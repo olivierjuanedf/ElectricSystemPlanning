@@ -74,6 +74,105 @@ def set_col_order_for_plot(df: pd.DataFrame, cols_ordered: List[str]) -> pd.Data
     df = df[current_df_cols_ordered]
     return df
 
+# def get_generation_units_data(uc_run_params: UCRunParams,
+#                               pypsa_unit_params_per_agg_pt: Dict[str, dict], 
+#                               units_complem_params_per_agg_pt: Dict[str, Dict[str, str]], 
+#                               agg_res_cf_data: Dict[str, pd.DataFrame], 
+#                               agg_gen_capa_data: Dict[str, pd.DataFrame]) -> GEN_UNITS_DATA_TYPE:
+#     """
+#     Get generation units data to create them hereafter
+#     :param pypsa_unit_params_per_agg_pt: dict of per aggreg. prod type main Pypsa params
+#     :param units_complem_params_per_agg_pt: # for each aggreg. prod type, a dict. {complem. param name: source - "from_json_tb_modif"/"from_eraa_data"}
+#     :param agg_res_cf_data: {country: df with per aggreg. prod type RES capa factor data}
+#     :param agg_gen_capa_data: {country: df with per aggreg. prod type (installed) generation capa. data}
+#     """
+#     countries = list(agg_gen_capa_data)
+#     prod_type_col = COLUMN_NAMES.production_type
+#     prod_type_agg_col = f"{prod_type_col}_agg"
+#     value_col = COLUMN_NAMES.value
+#     # TODO: set as global constants/unify...
+#     power_capa_key = "power_capa"
+#     capa_factor_key = "capa_factors"
+
+#     n_spaces_msg = 2
+
+#     generation_units_data = {}
+#     for country in countries:
+#         print_out_msg(msg_level="info", msg=f"- for country {country}")
+#         generation_units_data[country] = []
+#         current_capa_data = agg_gen_capa_data[country]
+#         current_res_cf_data = agg_res_cf_data[country]
+#         # get list of assets to be treated from capa. data
+#         agg_prod_types = list(set(current_capa_data[prod_type_agg_col]))
+#         # initialize set of params for each unit by using pypsa default values
+#         current_assets_data = {agg_pt: pypsa_unit_params_per_agg_pt[agg_pt] for agg_pt in agg_prod_types}
+#         # and loop over pt to add complementary params
+#         for agg_pt in agg_prod_types:
+#             print_out_msg(msg_level="info", msg=n_spaces_msg * " " + f"* for aggreg. prod. type {agg_pt}")
+#             # set and add asset name
+#             gen_unit_name = set_gen_unit_name(country=country, agg_prod_type=agg_pt)
+#             current_assets_data[agg_pt]["name"] = gen_unit_name
+#             # and "type" (the aggreg. prod types used here, with a direct corresp. to PyPSA generators; 
+#             # made explicit in JSON fixed params files)
+#             current_assets_data[agg_pt]["type"] = agg_pt
+#             if agg_pt in units_complem_params_per_agg_pt and len(units_complem_params_per_agg_pt[agg_pt]) > 0:
+#                 # add pnom attribute if needed
+#                 if power_capa_key in units_complem_params_per_agg_pt[agg_pt]:
+#                     print_out_msg(msg_level="info", msg=2*n_spaces_msg * " " + f"-> add {power_capa_key}")
+#                     current_power_capa = \
+#                         get_val_of_agg_pt_in_df(df_data=current_capa_data, prod_type_agg_col=prod_type_agg_col,
+#                                                 agg_prod_type=agg_pt, value_col="power_capacity",
+#                                                 static_val=True)
+#                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = int(current_power_capa)
+                        
+#                 # add pmax_pu when variable for RES/fatal units
+#                 if capa_factor_key in units_complem_params_per_agg_pt[agg_pt]:
+#                     print_out_msg(msg_level="info", msg=2*n_spaces_msg * " " + f"-> add {capa_factor_key}")
+#                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = \
+#                         get_val_of_agg_pt_in_df(df_data=current_res_cf_data, prod_type_agg_col=prod_type_agg_col,
+#                                                 agg_prod_type=agg_pt, value_col=value_col, static_val=False)
+#                 # max hours for storage-like assets (energy capa/power capa)
+
+#                 # marginal costs/efficiency, from FuelSources
+#             elif agg_pt == 'failure':
+#                 current_assets_data[agg_pt]['p_nom'] = agg_gen_capa_data[country].loc[agg_gen_capa_data[country]['production_type_agg']=='failure', 'power_capacity'].iloc[0]
+#                 current_assets_data[agg_pt]['marginal_cost'] = uc_run_params.failure_penalty
+#                 current_assets_data[agg_pt]['committable'] = False
+#             current_assets_data[agg_pt]['p_nom'] = agg_gen_capa_data[country].loc[agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity'].iloc[0]
+#             energy_capacity = agg_gen_capa_data[country].loc[agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'energy_capacity'].iloc[0]
+#             power_capacity_turbine = agg_gen_capa_data[country].loc[agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_turbine'].iloc[0]
+#             if energy_capacity > 0:
+#                 power_capacity_pumping = agg_gen_capa_data[country].loc[agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_pumping'].iloc[0]
+#                 if power_capacity_turbine > 0:
+#                     p_nom = max(abs(power_capacity_turbine), abs(power_capacity_pumping))
+#                     p_min_pu = power_capacity_pumping / p_nom
+#                     p_max_pu = power_capacity_turbine / p_nom
+#                     current_assets_data[agg_pt]['p_nom'] = p_nom
+#                     current_assets_data[agg_pt]['p_min_pu'] = p_min_pu
+#                     current_assets_data[agg_pt]['p_max_pu'] = p_max_pu
+#                     max_hours = energy_capacity / p_nom
+#                     current_assets_data[agg_pt]['max_hours'] = max_hours
+#                 power_capacity_injection = agg_gen_capa_data[country].loc[agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_injection'].iloc[0]
+#                 power_capacity_offtake = agg_gen_capa_data[country].loc[agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_offtake'].iloc[0]
+#                 if power_capacity_injection > 0:
+#                     p_nom = max(abs(power_capacity_injection), abs(power_capacity_offtake))
+#                     p_min_pu = -power_capacity_offtake / p_nom
+#                     p_max_pu = power_capacity_injection / p_nom
+#                     current_assets_data[agg_pt]['p_nom'] = p_nom
+#                     current_assets_data[agg_pt]['p_min_pu'] = p_min_pu
+#                     current_assets_data[agg_pt]['p_max_pu'] = p_max_pu
+#                     max_hours = energy_capacity / p_nom
+#                     current_assets_data[agg_pt]['max_hours'] = max_hours
+#             elif power_capacity_turbine > 0:
+#                     p_nom = abs(power_capacity_turbine)
+#                     current_assets_data[agg_pt]['p_nom'] = p_nom
+#                     current_assets_data[agg_pt]['p_min_pu'] = 0
+#                     current_assets_data[agg_pt]['p_max_pu'] = 1
+                
+            
+#             generation_units_data[country].append(GenerationUnitData(**current_assets_data[agg_pt]))
+#     return generation_units_data
+
 
 def set_full_coll_for_storage_df(df: pd.DataFrame, col_suffix: str) -> pd.DataFrame:
     old_cols = list(df.columns)
@@ -370,6 +469,53 @@ def get_country_bus_name(country: str) -> str:
 
 
 STORAGE_LIKE_UNITS = ['batteries', 'flexibility', 'hydro']
+
+# def init_pypsa_network(df_demand_first_country: pd.DataFrame):
+#     print("Initialize PyPSA network")
+#     network = pypsa.Network(snapshots=df_demand_first_country.index)
+#     return network
+
+
+# def add_gps_coordinates(network, countries_gps_coords: Dict[str, Tuple[float, float]]):
+#     print("Add GPS coordinates") 
+#     for country, gps_coords in countries_gps_coords.items():
+#         country_bus_name = get_country_bus_name(country=country)
+#         network.add("Bus", name=f"{country_bus_name}", x=gps_coords[0], y=gps_coords[1])
+#     return network
+
+
+# def add_energy_carrier(network, fuel_sources: Dict[str, FuelSources]):
+#     print("Add energy carriers")
+#     for carrier in list(fuel_sources.keys()):
+#         network.add("Carrier", name=carrier, co2_emissions=fuel_sources[carrier].co2_emissions/1000)
+#     return network
+
+
+
+def add_generators(network, generators_data: Dict[str, List[GenerationUnitData]]):
+    print("Add generators - associated to their respective buses")
+    for country, gen_units_data in generators_data.items():
+        country_bus_name = get_country_bus_name(country=country)
+        for gen_unit_data in gen_units_data:
+            pypsa_gen_unit_dict = gen_unit_data.__dict__
+            if pypsa_gen_unit_dict.get('max_hours', None) is not None:
+                network.add("StorageUnit", bus=f"{country_bus_name}", **pypsa_gen_unit_dict)
+            else:
+                network.add("Generator", bus=f"{country_bus_name}", **pypsa_gen_unit_dict)
+    print("Considered generators", network.generators)
+    print("Considered storage units", network.storage_units)
+    return network
+
+
+def add_loads(network, demand: Dict[str, pd.DataFrame]):
+    print("Add loads - associated to their respective buses")
+    for country in demand:
+        country_bus_name = get_country_bus_name(country=country)
+        load_data = {"name": f"{country_bus_name}-load", "bus": f"{country_bus_name}",
+                     "carrier": "AC", "p_set": demand[country]["value"].values}
+        network.add("Load", **load_data)
+    return network
+
 
 from itertools import product
 
