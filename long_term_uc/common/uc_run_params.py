@@ -163,6 +163,12 @@ class UCRunParams:
                 if val < 0:
                     errors_list.append(f'Updated fuel source {source} param {name} must be non-negative; but value read {val}')
 
+        # updated fuel sources params -> check non-negative marginal cost and CO2 emission values
+        for source, params in self.updated_fuel_sources_params.items():
+            for name, val in params.items():
+                if val < 0:
+                    errors_list.append(f"Updated fuel source {source} param {name} must be non-negative; but value read {val}")
+
         # stop if any error
         if len(errors_list) > 0:
             uncoherent_param_stop(param_errors=errors_list)

@@ -3,6 +3,16 @@ import numpy as np
 from typing import Dict
 
 from long_term_uc.common.constants.optimisation import OPTIM_RESOL_STATUS
+from dataclasses import dataclass
+
+
+@dataclass
+class OptimResolStatus:
+    optimal: str = "optimal"
+    infeasible: str = "infeasible"
+    
+
+OPTIM_RESOL_STATUS = OptimResolStatus()
 
 
 def get_generators_opt_p(network: Network) -> Dict[str, np.array]:

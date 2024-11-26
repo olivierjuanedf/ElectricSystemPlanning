@@ -104,6 +104,11 @@ def get_json_data_analysis_params_file() -> str:
     return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, 'data-analysis_params_to-be-modif.json') 
 
 
+
+def get_json_data_analysis_params_file() -> str:
+    return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, "data-analysis_params_to-be-modif.json") 
+
+
 def get_network_figure() -> str:
     return f'{OUTPUT_FIG_FOLDER}/network.png'
 
