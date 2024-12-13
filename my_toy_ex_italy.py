@@ -77,6 +77,13 @@ horizon = pd.date_range(
     end = uc_period_end.replace(year=uc_run_params.selected_target_year),
     freq = 'h'
 )
+
+# initialize dataset object
+from long_term_uc.include.dataset import Dataset
+eraa_dataset = Dataset(source=f"eraa_{eraa_data_descr.eraa_edition}", 
+                       agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data, 
+                       is_stress_test=uc_run_params.is_stress_test)
+
 """
 III) Get needed data - from ERAA csv files in data\\ERAA_2023-2
 """
