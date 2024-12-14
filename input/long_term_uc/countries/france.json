@@ -2,10 +2,12 @@
   "team": "france",
   "selected_prod_types": {
     "france": [
-      "all"
-    ]
+      "nuclear", "wind_on_shore"
+    ],
+    "germany": ["nuclear"]
   },
   "updated_capacities_prod_types": {
-    "france": {}
+    "france": {"nuclear": 80000},
+    "germany": {"nuclear": 20000}
   }
 }

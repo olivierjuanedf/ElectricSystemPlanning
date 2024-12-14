@@ -79,17 +79,31 @@ horizon = pd.date_range(
 )
 
 # initialize dataset object
+from long_term_uc.common.constants_extract_eraa_data import ERAADatasetDescr
 from long_term_uc.include.dataset import Dataset
-eraa_dataset = Dataset(source=f"eraa_{eraa_data_descr.eraa_edition}", 
-                       agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data, 
-                       is_stress_test=uc_run_params.is_stress_test)
+from long_term_uc.utils.read import check_and_load_json_file
+from long_term_uc.common.long_term_uc_io import get_json_fixed_params_file  
 
+json_fixed_params_file = get_json_fixed_params_file()
+json_params_fixed = check_and_load_json_file(json_file=json_fixed_params_file,
+                                             file_descr="JSON fixed params")
+
+eraa_data_descr = ERAADatasetDescr(**json_params_fixed)
+
+# initialize dataset object
+eraa_dataset = Dataset(source=f"eraa_{eraa_data_descr.eraa_edition}",
+                       agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data,
+                       is_stress_test=uc_run_params.is_stress_test)
+    
 """
 III) Get needed data - from ERAA csv files in data\\ERAA_2023-2
 """
 from long_term_uc.utils.eraa_data_reader import get_countries_data
 
 # III.1) Get data for Italy... just for test -> data used when writing PyPSA model will be re-obtained afterwards
+eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
+                                aggreg_prod_types_def=aggreg_prod_types_def)
+
 demand, agg_cf_data, agg_gen_capa_data, interco_capas = \
     get_countries_data(uc_run_params=uc_run_params, agg_prod_types_with_cf_data=agg_prod_types_selec,
                        aggreg_prod_types_def=AGG_PROD_TYPES_DEF)

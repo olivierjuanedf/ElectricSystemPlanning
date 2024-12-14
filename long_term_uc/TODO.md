@@ -2,6 +2,7 @@
 TODO[perpi]
 * data/ERAA_2023-2 -> PECD et res_capa-factors -> doublon ?
 * Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
+* MAJ toy_ex pour qu'il soit fonctionnel - après reformatage en mode objet
 
 [Toy ex, Mon afternoon]
 1) Doc doc/... pour clarifier les choses + baba utilisation codespace en dehors du repot ?
