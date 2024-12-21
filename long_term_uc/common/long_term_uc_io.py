@@ -107,18 +107,24 @@ def get_network_figure() -> str:
     return f"{OUTPUT_FIG_FOLDER}/network.png"
 
 
-def get_output_file_suffix(country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
-    return f"{country}_{year}_cy{climatic_year}_{start_horizon.strftime(DATE_FORMAT_FILE)}"
+def get_output_file_suffix(country: str, year: int, climatic_year: int = None, start_horizon: datetime = None) -> str:
+    cy_suffix = f"_cy{climatic_year}" if climatic_year is not None else ""
+    date_suffix = f"_{start_horizon.strftime(DATE_FORMAT_FILE)}" if start_horizon is not None else ""
+    return f"{country}_{year}{cy_suffix}{date_suffix}"
 
 
-def get_output_file_named(name: str, extension:str, output_dir:str, country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
+def get_output_file_named(name: str, extension:str, output_dir:str, country: str, year: int, climatic_year: int, start_horizon: datetime = None) -> str:
     file_suffix = get_output_file_suffix(country=country, year=year, climatic_year=climatic_year,
                                          start_horizon=start_horizon)
     return f"{output_dir}/{name}_{file_suffix}.{extension}"
 
 
-def get_figure_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
+def get_figure_file_named(name: str, country: str, year: int, climatic_year: int = None, start_horizon: datetime = None) -> str:
     return get_output_file_named(name, 'png', OUTPUT_FIG_FOLDER, country, year, climatic_year, start_horizon)
+
+
+def get_capacity_figure(country: str, year: int) -> str:
+    return get_figure_file_named('capa', country, year)
 
 
 def get_prod_figure(country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:

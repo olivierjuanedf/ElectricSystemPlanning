@@ -200,108 +200,95 @@ pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 # [Multiple-count. ext., end]
 
 # IV.5) Add load
-# N.B. "carrier" here just to explicit that an AC current network is considered
+# N.B. "carrier" associated to demand here just to explicit that an AC current network is considered
 # IV.5.1) Setting attribute values in a dictionary
-loads = [
-    {
-        "name": f"{country_trigram}-load", "bus": country_trigram,
-        "carrier": "AC", "p_set": demand[country]["value"].values
-    }
-]
+# loads = [
+#    {
+#        "name": f"{country_trigram}-load", "bus": country_trigram,
+#        "carrier": "AC", "p_set": demand[country]["value"].values
+#    }
+#]
+# IV.5.2) Then adding Load objects to PyPSA model
+# for load in loads:
+#    network.add("Load", **load)
+
 # [Coding trick] f"{my_var} is associated to {my_country}" is a f-string or formatted-string (https://docs.python.org/3/tutorial/inputoutput.html#formatted-string-literals)
 # [Multiple-count. ext., start] Multiple dictionaries in previous list, 
 # each of them corresponding to a given bus (country)
 # [Multiple-count. ext., end]
-
+# Here attribute eraa_dataset.demand has a unique key -> 'italy'
 pypsa_model.add_loads(demand=eraa_dataset.demand)
-
-# IV.5.2) Then adding Load objects to PyPSA model
-for load in loads:
-    network.add("Load", **load)
 
 # IV.6) A few prints to check/observe that created PyPSA model be coherent 
 # IV.6.1) Print the network after having completed it
-print(network)
+print(f"PyPSA network main properties: {pypsa_model.network}")
 # IV.6.2) And plot it. Surely better when having multiple buses (countries)!!
-import matplotlib.pyplot as plt
-from long_term_uc.common.long_term_uc_io import OUTPUT_DATA_FOLDER, get_figure_file_named, get_marginal_prices_file
-
-network.plot(
-    title="Network",
-    color_geomap=True,
-    jitter=0.3,
-)
-plt.tight_layout()
-plt.savefig(get_figure_file_named('network', country=country, year=year, climatic_year=climatic_year, 
-                            start_horizon=uc_run_params.uc_period_start)
-                            )
-plt.close()
-
+# plot network
+from long_term_uc.include.plotter import PlotParams
+plot_params = PlotParams()
+plot_params.read_and_check()
+pypsa_model.plot_network()
 # IV.6.3) Print out list of generators
-print(network.generators)
+print(pypsa_model.network.generators)
 
 # IV.7) "Optimize network" i.e., solve the associated Unit-Commitment problem
-# IV.7.1) Solve and print result
-result = network.optimize(solver_name="highs")
-print(result)
-print(f"Total cost at optimum: {network.objective:.2f}")
+# IV.7.1) Solve and print result. N.B. Default solver used is highs, that is 'sufficient' for a
+# 1-zone model as the one solved here
+result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year,
+                                      n_countries=len(uc_run_params.selected_countries),
+                                      period_start=uc_run_params.uc_period_start)
 # IV.7.2) [Optional] For those who want to get a standard .lp file containing 
 # the equations associated to the solved problem
 # -> will be saved in output folder output/long_term_uc/data
-from pathlib import Path
-import pypsa.optimization as opt
-m = opt.create_model(network)
-m.to_file(Path(f'{OUTPUT_DATA_FOLDER}/model_{country_trigram}.lp'))
+# you can observe if you find the equations corresponding to the UC problem modeled
 
-# IV.8) Plot a few info/results
-print("Plot generation and prices figures")
-# IV.8.1) Plot generation units capacities
-# N.B. p_nom_opt is the optimized capacity (that can be also a variable in PyPSA but here... 
-# not optimized - only UC problem -> values plotted correspond to the ones that can be found in input data)
-network.generators.p_nom_opt.drop(f"Failure_{country_trigram}").div(1e3).plot.bar(ylabel="GW", figsize=(8, 3))
-# [Coding trick] Matplotlib can directly adapt size of figure to fit with values plotted
-plt.tight_layout()
-plt.savefig(get_figure_file_named('generators', country=country, year=year, climatic_year=climatic_year, 
-                            start_horizon=uc_run_params.uc_period_start)
-                            )
-plt.close()
+print(result)  # Note 2nd component of result, the resolution status (optimal?)
+# get objective value, and associated optimal decisions / dual variables
+from long_term_uc.utils.pypsa_utils import OPTIM_RESOL_STATUS
+pypsa_opt_resol_status = OPTIM_RESOL_STATUS.optimal
+# if optimal resolution status, save output data and plot associated figures
+if result[1] == pypsa_opt_resol_status:
+    objective_value = pypsa_model.get_opt_value(pypsa_resol_status=pypsa_opt_resol_status)
+    print(f"Total cost at optimum: {objective_value:.2f}")
+    pypsa_model.get_prod_var_opt()
+    pypsa_model.get_storage_vars_opt()
+    pypsa_model.get_sde_dual_var_opt()
 
-# IV.8.2) And "stack" of optimized production profiles -> key graph to interpret UC solution -> will be 
-# saved in file output/long_term_uc/figures/prod_italy_{year}_{period start, under format %Y-%m-%d}.png
-from long_term_uc.common.long_term_uc_io import get_prod_figure, get_price_figure, get_opt_power_file
-network.generators_t.p.div(1e3).plot.area(subplots=False, ylabel="GW")
-plt.tight_layout()
-plt.savefig(get_prod_figure(country=country, year=year, climatic_year=climatic_year, 
-                            start_horizon=uc_run_params.uc_period_start)
-                            )
-plt.close()
-
-network.generators_t.p.div(1e3)[f'Failure_{country_trigram}'].plot.line(subplots=False, ylabel="GW")
-plt.tight_layout()
-plt.savefig(get_figure_file_named('failure', country=country, year=year, climatic_year=climatic_year, 
-                            start_horizon=uc_run_params.uc_period_start)
-                            )
-plt.close()
-
-
-# IV.8.3) Finally, "marginal prices" -> QUESTION: meaning? 
-# -> saved in file output/long_term_uc/figures/prices_italy_{year}_{period start, under format %Y-%m-%d}.png
-# QUESTION: how can you interpret the very constant value plotted?
-network.buses_t.marginal_price.mean(1).plot.line(figsize=(8, 3), ylabel="Euro per MWh")
-plt.tight_layout()
-plt.savefig(get_price_figure(country=country, year=year, climatic_year=climatic_year, 
-                             start_horizon=uc_run_params.uc_period_start)
-                             )
-plt.close()
-
-# IV.9) Save optimal decision to an output file
-print("Save optimal dispatch decisions to .csv file")
-opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year, 
+    # IV.8) Plot a few info/results
+    print("Plot installed capas (parameters), generation and prices (optim. outputs) figures")
+    # IV.8.1) Plot installed capacities
+    pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year)
+    # IV.8.2) Plot "stack" of optimized production profiles -> key graph to interpret UC solution -> will be 
+    # saved in file output/long_term_uc/figures/prod_italy_{year}_{period start, under format %Y-%m-%d}.png
+    pypsa_model.plot_opt_prod_var(plot_params=plot_params, country=unique_country,
+                                year=uc_run_params.selected_target_year,
+                                climatic_year=uc_run_params.selected_climatic_year,
+                                start_horizon=uc_run_params.uc_period_start)
+    # IV.8.2bis) Specific prod. profile: the one of fictive failure asset
+    pypsa_model.plot_failure_at_opt(country=unique_country, year=uc_run_params.selected_target_year,
+                                    climatic_year=uc_run_params.selected_climatic_year,
                                     start_horizon=uc_run_params.uc_period_start)
-network.generators_t.p.to_csv(opt_p_csv_file)
+    # IV.8.3) Finally, "marginal prices" -> QUESTION: meaning? 
+    # -> saved in file output/long_term_uc/figures/prices_italy_{year}_{period start, under format %Y-%m-%d}.png
+    # QUESTION: how can you interpret the very constant value plotted? 
+    pypsa_model.plot_marginal_price(plot_params=plot_params, year=uc_run_params.selected_target_year,
+                                    climatic_year=uc_run_params.selected_climatic_year,
+                                    start_horizon=uc_run_params.uc_period_start) 
 
-# IV.10) Save marginal prices to an output file
-print("Save marginal prices decisions to .csv file")
-marginal_prices_csv_file = get_marginal_prices_file(country=country, year=year, climatic_year=climatic_year, 
-                                    start_horizon=uc_run_params.uc_period_start)
-network.buses_t.marginal_price.mean(1).to_csv(marginal_prices_csv_file)
+
+    # IV.9) Save optimal decisions to output csv files
+    print("Save optimal dispatch decisions to .csv file")
+    # save optimal prod. decision to an output file
+    pypsa_model.save_opt_decisions_to_csv(year=uc_run_params.selected_target_year,
+                                        climatic_year=uc_run_params.selected_climatic_year,
+                                        start_horizon=uc_run_params.uc_period_start)
+
+    # save marginal prices to an output file
+    pypsa_model.save_marginal_prices_to_csv(year=uc_run_params.selected_target_year,
+                                            climatic_year=uc_run_params.selected_climatic_year,
+                                            start_horizon=uc_run_params.uc_period_start)
+else:
+    print(f"Optimisation resolution status is not {pypsa_opt_resol_status} -> output data (resp. figures) cannot be saved (resp. plotted), excepting installed capas one")
+    pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year)
+
+print(f"THE END of ERAA-PyPSA long-term UC toy model of country {unique_country} simulation!")

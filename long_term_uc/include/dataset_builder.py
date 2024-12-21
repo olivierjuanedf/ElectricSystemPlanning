@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 from long_term_uc.common.error_msgs import print_errors_list
 from long_term_uc.common.fuel_sources import FuelSources
 from long_term_uc.common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
-    get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file
+    get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file, \
+        get_capacity_figure, get_figure_file_named
 from long_term_uc.include.plotter import PlotParams
 from long_term_uc.utils.basic_utils import lexico_compar_str
 from long_term_uc.utils.df_utils import rename_df_columns
@@ -226,6 +227,17 @@ class PypsaModel:
         logging.info(f"Optimisation resolution status is {pypsa_resol_status} with objective value (cost) = {objective_value:.2f} -> output data (resp. figures) can be generated")
         return objective_value
     
+    def plot_installed_capas(self, country: str, year: int):
+        country_trigram = set_country_trigram(country=country)
+        # N.B. p_nom_opt is the optimized capacity (that can be also a variable in PyPSA but here...
+        # not optimized - only UC problem -> values plotted correspond to the ones that can be found in input data)
+        # all but failure asset capacity will be used in plot
+        self.network.generators.p_nom_opt.drop(f"{country_trigram}_failure").div(1e3).plot.bar(ylabel="GW", figsize=(8, 3))
+        # [Coding trick] Matplotlib can directly adapt size of figure to fit with values plotted
+        plt.tight_layout()
+        plt.savefig(get_capacity_figure(country=country, year=year))
+        plt.close()
+
     def plot_opt_prod_var(self, plot_params: PlotParams, country: str, year: int, 
                           climatic_year: int, start_horizon: datetime):
         """ 
@@ -243,9 +255,18 @@ class PypsaModel:
                                                       cols_ordered=plot_params.agg_prod_type_order)
         current_prod_var_opt.div(1e3).plot.area(subplots=False, ylabel="GW", 
                                                 color=plot_params.per_agg_prod_type_color)
+        plt.tight_layout()
         plt.savefig(get_prod_figure(country=country, year=year, 
                                     climatic_year=climatic_year, start_horizon=start_horizon))
+        plt.close()
+
+    def plot_failure_at_opt(self, country: str, year: int, climatic_year: int, start_horizon: datetime):
+        failure_unit_name = set_gen_unit_name(country=country, agg_prod_type="failure")
+        self.network.generators_t.p.div(1e3)[failure_unit_name].plot.line(subplots=False, ylabel="GW")
         plt.tight_layout()
+        plt.savefig(get_figure_file_named('failure', country=country, year=year, climatic_year=climatic_year,
+                                          start_horizon=start_horizon)
+                            )
         plt.close()
 
     def plot_marginal_price(self, plot_params: PlotParams, year: int, climatic_year: int, start_horizon: datetime):
@@ -261,6 +282,8 @@ class PypsaModel:
 
     def save_opt_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                                   rename_snapshot_col: bool = True):
+        # TODO: check if unique country and in this case (i) suppress country prefix in asset names; 
+        # (ii) rename file with country suffix instead of europe one
         country = "europe"
         # opt prod decisions for all but Storage assets
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,

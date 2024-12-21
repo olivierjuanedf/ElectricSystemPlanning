@@ -101,7 +101,7 @@ if result[1] == pypsa_opt_resol_status:
                                   climatic_year=uc_run_params.selected_climatic_year,
                                   start_horizon=uc_run_params.uc_period_start) 
 
-  # save optimal decision to an output file
+  # save optimal prod. decision to an output file
   pypsa_model.save_opt_decisions_to_csv(year=uc_run_params.selected_target_year,
                                         climatic_year=uc_run_params.selected_climatic_year,
                                         start_horizon=uc_run_params.uc_period_start)
