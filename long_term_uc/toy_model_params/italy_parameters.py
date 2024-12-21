@@ -1,13 +1,15 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
 from long_term_uc.common.fuel_sources import FuelSources
+from long_term_uc.include.dataset_builder import GenerationUnitData
 
 
+GENERATOR_DICT_TYPE = Dict[str, Union[float, int, str]]
 gps_coords = (12.5674, 41.8719)
 
 
 def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources],
-                   wind_on_shore_data, wind_off_shore_data, solar_pv_data) -> List[dict]:
+                   wind_on_shore_data, wind_off_shore_data, solar_pv_data) -> List[GENERATOR_DICT_TYPE]:
     """
     Get list of generators to be set on a given node of a PyPSA model
     :param country_trigram: name of considered country, as a trigram (ex: "ben", "fra", etc.)
@@ -71,3 +73,11 @@ def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources],
         }
     ]
     return generators
+
+
+def set_gen_as_list_of_gen_units_data(generators: List[GENERATOR_DICT_TYPE]) -> List[GenerationUnitData]:
+    # add type of units
+    for elt_gen in generators:
+        elt_gen["type"] = f"{elt_gen['carrier']}_agg"
+    # then cas as list of GenerationUnitData objects
+    return [GenerationUnitData(**elt_gen_dict) for elt_gen_dict in generators]

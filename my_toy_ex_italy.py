@@ -87,6 +87,12 @@ from long_term_uc.common.long_term_uc_io import get_json_fixed_params_file
 json_fixed_params_file = get_json_fixed_params_file()
 json_params_fixed = check_and_load_json_file(json_file=json_fixed_params_file,
                                              file_descr="JSON fixed params")
+json_available_values_dummy = {"available_climatic_years": None, 
+                               "available_countries": None, 
+                               "available_aggreg_prod_types": None,
+                               "available_intercos": None,
+                               "available_target_years": None}
+json_params_fixed |= json_available_values_dummy
 
 eraa_data_descr = ERAADatasetDescr(**json_params_fixed)
 
@@ -98,28 +104,23 @@ eraa_dataset = Dataset(source=f"eraa_{eraa_data_descr.eraa_edition}",
 """
 III) Get needed data - from ERAA csv files in data\\ERAA_2023-2
 """
-from long_term_uc.utils.eraa_data_reader import get_countries_data
 
 # III.1) Get data for Italy... just for test -> data used when writing PyPSA model will be re-obtained afterwards
 eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
-                                aggreg_prod_types_def=aggreg_prod_types_def)
-
-demand, agg_cf_data, agg_gen_capa_data, interco_capas = \
-    get_countries_data(uc_run_params=uc_run_params, agg_prod_types_with_cf_data=agg_prod_types_selec,
-                       aggreg_prod_types_def=AGG_PROD_TYPES_DEF)
+                                aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
 
 # III.2) In this case, decompose aggreg. CF data into three sub-dicts (for following ex. to be more explicit)
 from long_term_uc.utils.df_utils import selec_in_df_based_on_list
 solar_pv = {
-    country: selec_in_df_based_on_list(df=agg_cf_data[country], selec_col="production_type_agg",
+    country: selec_in_df_based_on_list(df=eraa_dataset.agg_cf_data[country], selec_col="production_type_agg",
                                        selec_vals=["solar_pv"], rm_selec_col=True)
 }
 wind_on_shore = {
-    country: selec_in_df_based_on_list(df=agg_cf_data[country], selec_col="production_type_agg",
+    country: selec_in_df_based_on_list(df=eraa_dataset.agg_cf_data[country], selec_col="production_type_agg",
                                        selec_vals=["wind_onshore"], rm_selec_col=True)
 }
 wind_off_shore = {
-    country: selec_in_df_based_on_list(df=agg_cf_data[country], selec_col="production_type_agg",
+    country: selec_in_df_based_on_list(df=eraa_dataset.agg_cf_data[country], selec_col="production_type_agg",
                                        selec_vals=["wind_offshore"], rm_selec_col=True)
 }
 
@@ -131,10 +132,20 @@ import pypsa
 print("Initialize PyPSA network")
 # Here snapshots is used to defined the temporal period associated to considered UC model
 # -> for ex. as a list of indices (other formats; like data ranges can be used instead) 
-network = pypsa.Network(snapshots=demand[country].index)
-network.set_snapshots(horizon[:-1])
+from long_term_uc.include.dataset_builder import PypsaModel
+pypsa_model = PypsaModel(name="my little europe")
+date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
+# set a date horizon, to have more explicit axis labels hereafter
+import pandas as pd
+horizon = pd.date_range(
+    start = uc_run_params.uc_period_start.replace(year=uc_run_params.selected_target_year),
+    end = uc_run_params.uc_period_end.replace(year=uc_run_params.selected_target_year),
+    freq = 'h'
+)
+pypsa_model.init_pypsa_network(date_idx=date_idx, date_range=horizon)
+
 # And print it to check that for now it is... empty
-print(network)
+print(pypsa_model.network)
 
 #################################################
 # KEY POINT: main parameters needed for Italy description in PyPSA are set in script
@@ -146,12 +157,13 @@ print(network)
 # IV.2) Add bus for considered country
 # N.B. Italy coordinates set randomly! (not useful in the calculation that will be done this week)
 from long_term_uc.toy_model_params.italy_parameters import gps_coords
-coordinates = {"italy": gps_coords}
+unique_country = "italy" 
+coordinates = {unique_country: gps_coords}
 # IV.2.1) For brevity, set country trigram as the "id" of this zone in following model definition (and observed outputs)
 from long_term_uc.include.dataset_builder import set_country_trigram
 country_trigram = set_country_trigram(country=country)
 # N.B. Multiple bus would be added if multiple countries were considered
-network.add("Bus", name=country_trigram, x=coordinates[country][0], y=coordinates[country][1])
+pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # [Multiple-count. ext., start] Loop over the different countries to add an associated bus
 # for country in modeled_countries:
 #    network.add("Bus", name=country_trigram, x=coordinates[country][0], y=coordinates[country][1])
@@ -166,17 +178,22 @@ network.add("Bus", name=country_trigram, x=coordinates[country][0], y=coordinate
 # (keeping format of dataclass - sort of enriched dictionary -, just change values in 
 # file long_term_uc/common/fuel_sources.py)
 from long_term_uc.common.fuel_sources import FUEL_SOURCES
-from long_term_uc.toy_model_params.italy_parameters import get_generators
+from long_term_uc.toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
 # IV.4.1) get generators to be set on the unique considered bus here 
 # -> from long_term_uc.toy_model_params.italy_parameters.py script
 generators = get_generators(country_trigram=country_trigram, fuel_sources=FUEL_SOURCES, 
                             wind_on_shore_data=wind_on_shore[country], wind_off_shore_data=wind_off_shore[country],
                             solar_pv_data=solar_pv[country])
+# set generation units data from this list
+from long_term_uc.include.dataset_builder import GenerationUnitData
+generation_units_data = set_gen_as_list_of_gen_units_data(generators=generators)
+eraa_dataset.set_generation_units_data(gen_units_data={unique_country: generation_units_data})
 
 # IV.4.2) Loop over previous list of dictionaries to add each of the generators to PyPSA network
 # [Coding trick] ** used to "unpack" the dictionary as named parameters
-for generator in generators:
-    network.add("Generator", bus=country_trigram, **generator, )
+pypsa_model.add_energy_carrier(fuel_sources=FUEL_SOURCES)
+pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
+
 # [Multiple-count. ext., start] Idem but adding the different generators to the bus (country) they are connected to
 # -> a correspondence (for ex. with a dictionary) between bus names and list of associated 
 # generators is then needed
@@ -195,6 +212,8 @@ loads = [
 # [Multiple-count. ext., start] Multiple dictionaries in previous list, 
 # each of them corresponding to a given bus (country)
 # [Multiple-count. ext., end]
+
+pypsa_model.add_loads(demand=eraa_dataset.demand)
 
 # IV.5.2) Then adding Load objects to PyPSA model
 for load in loads:

@@ -312,6 +312,9 @@ class Dataset:
                 
                 self.generation_units_data[country].append(GenerationUnitData(**current_assets_data[agg_pt]))
 
+    def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
+        self.generation_units_data = gen_units_data
+        
     def set_committable_param(self):
         for country, val in self.generation_units_data.items():
             for i in range(len(val)):
