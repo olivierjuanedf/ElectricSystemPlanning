@@ -1,37 +1,35 @@
-(A CLASSER...)
-TODO[perpi]
-* Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
-* MAJ toy_ex pour qu'il soit fonctionnel - après reformatage en mode objet
 
-[Toy ex, Mon afternoon]
-1) Doc doc/... pour clarifier les choses + baba utilisation codespace en dehors du repot ?
-2) my_toy_ex_italy.py
-* voir "XXX" (notamment les coding tricks)
-* conserver FUEL_SOURCES ou bien trop compliqué pour les étudiants ?
-* voir si certains warning sont de notre fait... même si en ligne il semble que PyPSA en génère pas mal - notamment en lien avec Linopy
-* Robust end of run when infeasible... not crashing after resolution
-* doc/toy-model_tutorial.md to be completed/improved
-2bis) Cleaner italy_parameters.py
-4) Hydraulic storages... cf. CS student code
-5) Scripts avec qques exemples de base Python ? "[coding tricks]"
-6) Usage param auto fulfill interco capa missing
-7) / by efficiency in FuelSources and not * for primary cost?
-8) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec des exs complémentaires au cas italien (hydrau, batteries)
+TODO
 
-[Tue-...]
-1) Set dates as values in plots (and not obscure idx)
+DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
+DA1) Rendre fonctionnelle v1 de ce script !
 
+TOY EX (TE) - my_toy_ex_italy.py
+TE1) voir "XXX" (notamment les coding tricks)
+TE2) conserver FUEL_SOURCES ou bien trop compliqué pour les étudiants ?
+TE3) voir si certains warning sont de notre fait... même si en ligne il semble que PyPSA en génère pas mal - notamment en lien avec Linopy
+TE4) doc/toy-model_tutorial.md to be completed/improved
+TE5) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec des exs complémentaires au cas italien (hydrau, batteries)
 
-[If time allows...]
-0) Finish and connect type checker for JSON file values -> using map(func, [val]) and all([true])
+MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
+MAS1) Doc doc/... pour clarifier les choses et permettre utilisation autonome
+-> 1 doc par jour (session) pour ne pas "faire peur" au début avec un doc trop conséquent ?
+MAS2) Integrate hydraulic storages... cf. CS student code
+MAS3) Usage param auto fulfill interco capa missing -> ??
+MAS4) Add possibility to set Stock (additional to ERAA data) in JSON tb modif input file
+MAS5) Add possibility to provide additional fatal demand -> for iterations between UC and imperfect disaggreg of an aggregate DSR flex (EV for ex) modeled as a Stock for ex! (cf. OMCEP course)
+
+PLOTS
+P1) Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
+P2) Add plot functions to get demand/cf/capas values for the selected values of params (and selected period) -> useful for 1st stage of data analysis (better with some graphs easy tb obtained)
+
+OTHERS
+O1) Doc baba utilisation codespace en dehors du repot ?
+O2) Scripts avec qques exemples de base Python ? "[coding tricks]"
+O3) / by efficiency in FuelSources and not * for primary cost?
+O4) Iberian-peninsula -> Iberia
+O5) Sous-partie git avec accès différencié élèves / TA pour docs et données diff ?
+(pour éviter conflits ; chgts menant à des bogues "non-nécessaires")
+O6) Finish and connect type checker for JSON file values -> using map(func, [val]) and all([true])
 -> OK excepting UsageParameters
-1) Set available aggreg. prod type PER COUNTRY - to facilitate exercise
-2) Add possibility to set Stock (additional to ERAA data) in JSON tb modif input file
-5) Add possibility to provide additional fatal demand -> for iterations between UC and imperfect disaggreg..
-6) Check multiple links between two zones possible. Cf. ger-scandinavia AC+DC in CentraleSupélec students hypothesis
-And types ok? Q2Emmanuel NEAU and Jean-Yves BOURMAUD
-7) Add plot functions to get demand/cf/capas values for the selected values of params (and selected period)
-8) Q2oj Sous-partie git avec accès différencié élèves / ta pour docs et données diff ?
-
-[Next year]
-1) Iberian-peninsula -> Iberia
+O7) Check multiple links between two zones possible. Cf. ger-scandinavia AC+DC in CentraleSupélec students hypothesis. And interco types (hvdc/hvac) ok? Q2Emmanuel NEAU and Jean-Yves BOURMAUD
