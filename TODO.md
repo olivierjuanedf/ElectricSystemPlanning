@@ -33,3 +33,4 @@ O5) Sous-partie git avec accès différencié élèves / TA pour docs et donnée
 O6) Finish and connect type checker for JSON file values -> using map(func, [val]) and all([true])
 -> OK excepting UsageParameters
 O7) Check multiple links between two zones possible. Cf. ger-scandinavia AC+DC in CentraleSupélec students hypothesis. And interco types (hvdc/hvac) ok? Q2Emmanuel NEAU and Jean-Yves BOURMAUD
+O8) See with OJ if regular runner possible (run all github with current state of code and plot current scores) -> script to calculate scores and plot results
