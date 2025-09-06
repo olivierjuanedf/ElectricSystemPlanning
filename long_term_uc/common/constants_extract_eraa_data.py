@@ -111,7 +111,7 @@ class ERAADatasetDescr:
         # convert str bool to boolean
         for agg_pt, pypsa_params in self.pypsa_unit_params_per_agg_pt.items():
             for param_name, param_val in pypsa_params.items():
-                if is_str_bool(bool_str=param_val) is True:
+                if is_str_bool(bool_str=param_val):
                     self.pypsa_unit_params_per_agg_pt[agg_pt][param_name] = bool(param_val)
         for country in self.gps_coordinates:
             self.gps_coordinates[country] = tuple(self.gps_coordinates[country])
@@ -122,7 +122,7 @@ class ERAADatasetDescr:
         for country, all_years_dict in self.available_aggreg_prod_types.items():
             new_avail_aggreg_pt_dict[country] = {int(elt_year): all_years_dict[elt_year] for elt_year in all_years_dict}
             # and add failure - fictive - asset
-            if auto_add_failure_pu is True:
+            if auto_add_failure_pu:
                 for elt_year in new_avail_aggreg_pt_dict[country]:
                     if FAILURE_ASSET not in new_avail_aggreg_pt_dict[country][elt_year]:
                         new_avail_aggreg_pt_dict[country][elt_year].append(FAILURE_ASSET)

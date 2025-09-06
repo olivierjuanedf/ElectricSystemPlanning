@@ -10,12 +10,12 @@ from long_term_uc.common.long_term_uc_io import DATE_FORMAT_PRINT
 def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True, 
                   ad_hoc_replacements: dict = None) -> Optional[str]:
     # sanitize only if str
-    if isinstance(raw_str, str) is False:
+    if not isinstance(raw_str, str):
         return raw_str
 
     sanitized_str = raw_str
     sanitized_str = sanitized_str.strip()
-    if replace_empty_char is True:
+    if replace_empty_char:
         sanitized_str = sanitized_str.replace(" ", "_")
     sanitized_str = sanitized_str.lower()
 
@@ -53,13 +53,13 @@ def get_period_str(period_start: datetime, period_end: datetime):
 
 
 def is_str_bool(bool_str: Optional[str]) -> bool:
-    if isinstance(bool_str, str) is False:
+    if not isinstance(bool_str, str):
         return False
     return bool_str.lower() in ["true", "false"]
 
 
 def cast_str_bool(bool_str: str) -> Union[str, bool]:
-    if is_str_bool(bool_str=bool_str) is True:
+    if is_str_bool(bool_str=bool_str):
         return bool(bool_str)
     else:
         return bool_str
@@ -72,7 +72,7 @@ def are_lists_eq(list_of_lists: List[list]) -> bool:
     n_lists = len(list_of_lists)
     for i_list in range(1, n_lists):
         current_list = list_of_lists[i_list]
-        if (len(current_list) == len_first_list and set(current_list) == set_first_list) is False:
+        if not (len(current_list) == len_first_list and set(current_list) == set_first_list):
             return False
     return True
 
@@ -81,15 +81,15 @@ def lexico_compar_str(string1: str, string2: str, return_tuple: bool = False) ->
     i = 0
     while i < len(string1) and i < len(string2):
         if string1[i] < string2[i]:
-            return (string1, string2) if return_tuple is True else string1
+            return (string1, string2) if return_tuple else string1
         elif string1[i] > string2[i]:
-            return (string2, string1) if return_tuple is True else string2
+            return (string2, string1) if return_tuple else string2
         i += 1
     # one of the strings starts with the other
     if len(string2) > len(string1):
-        return (string1, string2) if return_tuple is True else string1
+        return (string1, string2) if return_tuple else string1
     else:
-        return (string2, string1) if return_tuple is True else string2
+        return (string2, string1) if return_tuple else string2
 
 
 def flatten_list_of_lists(list_of_lists: List[list]) -> list:

@@ -19,7 +19,7 @@ def selec_in_df_based_on_list(df: pd.DataFrame, selec_col, selec_vals: list, rm_
 
 def concatenate_dfs(dfs: List[pd.DataFrame], reset_index: bool = True) -> pd.DataFrame:
     df_concat = pd.concat(dfs, axis=0)
-    if reset_index is True:
+    if reset_index:
         df_concat = df_concat.reset_index(drop=True)
     return df_concat
 

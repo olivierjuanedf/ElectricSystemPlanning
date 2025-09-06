@@ -16,7 +16,7 @@ def check_int(data_val) -> bool:
 
 # lists of a given type
 def check_list_of_given_type(data_val, needed_type: type) -> bool:
-    if isinstance(data_val, list) is False:
+    if not isinstance(data_val, list):
         return False
     return all([isinstance(elt, needed_type) for elt in data_val])
 
@@ -41,7 +41,7 @@ def check_none_or_list_of_str(data_val) -> bool:
 
 # complex dicts
 def check_str_str_dict(data_val) -> bool:
-    if isinstance(data_val, dict) is False:
+    if not isinstance(data_val, dict):
         return False
     keys_and_vals = list(data_val.keys())
     keys_and_vals.extend(data_val.values())
@@ -49,7 +49,7 @@ def check_str_str_dict(data_val) -> bool:
 
 
 def check_str_list_of_str_dict(data_val) -> bool:
-    if isinstance(data_val, dict) is False:
+    if not isinstance(data_val, dict):
         return False
     keys = list(data_val.keys())
     vals = list(data_val.values())
@@ -58,7 +58,7 @@ def check_str_list_of_str_dict(data_val) -> bool:
 
 
 def check_str_list_of_float_dict(data_val) -> bool:
-    if isinstance(data_val, dict) is False:
+    if not isinstance(data_val, dict):
         return False
     keys = list(data_val.keys())
     vals = list(data_val.values())
@@ -70,7 +70,7 @@ def check_str_dict_dict(data_val) -> bool:
     """
     Check that data_val be of type {str: dict}
     """
-    if isinstance(data_val, dict) is False:
+    if not isinstance(data_val, dict):
         return False
     keys = list(data_val.keys())
     vals = list(data_val.values())
@@ -78,13 +78,13 @@ def check_str_dict_dict(data_val) -> bool:
 
 
 def check_three_level_str_dict(data_val) -> bool:
-    if isinstance(data_val, dict) is False:
+    if not isinstance(data_val, dict):
         return False
     return all([(isinstance(key, str) and check_str_str_dict(data_val=val)) for key, val in data_val.items()])
 
 
 def check_str_str_list_of_str_dict(data_val) -> bool:
-    if isinstance(data_val, dict) is False:
+    if not isinstance(data_val, dict):
         return False
     keys = list(data_val.keys())
     vals = list(list(data_val.values()))
@@ -124,7 +124,7 @@ def apply_params_type_check(param_obj_dict: dict, types_for_check: Dict[str, str
     for attr_tb_checked, type_for_check in types_for_check.items():
         if attr_tb_checked in param_obj_dict:
             check_result = apply_data_type_check(data_type=type_for_check, data_val=param_obj_dict[attr_tb_checked])
-            if check_result is False:
+            if not check_result:
                 check_errors.append(attr_tb_checked)
     if len(check_errors) > 0:
         print_errors_list(error_name=f"{param_name} JSON data with erroneous types",

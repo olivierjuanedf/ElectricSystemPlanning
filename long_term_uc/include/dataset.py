@@ -89,7 +89,7 @@ class Dataset:
             if DATATYPE_NAMES.demand in datatypes_selec:
                 # get demand
                 logging.info("Get demand")
-                if self.is_stress_test is True:
+                if self.is_stress_test:
                     demand_folder_full = f"{demand_folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}"
                 else:
                     demand_folder_full = f"{demand_folder}"
@@ -117,13 +117,13 @@ class Dataset:
                         logging.info(n_spaces_msg * " " + f"- For aggreg. prod. type: {agg_prod_type}")
                         current_agg_pt_df_res_cf_list = []
                         for prod_type in aggreg_pt_cf_def[agg_prod_type]:
-                            if self.is_stress_test is True:
+                            if self.is_stress_test:
                                 res_cf_folder_full = f"{res_cf_folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}"
                             else:
                                 res_cf_folder_full = f"{res_cf_folder}"
                             cf_filename = f"{res_cf_prefix}_{prod_type}_{current_suffix}.csv" 
                             cf_data_file = f"{res_cf_folder_full}/{cf_filename}"
-                            if os.path.exists(cf_data_file) is False:
+                            if not os.path.exists(cf_data_file):
                                 logging.warning(2*n_spaces_msg * " " + f"RES capa. factor data file does not exist: {prod_type} not accounted for here")
                             else:
                                 logging.info(2*n_spaces_msg * " " + f"* Prod. type: {prod_type}")
@@ -156,7 +156,7 @@ class Dataset:
                 # get installed generation capacity data
                 logging.info("Get installed generation capacities (unique file per country and year, with all prod. types in it)")
                 gen_capa_data_file = f"{gen_capas_folder}/{gen_capas_prefix}_{current_suffix}.csv"
-                if os.path.exists(gen_capa_data_file) is False:
+                if not os.path.exists(gen_capa_data_file):
                     logging.warning(f"Generation capas data file does not exist: {country} not accounted for here")
                 else:
                     current_df_gen_capa = pd.read_csv(gen_capa_data_file, sep=column_sep, decimal=decimal_sep)
@@ -196,7 +196,7 @@ class Dataset:
             # read interconnection capas file
             logging.info("Get interconnection capacities, with unique file for all nodes (zones=countries) and year")
             interco_capas_data_file = f"{interco_capas_folder}/{interco_capas_prefix}_{year}.csv"
-            if os.path.exists(interco_capas_data_file) is False:
+            if not os.path.exists(interco_capas_data_file):
                 logging.warning(f"Generation capas data file does not exist: {country} not accounted for here")
             else:
                 df_interco_capas = pd.read_csv(interco_capas_data_file, sep=column_sep, decimal=decimal_sep)

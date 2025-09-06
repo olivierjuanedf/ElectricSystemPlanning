@@ -64,7 +64,7 @@ class UCTimeseries:
         vals_desc_order = np.sort(self.values)[::-1]
         # this calculation is done assuming uniform time-slot duration
         duration_curve = np.arange(1, len(vals_desc_order) + 1)
-        if as_a_percentage is True:
+        if as_a_percentage:
             duration_curve = np.cumsum(duration_curve) / len(duration_curve)
             xlabel = "Duration (%)"
         else:
@@ -89,7 +89,7 @@ def list_of_uc_timeseries_to_df(uc_timeseries: List[UCTimeseries]) -> pd.DataFra
 
 def list_of_uc_ts_to_csv(list_of_uc_ts: List[UCTimeseries], output_dir: str, to_matrix_format: bool = False):
     # 1 file per UC timeseries
-    if to_matrix_format is False:
+    if not to_matrix_format:
         for uc_ts in list_of_uc_ts:
             uc_ts.to_csv(output_dir: str)
 

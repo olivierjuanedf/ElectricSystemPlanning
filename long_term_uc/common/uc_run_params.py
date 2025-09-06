@@ -97,7 +97,7 @@ class UCRunParams:
                  and self.selected_climatic_year not in eraa_data_descr.available_climatic_years_stress_test):
             errors_list.append(f"Unknown climatic year {self.selected_climatic_year}")
         # stop if any error
-        if stop_if_error is True and len(errors_list) > 0:
+        if stop_if_error and len(errors_list) > 0:
             uncoherent_param_stop(param_errors=errors_list)
 
         return errors_list
@@ -135,7 +135,7 @@ class UCRunParams:
         agg_pt_countries_with_val = [elt_country for elt_country in agg_pt_countries 
                                      if len(self.selected_prod_types[elt_country]) > 0]
         countries_lists = [self.selected_countries, agg_pt_countries_with_val]
-        if are_lists_eq(list_of_lists=countries_lists) is False:
+        if not are_lists_eq(list_of_lists=countries_lists):
             errors_list.append(f"Countries are different in selection list ({self.selected_countries}) versus keys of aggreg. prod. types selection dict. - wo None value ({agg_pt_countries_with_val})")
 
         # check that aggreg. prod types are not repeated, and known

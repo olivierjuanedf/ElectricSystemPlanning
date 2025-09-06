@@ -54,7 +54,7 @@ class GenerationUnitData:
 def get_val_of_agg_pt_in_df(df_data: pd.DataFrame, prod_type_agg_col: str, 
                             agg_prod_type: str, value_col: str, static_val: bool) \
                                 -> Union[np.ndarray, float]:
-    if static_val is True:
+    if static_val:
         return df_data[df_data[prod_type_agg_col] == agg_prod_type][value_col].iloc[0]
     else:
         return np.array(df_data[df_data[prod_type_agg_col] == agg_prod_type][value_col])
@@ -165,7 +165,7 @@ class PypsaModel:
                                             country_dest=country_dest)
                 if current_interco_capa is None:
                     # if symmetrical interco order lexicographically to fit with input data format
-                    if is_sym_interco is True:
+                    if is_sym_interco:
                         link_wo_capa = lexico_compar_str(string1=country_origin,
                                                         string2=country_dest, return_tuple=True)
                     else:
@@ -176,7 +176,7 @@ class PypsaModel:
                 else:
                     country_origin_bus_name = get_country_bus_name(country=country_origin)
                     country_dest_bus_name = get_country_bus_name(country=country_dest)
-                    if is_sym_interco is True:
+                    if is_sym_interco:
                         p_min_pu, p_max_pu = -1, 1
                         symmetric_links.append(link_tuple)
                     else:
@@ -207,7 +207,7 @@ class PypsaModel:
         logging.info("Optimize 'network' - i.e. solve associated UC problem")
         result = self.network.optimize(solver_name="highs")
         logging.info(result)
-        if save_lp_file is True:
+        if save_lp_file:
             save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start)
         return result
     
@@ -290,7 +290,7 @@ class PypsaModel:
                                             start_horizon=start_horizon)
         logging.info(f"Save - all but Storage assets - optimal dispatch decisions to csv file {opt_p_csv_file}")
         df_prod_opt = self.prod_var_opt
-        if rename_snapshot_col is True:
+        if rename_snapshot_col:
             df_prod_opt.index.name = OUTPUT_DATE_COL
         df_prod_opt.to_csv(opt_p_csv_file)
         # then storage assets decisions
@@ -307,7 +307,7 @@ class PypsaModel:
         df_cons_opt = set_full_coll_for_storage_df(df=df_cons_opt, col_suffix="cons")
         df_soc_opt = set_full_coll_for_storage_df(df=df_soc_opt, col_suffix="soc")
         df_storage_all_decs = df_prod_opt.join(df_cons_opt).join(df_soc_opt)
-        if rename_snapshot_col is True:
+        if rename_snapshot_col:
             df_storage_all_decs.index.name = OUTPUT_DATE_COL
         df_storage_all_decs.to_csv(storage_opt_dec_csv_file)
 
@@ -318,7 +318,7 @@ class PypsaModel:
                                                             climatic_year=climatic_year,
                                                             start_horizon=start_horizon)
         df_sde_dual_var_opt = self.sde_dual_var_opt
-        if rename_snapshot_col is True:
+        if rename_snapshot_col:
             df_sde_dual_var_opt.index.name = OUTPUT_DATE_COL
         df_sde_dual_var_opt.to_csv(marginal_prices_csv_file)
 
