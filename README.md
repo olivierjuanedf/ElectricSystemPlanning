@@ -32,7 +32,7 @@ Are you sure you want to choose the red pill over the blue pill?
 <details>
   <summary>Yes, I'm sure</summary>
 
-You have to install Python and Pycharm 
+You have to install Python and ( Pycharm or VSCode ) 
 
 #### Python
 Install a compatible Python version from 3.9 to 3.12, avoid 3.13 and versions older than 3.9 
@@ -96,6 +96,47 @@ download and install https://download.jetbrains.com/python/pycharm-community-202
 #### Setting up Pycharm 
 
 TO COME
+
+#### VSCode
+
+
+download and install https://code.visualstudio.com/download
+
+
+in VSCode terminal, create a python environment and activate it :
+
+
+```
+
+python -m venv uc-env
+
+
+. uc-env/Script/activate
+
+```
+
+install requirements
+
+
+```
+
+
+pip install requirements.txt
+
+
+```
+
+
+run the code
+
+
+```
+
+
+python .\my_little_europe_lt_uc.py
+
+
+```
 
 </details>
 
