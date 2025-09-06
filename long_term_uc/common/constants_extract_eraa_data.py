@@ -21,7 +21,7 @@ USAGE_PARAMS_SHORT_NAMES = {
 }
 
 
-type Mode = Literal['solo', 'europe']
+Mode = Literal['solo', 'europe']
 
 
 # raw types (just after reading) of the following attributes 
