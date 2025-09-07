@@ -87,9 +87,11 @@ def list_of_uc_timeseries_to_df(uc_timeseries: List[UCTimeseries]) -> pd.DataFra
     return pd.DataFrame(uc_ts_dict)
 
 
+# TODO: usage of this function?
 def list_of_uc_ts_to_csv(list_of_uc_ts: List[UCTimeseries], output_dir: str, to_matrix_format: bool = False):
     # 1 file per UC timeseries
     if not to_matrix_format:
         for uc_ts in list_of_uc_ts:
-            uc_ts.to_csv(output_dir: str)
+            dummy_file = os.path.join(output_dir, 'dummy.csv')
+            uc_ts.to_csv(dummy_file)
 
