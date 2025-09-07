@@ -19,10 +19,10 @@ from long_term_uc.utils.read import read_and_check_uc_run_params, read_and_check
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
 
-logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name="eraa_lt_uc_pb.log",
+logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_lt_uc_pb.log',
                      log_level=usage_params.log_level)
 
-logging.info(f"Start ERAA-PyPSA long-term Unit Commitment (UC) simulation")
+logging.info(f'Start ERAA-PyPSA long-term Unit Commitment (UC) simulation')
 
 """
 Get needed data (demand, RES Capa. Factors, installed generation capacities)
@@ -30,16 +30,16 @@ Get needed data (demand, RES Capa. Factors, installed generation capacities)
 uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start, 
                                period_end=uc_run_params.uc_period_end)
 
-logging.info(f"Read needed ERAA ({eraa_data_descr.eraa_edition}) data for period {uc_period_msg}")
+logging.info(f'Read needed ERAA ({eraa_data_descr.eraa_edition}) data for period {uc_period_msg}')
 # initialize dataset object
-eraa_dataset = Dataset(source=f"eraa_{eraa_data_descr.eraa_edition}", 
+eraa_dataset = Dataset(source=f'eraa_{eraa_data_descr.eraa_edition}', 
                        agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data, 
                        is_stress_test=uc_run_params.is_stress_test)
 
 eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                 aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
 
-logging.info("Get generation units data, from both ERAA data - read just before - and JSON parameter file")
+logging.info('Get generation units data, from both ERAA data - read just before - and JSON parameter file')
 eraa_dataset.get_generation_units_data(uc_run_params=uc_run_params, 
                                        pypsa_unit_params_per_agg_pt=eraa_data_descr.pypsa_unit_params_per_agg_pt,
                                        units_complem_params_per_agg_pt=eraa_data_descr.units_complem_params_per_agg_pt)
@@ -49,12 +49,12 @@ eraa_dataset.set_committable_param()
 #   generation_units_data = overwrite_gen_units_fuel_src_params(generation_units_data=generation_units_data, 
 #                                                               updated_fuel_sources_params=uc_run_params.updated_fuel_sources_params)
 
-logging.info("Check that 'minimal' PyPSA parameters for unit creation have been provided (in JSON files)/read (from ERAA data)")
+logging.info('Check that "minimal" PyPSA parameters for unit creation have been provided (in JSON files)/read (from ERAA data)')
 pypsa_static_params = read_and_check_pypsa_static_params()
 eraa_dataset.control_min_pypsa_params_per_gen_units(pypsa_min_unit_params_per_agg_pt=pypsa_static_params.min_unit_params_per_agg_pt)
 
 # create PyPSA network
-pypsa_model = PypsaModel(name="my little europe")
+pypsa_model = PypsaModel(name='my little europe')
 date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
 import pandas as pd
 horizon = pd.date_range(
@@ -72,7 +72,7 @@ pypsa_model.add_energy_carrier(fuel_sources=FUEL_SOURCES)
 pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 pypsa_model.add_loads(demand=eraa_dataset.demand)
 pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
-logging.info("PyPSA network main properties:", pypsa_model.network)
+logging.info(f'PyPSA network main properties: {pypsa_model.network}')
 # plot network
 from long_term_uc.include.plotter import PlotParams
 plot_params = PlotParams()
@@ -90,13 +90,13 @@ if result[1] == pypsa_opt_resol_status:
   pypsa_model.get_prod_var_opt()
   pypsa_model.get_storage_vars_opt()
   pypsa_model.get_sde_dual_var_opt()
-  # plot - per country - opt prod profiles "stacked"
+  # plot - per country - opt prod profiles 'stacked'
   for country in uc_run_params.selected_countries:
       pypsa_model.plot_opt_prod_var(plot_params=plot_params, country=country, 
                                     year=uc_run_params.selected_target_year,
                                     climatic_year=uc_run_params.selected_climatic_year,
                                     start_horizon=uc_run_params.uc_period_start)
-  # plot "marginal price" figure
+  # plot 'marginal price' figure
   pypsa_model.plot_marginal_price(plot_params=plot_params, year=uc_run_params.selected_target_year, 
                                   climatic_year=uc_run_params.selected_climatic_year,
                                   start_horizon=uc_run_params.uc_period_start) 
@@ -111,7 +111,7 @@ if result[1] == pypsa_opt_resol_status:
                                           climatic_year=uc_run_params.selected_climatic_year,
                                           start_horizon=uc_run_params.uc_period_start)
 else:
-   logging.info(f"Optimisation resolution status is not {pypsa_opt_resol_status} -> output data (resp. figures) cannot be saved (resp. plotted)")
+   logging.info(f'Optimisation resolution status is not {pypsa_opt_resol_status} -> output data (resp. figures) cannot be saved (resp. plotted)')
 
-logging.info("THE END of ERAA-PyPSA long-term UC simulation!")
+logging.info('THE END of ERAA-PyPSA long-term UC simulation!')
 stop_logger()

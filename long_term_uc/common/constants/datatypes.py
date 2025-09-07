@@ -15,7 +15,7 @@ PROD_TYPES_PER_DT = {DATATYPE_NAMES.capa_factor:
                      [ProdTypeNames.csp_no_storage, 'lfsolarpv', ProdTypeNames.wind_offshore, ProdTypeNames.wind_onshore],
                      DATATYPE_NAMES.installed_capa: 
                      [ProdTypeNames.batteries, ProdTypeNames.biofuel, ProdTypeNames.coal, ProdTypeNames.hard_coal,
-                      ProdTypeNames.lignite, ProdTypeNames.demand_side_resp, ProdTypeNames.gas,
+                      ProdTypeNames.lignite, ProdTypeNames.demand_side_response, ProdTypeNames.gas,
                       ProdTypeNames.hydro_pondage, ProdTypeNames.hydro_pump_storage_closed,
                       ProdTypeNames.hydro_pump_storage_open, ProdTypeNames.hydro_reservoir,
                       ProdTypeNames.hydro_ror, ProdTypeNames.nuclear, ProdTypeNames.oil,

@@ -14,15 +14,15 @@ from long_term_uc.utils.read import read_and_check_data_analysis_params, read_an
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
 data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
 
-logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name="eraa_input_data_analysis",
+logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_input_data_analysis',
                      log_level=usage_params.log_level)
-logging.info("START ERAA (input) data analysis")
+logging.info('START ERAA (input) data analysis')
 
 uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start, 
                                period_end=uc_run_params.uc_period_end)
 
-date_col = "date"
-value_col = "value"
+date_col = 'date'
+value_col = 'value'
 
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:
@@ -36,9 +36,9 @@ for elt_analysis in data_analyses:
     # And if coherent climatic year, i.e. in list of available data
     uc_run_params.coherence_check_ty_and_cy(eraa_data_descr=eraa_data_descr, stop_if_error=True)
 
-    logging.info(f"Read needed ERAA ({eraa_data_descr.eraa_edition}) data for period {uc_period_msg}")
+    logging.info(f'Read needed ERAA ({eraa_data_descr.eraa_edition}) data for period {uc_period_msg}')
     # initialize dataset object
-    eraa_dataset = Dataset(source=f"eraa_{eraa_data_descr.eraa_edition}", 
+    eraa_dataset = Dataset(source=f'eraa_{eraa_data_descr.eraa_edition}', 
                         agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data, 
                         is_stress_test=uc_run_params.is_stress_test)
 
@@ -73,5 +73,5 @@ for elt_analysis in data_analyses:
         to_matrix = True if elt_analysis == ANALYSIS_TYPES.extract_to_mat else False
         uc_timeseries.to_csv(to_matrix_format=to_matrix)
 
-logging.info("THE END of ERAA (input) data analysis!")
+logging.info('THE END of ERAA (input) data analysis!')
 stop_logger()

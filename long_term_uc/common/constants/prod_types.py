@@ -7,7 +7,7 @@ class ProdTypeNames:  # by alpha. order
     biofuel: str = 'biofuel'
     coal: str = 'coal'
     csp_no_storage: str = 'csp_nostorage'
-    demand_side_resp: str = 'demand_side_response_capacity'  # TODO: why capa in this name?
+    demand_side_response: str = 'demand_side_response_capacity'  # TODO: why capa in this name?
     gas: str = 'gas'
     hard_coal: str = 'hard_coal'
     hydro_pondage: str = 'hydro_pondage'
@@ -18,7 +18,10 @@ class ProdTypeNames:  # by alpha. order
     lignite: str = 'lignite'
     nuclear: str = 'nuclear'
     oil: str = 'oil'
+    others_non_renewable: str = 'others_non-renewable'
+    others_renewable: str = 'others_renewable'
     solar_pv: str = 'solar_(photovoltaic)'
+    solar_pv_in_cf_data: str = 'lfsolarpv'
     solar_thermal: str = 'solar_(thermal)'
     wind_offshore: str = 'wind_offshore'
     wind_onshore: str = 'wind_onshore'

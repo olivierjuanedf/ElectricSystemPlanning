@@ -1,6 +1,9 @@
 
 TODO
 
+DATA (D)
+D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions...
+
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
 DA1) Rendre fonctionnelle v1 de ce script !
 
