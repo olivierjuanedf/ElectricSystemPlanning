@@ -1,6 +1,12 @@
 
 TODO
 
+MAIN actions (M)
+M1) Set UCRunParams.selected_prod_types to all available values for countries selected in a run and 
+for which no subselection has been set in JSON input file(s) - either 1 if solo mode, or 
+all per country files if team mode
+-> cf. coherence_check function in uc_run_params.py script
+
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions...
 
