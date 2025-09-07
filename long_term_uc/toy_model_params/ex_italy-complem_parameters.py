@@ -1,3 +1,8 @@
+from typing import Dict, List
+
+from long_term_uc.common.fuel_sources import FuelSources
+
+
 def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources],
                    wind_on_shore_data, wind_off_shore_data, solar_pv_data) -> List[dict]:
     """
@@ -6,8 +11,8 @@ def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources],
     :param fuel_sources
     """
     generators = [
-        {"name": f"Battery_{country_trigram}", "carrier": "Flexibility", "p_nom": 4000,
-        "p_min_pu": -1, "p_max_pu": 1
+        {'name': f'Battery_{country_trigram}', 'carrier': 'Flexibility', 'p_nom': 4000,
+        'p_min_pu': -1, 'p_max_pu': 1
         }
     ]
     return generators
