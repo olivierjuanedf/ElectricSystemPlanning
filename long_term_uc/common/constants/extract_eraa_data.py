@@ -6,19 +6,7 @@ from long_term_uc.utils.eraa_utils import set_interco_to_tuples
 from long_term_uc.utils.type_checker import apply_params_type_check
 
 
-INTERCO_STR_SEP = "2"
-USAGE_PARAMS_SHORT_NAMES = {
-    "allow_adding_interco_capas": "adding_interco_capas",
-    "allow_overwriting_eraa_interco_capa_vals": "overwriting_eraa_interco_capa_vals",
-    "allow_manually_adding_demand": "manually_adding_demand",
-    "allow_manually_adding_generators": "manually_adding_generators",
-    "apply_cf_techno_breakthrough": "apply_cf_techno_breakthrough",
-    "log_level": "log_level",
-    "res_cf_stress_test_folder": "res_cf_stress_test_folder",
-    "res_cf_stress_test_cy": "res_cf_stress_test_cy", 
-    "mode": "mode",
-    "team": "team"
-}
+INTERCO_STR_SEP = '2'
 
 
 Mode = Literal['solo', 'europe']
