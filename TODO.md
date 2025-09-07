@@ -24,6 +24,7 @@ MAS6) Reformat/simplify JSON params file (in input/long_term_uc/)
 PLOTS
 P1) Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
 P2) Add plot functions to get demand/cf/capas values for the selected values of params (and selected period) -> useful for 1st stage of data analysis (better with some graphs easy tb obtained)
+P3) Set up per country colors so that all groups will obtain directly comparable graphs
 
 OTHERS
 O1) Doc baba utilisation codespace en dehors du repot ?

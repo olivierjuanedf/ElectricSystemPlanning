@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import pypsa
 import matplotlib.pyplot as plt
 
+from long_term_uc.common.constants.prod_types import ProdTypeNames
 from long_term_uc.common.error_msgs import print_errors_list
 from long_term_uc.common.fuel_sources import FuelSources
 from long_term_uc.common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
