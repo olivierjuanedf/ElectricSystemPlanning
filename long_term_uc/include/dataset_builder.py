@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import pypsa
 import matplotlib.pyplot as plt
 
-from long_term_uc.common.constants.prod_types import ProdTypeNames
+from long_term_uc.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from long_term_uc.common.error_msgs import print_errors_list
 from long_term_uc.common.fuel_sources import FuelSources
 from long_term_uc.common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
@@ -18,20 +18,6 @@ from long_term_uc.include.plotter import PlotParams
 from long_term_uc.utils.basic_utils import lexico_compar_str
 from long_term_uc.utils.df_utils import rename_df_columns
 from long_term_uc.utils.pypsa_utils import get_network_obj_value
-
-
-@dataclass
-class GenUnitsPypsaParams:
-    capa_factors: str = 'p_max_pu' 
-    power_capa: str = 'p_nom'
-    min_power: str = 'p_min_pu'
-    marginal_cost: str = 'marginal_cost'
-    co2_emissions: str = 'co2_emissions'  # TODO: check that aligned on PyPSA generators attribute names
-    committable: str = 'committable'
-    max_hours: str = 'max_hours'
-    energy_capa: str = None
-
-GEN_UNITS_PYPSA_PARAMS = GenUnitsPypsaParams()
 
 
 @dataclass
