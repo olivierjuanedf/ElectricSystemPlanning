@@ -211,7 +211,7 @@ class Dataset:
                                     axis=1)
             interco_capas = create_dict_from_cols_in_df(df=df_interco_capas, key_col=tuple_key_col, val_col=value_col)
             # add interco capas values set by user
-            interco_capas |= uc_run_params.interco_capas_updated_values
+            interco_capas |= uc_run_params.interco_capas_tb_overwritten
             self.interco_capas = interco_capas
     
     def get_generation_units_data(self, uc_run_params: UCRunParams, pypsa_unit_params_per_agg_pt: Dict[str, dict],

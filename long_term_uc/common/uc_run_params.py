@@ -28,7 +28,7 @@ class UCRunParams:
     uc_period_end: Union[str, datetime] = None
     failure_power_capa: float = None
     failure_penalty: float = None
-    interco_capas_updated_values: Union[Dict[str, float], Dict[Tuple[str, str], float]] = field(default_factory=dict)
+    interco_capas_tb_overwritten: Union[Dict[str, float], Dict[Tuple[str, str], float]] = field(default_factory=dict)
     capacities_tb_overwritten: Dict[str, Optional[Dict[str, float]]] = field(default_factory=dict)
     updated_fuel_sources_params: Dict[str, Dict[str, Optional[float]]] = None
     # to indicate that some parameters have been changed compared to the set of the ones used for CP decision-making
@@ -60,13 +60,13 @@ class UCRunParams:
                 or self.selected_prod_types[country] is None:
                 self.selected_prod_types[country] = []
         # empty dict if interco. added values is empty
-        if self.interco_capas_updated_values is None:
-            self.interco_capas_updated_values = {}
+        if self.interco_capas_tb_overwritten is None:
+            self.interco_capas_tb_overwritten = {}
         else:  # set interco. from {zone_origin}2{zone_destination} names to tuples
-            interco_tuples = set_interco_to_tuples(interco_names=self.interco_capas_updated_values,
+            interco_tuples = set_interco_to_tuples(interco_names=self.interco_capas_tb_overwritten,
                                                    return_corresp=True)
-            self.interco_capas_updated_values = {interco_tuples[key]: val
-                                               for key, val in self.interco_capas_updated_values.items()}
+            self.interco_capas_tb_overwritten = {interco_tuples[key]: val
+                                               for key, val in self.interco_capas_tb_overwritten.items()}
         logging.info('*'*30 + f"self.selected_prod_types" + '*'*30)
         # keep only updated source params values that are non None
         new_updated_fuel_source_params = {}
