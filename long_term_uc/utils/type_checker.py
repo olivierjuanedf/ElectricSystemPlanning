@@ -111,10 +111,10 @@ def check_str_str_list_of_str_dict(data_val) -> bool:
 # generic function to apply a given type checker
 def apply_data_type_check(data_type: str, data_val) -> bool:
     if data_type not in CHECK_FUNCTIONS:
-        logging.error(f"Unknown data type for check {data_type} -> STOP")
+        logging.error(f'Unknown data type for check {data_type} -> STOP')
         sys.exit(1)
     if CHECK_FUNCTIONS[data_type] is None:
-        logging.error(f"Function to check data type {data_type} is None (not defined) -> STOP")
+        logging.error(f'Function to check data type {data_type} is None (not defined) -> STOP')
         sys.exit(1)
     return list(map(CHECK_FUNCTIONS[data_type], [data_val]))[0]
 
@@ -143,5 +143,5 @@ def apply_params_type_check(param_obj_dict: dict, types_for_check: Dict[str, str
             if not check_result:
                 check_errors.append(attr_tb_checked)
     if len(check_errors) > 0:
-        print_errors_list(error_name=f"{param_name} JSON data with erroneous types",
+        print_errors_list(error_name=f'{param_name} JSON data with erroneous types',
                           errors_list=check_errors)

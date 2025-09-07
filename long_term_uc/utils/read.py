@@ -18,7 +18,7 @@ from long_term_uc.utils.dir_utils import check_file_existence
 def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:
     check_file_existence(file=json_file, file_descr=file_descr)
 
-    f = open(json_file, mode="r", encoding='utf-8')
+    f = open(json_file, mode='r', encoding='utf-8')
 
     # rk: when reading null values in a JSON file they are converted to None
     json_data = json.loads(f.read())
@@ -36,27 +36,27 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
     # TODO[ATHENS]: read 3 JSON files then func check_and_run UC (allow)
     # for the students script (i) call read + (ii) own loop changing parameters (iii) call check_and_run
     # WITH run_name param to identify file with output results (if None no suffix added)
-    logging.info(f"Read and check long-term UC parameters; the ones modified in file {json_params_tb_modif_file}")
+    logging.info(f'Read and check long-term UC parameters; the ones modified in file {json_params_tb_modif_file}')
     # read them and do some basic operations on obtained dictionaries
     json_usage_params_data = check_and_load_json_file(json_file=json_usage_params_file,
-                                                      file_descr="JSON usage params")
+                                                      file_descr='JSON usage params')
     # replace long key names by short names (attribute names of following object created)
     json_usage_params_data = {USAGE_PARAMS_SHORT_NAMES[key]: val for key, val in json_usage_params_data.items()}
     json_params_fixed = check_and_load_json_file(json_file=json_fixed_params_file,
-                                                 file_descr="JSON fixed params")
+                                                 file_descr='JSON fixed params')
     json_eraa_avail_values = check_and_load_json_file(json_file=json_eraa_avail_values_file,
-                                                      file_descr="JSON ERAA available values")
-    # add "avail_" to the different keys of JSON available values to make them more explicit in the following
-    json_eraa_avail_values = {f"available_{key}": val for key, val in json_eraa_avail_values.items()}
-    # put this dictionary values into the "fixed values" one
+                                                      file_descr='JSON ERAA available values')
+    # add 'avail_' to the different keys of JSON available values to make them more explicit in the following
+    json_eraa_avail_values = {f'available_{key}': val for key, val in json_eraa_avail_values.items()}
+    # put this dictionary values into the 'fixed values' one
     json_params_fixed |= json_eraa_avail_values
     json_params_tb_modif = check_and_load_json_file(json_file=json_params_tb_modif_file,
-                                                    file_descr="JSON params to be modif.")
+                                                    file_descr='JSON params to be modif.')
     # fuel sources values modif.
     json_fuel_sources_tb_modif = check_and_load_json_file(json_file=json_fuel_sources_tb_modif_file,
-                                                          file_descr="JSON fuel sources params to be modif.")
+                                                          file_descr='JSON fuel sources params to be modif.')
     # check that modifications in JSON in which it is allowed are allowed/coherent
-    logging.info("... and check that modifications done are coherent with available ERAA data")
+    logging.info('... and check that modifications done are coherent with available ERAA data')
     usage_params = UsageParameters(**json_usage_params_data)
 
     eraa_data_descr = ERAADatasetDescr(**json_params_fixed)
@@ -74,7 +74,7 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
             file_descr='JSON country capacities'
         )
         country = json_country[CountryJsonParamNames.team]
-        if usage_params.mode == "solo" and usage_params.team != country:
+        if usage_params.mode == 'solo' and usage_params.team != country:
             continue
         if country not in eraa_data_descr.available_countries:
             logging.error(f'Incorrect country found in file {file}: {country} is not available in dataset')
@@ -111,10 +111,10 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
 
 def read_and_check_pypsa_static_params() -> PypsaStaticParams:
     json_pypsa_static_params_file = get_json_pypsa_static_params_file()
-    logging.info(f"Read and check PyPSA static parameters file; the ones modified in file {json_pypsa_static_params_file}")
+    logging.info(f'Read and check PyPSA static parameters file; the ones modified in file {json_pypsa_static_params_file}')
 
     json_pypsa_static_params = check_and_load_json_file(json_file=json_pypsa_static_params_file,
-                                                        file_descr="JSON PyPSA static params")
+                                                        file_descr='JSON PyPSA static params')
     pypsa_static_params = PypsaStaticParams(**json_pypsa_static_params)
     pypsa_static_params.check_types()
     pypsa_static_params.process()
@@ -123,11 +123,11 @@ def read_and_check_pypsa_static_params() -> PypsaStaticParams:
 
 def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> List[DataAnalysis]:
     json_data_analysis_params_file = get_json_data_analysis_params_file()
-    logging.info(f"Read and check data analysis parameters file; the ones modified in file {json_data_analysis_params_file}")
+    logging.info(f'Read and check data analysis parameters file; the ones modified in file {json_data_analysis_params_file}')
 
     json_data_analysis_params = check_and_load_json_file(json_file=json_data_analysis_params_file,
-                                                         file_descr="JSON data analysis params")
-    data_analysis_params = json_data_analysis_params["data_analysis_list"]
+                                                         file_descr='JSON data analysis params')
+    data_analysis_params = json_data_analysis_params['data_analysis_list']
     data_analyses = [DataAnalysis(**param_vals) for param_vals in data_analysis_params]
     # check types
     for elt_analysis in data_analyses:

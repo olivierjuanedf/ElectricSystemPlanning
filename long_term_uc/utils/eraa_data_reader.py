@@ -2,6 +2,7 @@ from typing import List
 import pandas as pd
 from datetime import datetime
 
+from long_term_uc.common.constants.aggreg_operations import AggregOpeNames
 from long_term_uc.common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT
 from long_term_uc.utils.basic_utils import str_sanitizer
 from long_term_uc.utils.df_utils import cast_df_col_as_date, concatenate_dfs, selec_in_df_based_on_list, \
@@ -24,20 +25,20 @@ def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, p
 def set_aggreg_cf_prod_types_data(df_cf_list: List[pd.DataFrame], pt_agg_col: str, date_col: str, val_col: str) -> pd.DataFrame:
     # concatenate, aggreg. over prod type of same aggreg. type and avg
     df_cf_agg = concatenate_dfs(dfs=df_cf_list)
-    df_cf_agg = df_cf_agg.groupby([pt_agg_col, date_col]).agg({val_col: "mean"}).reset_index()
+    df_cf_agg = df_cf_agg.groupby([pt_agg_col, date_col]).agg({val_col: AggregOpeNames.mean}).reset_index()
     return df_cf_agg
 
 
 def gen_capa_pt_str_sanitizer(gen_capa_prod_type: str) -> str:
     # very ad-hoc operation
-    sanitized_gen_capa_pt = gen_capa_prod_type.replace(" - ", " ")
+    sanitized_gen_capa_pt = gen_capa_prod_type.replace(' - ', ' ')
     sanitized_gen_capa_pt = str_sanitizer(raw_str=sanitized_gen_capa_pt, 
-                                          ad_hoc_replacements={"gas_": "gas", "(": "", ")": ""})
+                                          ad_hoc_replacements={'gas_': 'gas', '(': '', ')': ''})
     return sanitized_gen_capa_pt
 
 
 def select_interco_capas(df_intercos_capa: pd.DataFrame, countries: List[str]) -> pd.DataFrame:
-    selection_col = "selected"
+    selection_col = 'selected'
     # add selection column
     origin_col = COLUMN_NAMES.zone_origin
     destination_col = COLUMN_NAMES.zone_destination
