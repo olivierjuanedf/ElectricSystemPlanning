@@ -28,3 +28,4 @@ USAGE_PARAMS_SHORT_NAMES = {
     UsageJsonParamNames.res_cf_stress_test_folder: 'res_cf_stress_test_folder',
     UsageJsonParamNames.team: 'team'
 }
+

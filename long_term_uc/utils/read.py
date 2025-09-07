@@ -74,12 +74,14 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
             file_descr='JSON country capacities'
         )
         country = json_country[CountryJsonParamNames.team]
+        # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
         if usage_params.mode == 'solo' and usage_params.team != country:
             continue
         if country not in eraa_data_descr.available_countries:
             logging.error(f'Incorrect country found in file {file}: {country} is not available in dataset')
             exit(1)
         for k, _ in countries_data.items():
+            # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
             if usage_params.mode == 'solo':
                 for c, _ in json_country[k].items():
                     logging.info(f'Updating {k} for country {c} from file {file}')
