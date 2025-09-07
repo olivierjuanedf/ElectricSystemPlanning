@@ -48,7 +48,7 @@ class Dataset:
         year = uc_run_params.selected_target_year
         climatic_year = uc_run_params.selected_climatic_year
         selec_agg_prod_types = uc_run_params.selected_prod_types
-        power_capacities = uc_run_params.updated_capacities_prod_types
+        power_capacities = uc_run_params.capacities_tb_overwritten
         period_start = uc_run_params.uc_period_start
         period_end = uc_run_params.uc_period_end
         # get - per datatype - folder names

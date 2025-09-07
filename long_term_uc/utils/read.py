@@ -8,6 +8,7 @@ from long_term_uc.common.long_term_uc_io import get_json_usage_params_file, get_
             get_json_data_analysis_params_file
 from long_term_uc.common.constants_extract_eraa_data import USAGE_PARAMS_SHORT_NAMES, ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
+from long_term_uc.common.constants_json_inputs import CountryJsonParamNames
 from long_term_uc.common.uc_run_params import UCRunParams
 from long_term_uc.include.dataset_analyzer import DataAnalysis
 from long_term_uc.utils.dir_utils import check_file_existence
@@ -24,7 +25,7 @@ def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:
     return json_data
 
 
-def read_and_check_uc_run_params() -> (UsageParameters, ERAADatasetDescr, UCRunParams):
+def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, UCRunParams]:
     # set JSON filenames
     json_usage_params_file = get_json_usage_params_file()
     json_fixed_params_file = get_json_fixed_params_file()
@@ -61,16 +62,17 @@ def read_and_check_uc_run_params() -> (UsageParameters, ERAADatasetDescr, UCRunP
     eraa_data_descr.check_types()
     eraa_data_descr.process()
 
+    selected_pt_param_name = CountryJsonParamNames.selected_prod_types
     countries_data = {
-        'updated_capacities_prod_types': {},
-        'selected_prod_types': {}
+        CountryJsonParamNames.capacities_tb_overwritten: {},
+        selected_pt_param_name: {}
     }
     for file in get_json_params_modif_country_files():
         json_country = check_and_load_json_file(
             json_file=file,
             file_descr='JSON country capacities'
         )
-        country = json_country['team']
+        country = json_country[CountryJsonParamNames.team]
         if usage_params.mode == "solo" and usage_params.team != country:
             continue
         if country not in eraa_data_descr.available_countries:
@@ -88,11 +90,13 @@ def read_and_check_uc_run_params() -> (UsageParameters, ERAADatasetDescr, UCRunP
                     if c != country:
                         logging.warning(f'Ignoring {k} for {country} from file {file}')
 
-    if len(countries_data['selected_prod_types']) > 0:
-        for c, v in countries_data['selected_prod_types'].items():
-            logging.warning(f'Selected production type overwritten for {c}')
-            json_params_tb_modif['selected_prod_types'][c] = v
-        del countries_data['selected_prod_types']
+    # add key for selected prod. types 
+    json_params_tb_modif[selected_pt_param_name] = {}
+    if len(countries_data[selected_pt_param_name]) > 0:
+        for c, v in countries_data[selected_pt_param_name].items():
+            logging.info(f'Selected production type overwritten (not all the ones from ERAA) for {c}')
+            json_params_tb_modif[selected_pt_param_name][c] = v
+        del countries_data[selected_pt_param_name]
 
     uc_run_params = UCRunParams(**json_params_tb_modif, **countries_data, 
                                 updated_fuel_sources_params=json_fuel_sources_tb_modif)

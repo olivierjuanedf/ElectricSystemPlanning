@@ -18,6 +18,8 @@ MAS2) Integrate hydraulic storages... cf. CS student code
 MAS3) Usage param auto fulfill interco capa missing -> ??
 MAS4) Add possibility to set Stock (additional to ERAA data) in JSON tb modif input file
 MAS5) Add possibility to provide additional fatal demand -> for iterations between UC and imperfect disaggreg of an aggregate DSR flex (EV for ex) modeled as a Stock for ex! (cf. OMCEP course)
+MAS6) Reformat/simplify JSON params file (in input/long_term_uc/)
+* elec-europe_params_to-be-modif.json -> suppress "selec" prefix implicit for some params?
 
 PLOTS
 P1) Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors

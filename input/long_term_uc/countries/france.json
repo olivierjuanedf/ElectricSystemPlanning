@@ -6,7 +6,7 @@
     ],
     "germany": ["nuclear"]
   },
-  "updated_capacities_prod_types": {
+  "capacities_tb_overwritten": {
     "france": {"nuclear": 80000},
     "germany": {"nuclear": 20000}
   }

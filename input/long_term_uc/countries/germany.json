@@ -5,7 +5,7 @@
       "failure"
     ]
   },
-  "updated_capacities_prod_types": {
+  "capacities_tb_overwritten": {
     "germany": {
       "failure": 10000000.0
     }

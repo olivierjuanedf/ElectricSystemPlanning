@@ -29,7 +29,7 @@ class UCRunParams:
     failure_power_capa: float = None
     failure_penalty: float = None
     interco_capas_updated_values: Union[Dict[str, float], Dict[Tuple[str, str], float]] = field(default_factory=dict)
-    updated_capacities_prod_types: Dict[str, Optional[Dict[str, float]]] = field(default_factory=dict)
+    capacities_tb_overwritten: Dict[str, Optional[Dict[str, float]]] = field(default_factory=dict)
     updated_fuel_sources_params: Dict[str, Dict[str, Optional[float]]] = None
     # to indicate that some parameters have been changed compared to the set of the ones used for CP decision-making
     is_stress_test: bool = None 
@@ -44,7 +44,7 @@ class UCRunParams:
         return repr_str
 
     def process(self, available_countries: List[str]):
-        logging.info('*'*30 + f"{self.updated_capacities_prod_types}" + '*'*30)
+        logging.info('*'*30 + f"{self.capacities_tb_overwritten}" + '*'*30)
         # if dates in str format, cast them as datetime
         # - setting end of period to default value if not provided
         if isinstance(self.uc_period_start, str):
