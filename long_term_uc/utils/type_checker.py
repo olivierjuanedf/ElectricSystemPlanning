@@ -1,5 +1,3 @@
-import sys
-import logging
 from typing import Dict
 from dataclasses import dataclass
 
@@ -111,11 +109,9 @@ def check_str_str_list_of_str_dict(data_val) -> bool:
 # generic function to apply a given type checker
 def apply_data_type_check(data_type: str, data_val) -> bool:
     if data_type not in CHECK_FUNCTIONS:
-        logging.error(f'Unknown data type for check {data_type} -> STOP')
-        sys.exit(1)
+        raise Exception(f'Unknown data type for check {data_type} -> STOP')
     if CHECK_FUNCTIONS[data_type] is None:
-        logging.error(f'Function to check data type {data_type} is None (not defined) -> STOP')
-        sys.exit(1)
+        raise Exception(f'Function to check data type {data_type} is None (not defined) -> STOP')
     return list(map(CHECK_FUNCTIONS[data_type], [data_val]))[0]
 
 

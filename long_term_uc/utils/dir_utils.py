@@ -1,6 +1,4 @@
-import sys
 import os
-import logging
 
 
 def check_file_existence(file: str, file_descr: str = None):
@@ -12,5 +10,5 @@ def check_file_existence(file: str, file_descr: str = None):
     """
     if not os.path.isfile(file):
         msg_prefix = 'File' if file_descr is None else f'{file_descr} file'
-        logging.error(f'{msg_prefix} {file} does not exist -> STOP')
-        sys.exit(1)
+        raise Exception(f'{msg_prefix} {file} does not exist -> STOP')
+
