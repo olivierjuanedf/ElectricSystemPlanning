@@ -52,10 +52,14 @@ for elt_analysis in data_analyses:
     # create Unit Commitment Timeseries object from data read
     if elt_analysis.data_type == DATATYPE_NAMES.demand:
         current_df = eraa_dataset.demand[elt_analysis.country]
-        
     elif elt_analysis.data_type == DATATYPE_NAMES.capa_factor:
         current_df = eraa_dataset.agg_cf_data[elt_analysis.country]
-    dates = list(current_df[date_col])
+    try:
+        dates = list(current_df[date_col])
+    except:
+        logging.error(f'No dates obtained from data -> move directly to next data analysis')
+        continue
+    # if data available continue analysis (and plot)
     dates = [elt_date.replace(year=elt_analysis.year) for elt_date in dates]
     values = np.array(current_df[value_col])
 

@@ -105,7 +105,7 @@ class Dataset:
             if DATATYPE_NAMES.capa_factor in datatypes_selec:
                 # get RES capacity factor data
                 logging.info('Get RES capacity factors')
-                self.agg_cf_data[country] = {}
+                self.agg_cf_data[country] = None
                 df_res_cf_list = []
                 if subdt_selec is not None:
                     agg_prod_types_tb_read = \

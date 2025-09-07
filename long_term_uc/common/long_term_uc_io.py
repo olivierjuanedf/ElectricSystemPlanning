@@ -62,10 +62,11 @@ INPUT_FUNC_PARAMS_SUBFOLDER = f'{INPUT_FOLDER}/functional_params'
 INPUT_DATA_ANALYSIS_SUBFOLDER = f'{INPUT_LT_UC_SUBFOLDER}/data_analysis'
 INTERCO_STR_SEP = '2'
 INPUT_CY_STRESS_TEST_SUBFOLDER = 'cy_stress-test'
-OUTPUT_FOLDER_LT = 'output/long_term_uc'
+OUTPUT_FOLDER = 'output'
+OUTPUT_FOLDER_LT = f'{OUTPUT_FOLDER}/long_term_uc'
 OUTPUT_DATA_FOLDER = f'{OUTPUT_FOLDER_LT}/data'
 OUTPUT_FIG_FOLDER = f'{OUTPUT_FOLDER_LT}/figures'
-OUTPUT_DATA_ANALYSIS_FOLDER = f'{OUTPUT_FOLDER_LT}/input_data_analysis'
+OUTPUT_DATA_ANALYSIS_FOLDER = f'{OUTPUT_FOLDER}/data_analysis'
 
 
 def get_json_usage_params_file() -> str:
