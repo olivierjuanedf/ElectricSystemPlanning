@@ -4,6 +4,7 @@ import logging
 from typing import Dict, List, Tuple
 import pandas as pd
 
+from long_term_uc.common.constants.aggreg_operations import AggregOpeNames
 from long_term_uc.common.constants.datatypes import DATATYPE_NAMES
 from long_term_uc.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from long_term_uc.common.error_msgs import print_errors_list
@@ -167,7 +168,7 @@ class Dataset:
                     current_df_gen_capa = \
                         set_aggreg_col_based_on_corresp(df=current_df_gen_capa, col_name=prod_type_col,
                                                         created_agg_col_name=prod_type_agg_col, val_cols=GEN_CAPA_SUBDT_COLS, 
-                                                        agg_corresp=aggreg_pt_gen_capa_def, common_aggreg_ope='sum')
+                                                        agg_corresp=aggreg_pt_gen_capa_def, common_aggreg_ope=AggregOpeNames.sum)
                     current_df_gen_capa = \
                         selec_in_df_based_on_list(df=current_df_gen_capa, selec_col=prod_type_agg_col,
                                                 selec_vals=selec_agg_prod_types[country])
