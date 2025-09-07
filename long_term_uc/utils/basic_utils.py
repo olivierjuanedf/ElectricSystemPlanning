@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional, Tuple, Union
 import numpy as np
 
-from long_term_uc.common.constants_temporal import DAY_OF_WEEK
+from long_term_uc.common.constants.temporal import DAY_OF_WEEK
 from long_term_uc.common.long_term_uc_io import DATE_FORMAT_PRINT
 
 

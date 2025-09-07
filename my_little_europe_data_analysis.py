@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 
-from long_term_uc.common.constants_datatypes import DATATYPE_NAMES, UNITS_PER_DT
+from long_term_uc.common.constants.datatypes import DATATYPE_NAMES, UNITS_PER_DT
 from long_term_uc.common.logger import init_logger, stop_logger
 from long_term_uc.common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER, OUTPUT_FOLDER_LT
 from long_term_uc.utils.basic_utils import get_period_str

@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
 import logging
 
-from long_term_uc.common.constants_extract_eraa_data import ERAADatasetDescr
-from long_term_uc.common.constants_temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
+from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
+from long_term_uc.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
 from long_term_uc.common.error_msgs import uncoherent_param_stop
 from long_term_uc.utils.basic_utils import get_period_str, are_lists_eq

@@ -79,7 +79,7 @@ horizon = pd.date_range(
 )
 
 # initialize dataset object
-from long_term_uc.common.constants_extract_eraa_data import ERAADatasetDescr
+from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
 from long_term_uc.include.dataset import Dataset
 from long_term_uc.utils.read import check_and_load_json_file
 from long_term_uc.common.long_term_uc_io import get_json_fixed_params_file  

@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Tuple
 import pandas as pd
 
-from long_term_uc.common.constants_datatypes import DATATYPE_NAMES
+from long_term_uc.common.constants.datatypes import DATATYPE_NAMES
 from long_term_uc.common.error_msgs import print_errors_list
 from long_term_uc.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER
