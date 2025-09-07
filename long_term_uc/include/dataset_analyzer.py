@@ -6,7 +6,7 @@ from long_term_uc.common.constants.datatypes import DatatypesNames
 from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
 from long_term_uc.common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_DAYS_DATA_ANALYSIS_DEFAULT
 from long_term_uc.common.error_msgs import uncoherent_param_stop
-from long_term_uc.utils.type_checker import apply_params_type_check
+from long_term_uc.utils.type_checker import CheckerNames, apply_params_type_check
 
 
 @dataclass
@@ -25,8 +25,9 @@ ANALYSIS_TYPES = AnalysisTypes()
 AVAILABLE_ANALYSIS_TYPES = list(ANALYSIS_TYPES.__dict__.values())
 AVAILABLE_DATA_TYPES = list(DatatypesNames.__annotations__.values())
 DATA_SUBTYPE_KEY = "data_subtype"  # TODO[Q2OJ]: cleaner way to set/get it?
-RAW_TYPES_FOR_CHECK = {"analysis_type": "str", "data_type": "str", "data_subtype": "str", 
-                       "country": "str", "year": "int", "climatic_year": "int"}
+RAW_TYPES_FOR_CHECK = {"analysis_type": CheckerNames.is_str, "data_type": CheckerNames.is_str, 
+                       "data_subtype": CheckerNames.is_str, "country": CheckerNames.is_str, 
+                       "year": CheckerNames.is_int, "climatic_year": CheckerNames.is_int}
 
 
 @dataclass

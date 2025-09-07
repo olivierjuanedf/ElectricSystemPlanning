@@ -29,7 +29,7 @@ def init_logger(logger_dir: str, logger_name: str, log_level: str) -> logging.Lo
         logger = setup_logger(log_file_name=logger_path, log_level_str=log_level)
     except Exception:
         print(traceback.print_exc())
-        sys.exit("ERROR: an error occurred while creating the logger")
+        sys.exit('ERROR: an error occurred while creating the logger')
     return logger
 
 
@@ -49,14 +49,14 @@ def setup_logger(log_file_name: str, log_level_str: str) -> logging.Logger:
     log = logging.getLogger()
 
     # log file
-    formatter_log = logging.Formatter("%(asctime)s -- general -- %(filename)s "
-                                      "-- %(levelname)s -- %(message)s")
+    formatter_log = logging.Formatter('%(asctime)s -- general -- %(filename)s '
+                                      '-- %(levelname)s -- %(message)s')
     file_handler = logging.handlers.RotatingFileHandler(log_file_name,
-                                                        maxBytes=1024 * 1024, backupCount=1, encoding="utf-8")
+                                                        maxBytes=1024 * 1024, backupCount=1, encoding='utf-8')
     file_handler.setFormatter(formatter_log)
 
     # log console
-    formatter_console = logging.Formatter("[%(levelname)s]\t%(message)s")
+    formatter_console = logging.Formatter('[%(levelname)s]\t%(message)s')
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(formatter_console)
 

@@ -23,12 +23,12 @@ class FuelSources:
           self.primary_cost = 0
 
 FUEL_SOURCES = {
-    "Coal": FuelSources("Coal", 760, True, 4, 4, 8, 128),
-    "Gas": FuelSources("Gas", 370, True, 2, 2, 14.89, 134.34),
-    "Oil": FuelSources("Oil", 406, True, 1, 1, 11.63, 555.78),
-    "Uranium": FuelSources("Uranium", 0, True, 10, 10, 22394, 150000.84),
-    "Solar": FuelSources("Solar", 0, False, 1, 1, 0, 0),
-    "Wind": FuelSources("Wind", 0, False, 1, 1, 0, 0),
-    "Hydro": FuelSources("Hydro", 0, True, 2, 2, 0, 0),
-    "Biomass": FuelSources("Biomass", 0, True, 2, 2, 5, 30)
+    'Coal': FuelSources('Coal', 760, True, 4, 4, 8, 128),
+    'Gas': FuelSources('Gas', 370, True, 2, 2, 14.89, 134.34),
+    'Oil': FuelSources('Oil', 406, True, 1, 1, 11.63, 555.78),
+    'Uranium': FuelSources('Uranium', 0, True, 10, 10, 22394, 150000.84),
+    'Solar': FuelSources('Solar', 0, False, 1, 1, 0, 0),
+    'Wind': FuelSources('Wind', 0, False, 1, 1, 0, 0),
+    'Hydro': FuelSources('Hydro', 0, True, 2, 2, 0, 0),
+    'Biomass': FuelSources('Biomass', 0, True, 2, 2, 5, 30)
 }

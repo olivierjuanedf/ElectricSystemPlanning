@@ -1,8 +1,24 @@
 import sys
 import logging
 from typing import Dict
+from dataclasses import dataclass
 
 from long_term_uc.common.error_msgs import print_errors_list
+
+
+@dataclass
+class CheckerNames:
+    is_str: str = 'str'
+    is_int: str = 'int'
+    is_list_of_int: str = 'list_of_int'
+    is_list_of_str: str = 'list_of_str'
+    is_none_or_list_of_str: str = 'none_or_list_of_str'
+    is_dict_str_dict: str = 'dict_str_dict'
+    is_dict_str_list_of_float: str = 'dict_str_list_of_float'
+    is_dict_str_list_of_str: str = 'dict_str_list_of_str'
+    is_dict_str_str: str = 'dict_str_str'
+    is_two_level_dict_str_str_list_of_str: str = 'two_level_dict_str_str_list-of-str'
+    is_two_level_dict_str_str_str: str = 'two_level_dict_str_str_str'
 
 
 # basic checker
@@ -105,17 +121,17 @@ def apply_data_type_check(data_type: str, data_val) -> bool:
 
 # correspondence between types and associated functions (and additional keyword args when applicable) 
 # to be applied for type check
-CHECK_FUNCTIONS = {"str": check_str,
-                   "int": check_int,
-                   "list_of_int": check_list_of_int,
-                   "list_of_str": check_list_of_str,
-                   "none_or_list_of_str": check_none_or_list_of_str,
-                   "dict_str_dict": check_str_dict_dict, 
-                   "dict_str_list_of_float": check_str_list_of_float_dict,
-                   "dict_str_list_of_str": check_str_list_of_str_dict,
-                   "dict_str_str": check_str_str_dict,
-                   "two_level_dict_str_str_list-of-str": check_str_str_list_of_str_dict,
-                   "two_level_dict_str_str_str": check_three_level_str_dict
+CHECK_FUNCTIONS = {CheckerNames.is_str: check_str,
+                   CheckerNames.is_int: check_int,
+                   CheckerNames.is_list_of_int: check_list_of_int,
+                   CheckerNames.is_list_of_str: check_list_of_str,
+                   CheckerNames.is_none_or_list_of_str: check_none_or_list_of_str,
+                   CheckerNames.is_dict_str_dict: check_str_dict_dict, 
+                   CheckerNames.is_dict_str_list_of_float: check_str_list_of_float_dict,
+                   CheckerNames.is_dict_str_list_of_str: check_str_list_of_str_dict,
+                   CheckerNames.is_dict_str_str: check_str_str_dict,
+                   CheckerNames.is_two_level_dict_str_str_list_of_str: check_str_str_list_of_str_dict,
+                   CheckerNames.is_two_level_dict_str_str_str: check_three_level_str_dict
                    }
 
 

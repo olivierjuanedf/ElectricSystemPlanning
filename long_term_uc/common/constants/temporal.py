@@ -1,8 +1,8 @@
 from datetime import datetime
 
 
-DATE_FORMAT_IN_JSON = "%Y/%m/%d"
-DAY_OF_WEEK = {1: "Mon", 2: "Tue", 3: "Wed", 4: "Thur", 5: "Fri", 6: "Sat", 7: "Sun"}
+DATE_FORMAT_IN_JSON = '%Y/%m/%d'
+DAY_OF_WEEK = {1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thur', 5: 'Fri', 6: 'Sat', 7: 'Sun'}
 # first date in ERAA data (fictive 364 days calendar)
 MIN_DATE_IN_DATA = datetime(year=1900, month=1, day=1)
 # first date NOT in ERAA data (fictive 364 days calendar)

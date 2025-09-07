@@ -6,86 +6,86 @@ from typing import List
 
 @dataclass
 class DtSubfolders:
-    demand: str = "demand"
-    res_capa_factors: str = "res_capa-factors"
-    generation_capas: str = "generation_capas"
-    interco_capas: str = "interco_capas"
+    demand: str = 'demand'
+    res_capa_factors: str = 'res_capa-factors'
+    generation_capas: str = 'generation_capas'
+    interco_capas: str = 'interco_capas'
 
 
 @dataclass
 class DtFilePrefix:
-    demand: str = "demand"
-    res_capa_factors: str = "capa_factor"
-    generation_capas: str = "generation-capa"
-    interco_capas: str = "interco-capas"
+    demand: str = 'demand'
+    res_capa_factors: str = 'capa_factor'
+    generation_capas: str = 'generation-capa'
+    interco_capas: str = 'interco-capas'
 
 
 @dataclass
 class ColumnNames:
-    date: str = "date"
-    target_year: str = "year"
-    climatic_year: str = "climatic_year"
-    production_type: str = "production_type"
-    value: str = "value"
-    zone_origin: str = "zone_origin"
-    zone_destination: str = "zone_destination"
+    date: str = 'date'
+    target_year: str = 'year'
+    climatic_year: str = 'climatic_year'
+    production_type: str = 'production_type'
+    value: str = 'value'
+    zone_origin: str = 'zone_origin'
+    zone_destination: str = 'zone_destination'
 
 
 @dataclass
 class FilesFormat:
-    column_sep: str = ";"
-    decimal_sep: str = "."
+    column_sep: str = ';'
+    decimal_sep: str = '.'
 
 
 @dataclass
 class ComplemDataSources:
-    from_json_tb_modif: str = "from_json_tb_modif"
-    from_eraa_data: str = "from_eraa_data"
+    from_json_tb_modif: str = 'from_json_tb_modif'
+    from_eraa_data: str = 'from_eraa_data'
 
 
-LT_UC_COMMON_FOLDER = "long_term_uc/common"
+LT_UC_COMMON_FOLDER = 'long_term_uc/common'
 COLUMN_NAMES = ColumnNames()
 COMPLEM_DATA_SOURCES = ComplemDataSources()
-DATE_FORMAT_FILE = "%Y-%m-%d"
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-DATE_FORMAT_PRINT = "%Y/%m/%d"
+DATE_FORMAT_FILE = '%Y-%m-%d'
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+DATE_FORMAT_PRINT = '%Y/%m/%d'
 DT_FILE_PREFIX = DtFilePrefix()
 DT_SUBFOLDERS = DtSubfolders()
 FILES_FORMAT = FilesFormat()
-GEN_CAPA_SUBDT_COLS = ["power_capacity", "power_capacity_turbine", "power_capacity_pumping", 
-                       "power_capacity_injection", "power_capacity_offtake", "energy_capacity"]
-INPUT_ERAA_FOLDER = "data/ERAA_2023-2"
-INPUT_FOLDER = "input"
-INPUT_LT_UC_SUBFOLDER = f"{INPUT_FOLDER}/long_term_uc"
-INPUT_LT_UC_COUNTRY_SUBFOLDER = f"{INPUT_LT_UC_SUBFOLDER}/countries"
-INPUT_FUNC_PARAMS_SUBFOLDER = f"{INPUT_FOLDER}/functional_params"
-INPUT_DATA_ANALYSIS_SUBFOLDER = f"{INPUT_LT_UC_SUBFOLDER}/data_analysis"
-INTERCO_STR_SEP = "2"
-INPUT_CY_STRESS_TEST_SUBFOLDER = "cy_stress-test"
-OUTPUT_FOLDER_LT = "output/long_term_uc"
-OUTPUT_DATA_FOLDER = f"{OUTPUT_FOLDER_LT}/data"
-OUTPUT_FIG_FOLDER = f"{OUTPUT_FOLDER_LT}/figures"
-OUTPUT_DATA_ANALYSIS_FOLDER = f"{OUTPUT_FOLDER_LT}/input_data_analysis"
+GEN_CAPA_SUBDT_COLS = ['power_capacity', 'power_capacity_turbine', 'power_capacity_pumping', 
+                       'power_capacity_injection', 'power_capacity_offtake', 'energy_capacity']
+INPUT_ERAA_FOLDER = 'data/ERAA_2023-2'
+INPUT_FOLDER = 'input'
+INPUT_LT_UC_SUBFOLDER = f'{INPUT_FOLDER}/long_term_uc'
+INPUT_LT_UC_COUNTRY_SUBFOLDER = f'{INPUT_LT_UC_SUBFOLDER}/countries'
+INPUT_FUNC_PARAMS_SUBFOLDER = f'{INPUT_FOLDER}/functional_params'
+INPUT_DATA_ANALYSIS_SUBFOLDER = f'{INPUT_LT_UC_SUBFOLDER}/data_analysis'
+INTERCO_STR_SEP = '2'
+INPUT_CY_STRESS_TEST_SUBFOLDER = 'cy_stress-test'
+OUTPUT_FOLDER_LT = 'output/long_term_uc'
+OUTPUT_DATA_FOLDER = f'{OUTPUT_FOLDER_LT}/data'
+OUTPUT_FIG_FOLDER = f'{OUTPUT_FOLDER_LT}/figures'
+OUTPUT_DATA_ANALYSIS_FOLDER = f'{OUTPUT_FOLDER_LT}/input_data_analysis'
 
 
 def get_json_usage_params_file() -> str:
-    return os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, "usage_params.json")
+    return os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'usage_params.json')
 
 
 def get_json_fixed_params_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, "elec-europe_params_fixed.json")
+    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_fixed.json')
 
 
 def get_json_eraa_avail_values_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, "elec-europe_eraa-available-values.json")
+    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_eraa-available-values.json')
 
 
 def get_json_params_tb_modif_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, "elec-europe_params_to-be-modif.json")
+    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_to-be-modif.json')
 
 
 def get_json_fuel_sources_tb_modif_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, "fuel_sources_to-be_modif.json")
+    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'fuel_sources_to-be_modif.json')
 
 
 def get_json_params_modif_country_files() -> List[str]:
@@ -96,27 +96,27 @@ def get_json_params_modif_country_files() -> List[str]:
 
 
 def get_json_pypsa_static_params_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, "pypsa_static_params.json") 
+    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'pypsa_static_params.json') 
 
 
 def get_json_data_analysis_params_file() -> str:
-    return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, "data-analysis_params_to-be-modif.json") 
+    return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, 'data-analysis_params_to-be-modif.json') 
 
 
 def get_network_figure() -> str:
-    return f"{OUTPUT_FIG_FOLDER}/network.png"
+    return f'{OUTPUT_FIG_FOLDER}/network.png'
 
 
 def get_output_file_suffix(country: str, year: int, climatic_year: int = None, start_horizon: datetime = None) -> str:
-    cy_suffix = f"_cy{climatic_year}" if climatic_year is not None else ""
-    date_suffix = f"_{start_horizon.strftime(DATE_FORMAT_FILE)}" if start_horizon is not None else ""
-    return f"{country}_{year}{cy_suffix}{date_suffix}"
+    cy_suffix = f'_cy{climatic_year}' if climatic_year is not None else ''
+    date_suffix = f'_{start_horizon.strftime(DATE_FORMAT_FILE)}' if start_horizon is not None else ''
+    return f'{country}_{year}{cy_suffix}{date_suffix}'
 
 
 def get_output_file_named(name: str, extension:str, output_dir:str, country: str, year: int, climatic_year: int, start_horizon: datetime = None) -> str:
     file_suffix = get_output_file_suffix(country=country, year=year, climatic_year=climatic_year,
                                          start_horizon=start_horizon)
-    return f"{output_dir}/{name}_{file_suffix}.{extension}"
+    return f'{output_dir}/{name}_{file_suffix}.{extension}'
 
 
 def get_figure_file_named(name: str, country: str, year: int, climatic_year: int = None, start_horizon: datetime = None) -> str:
