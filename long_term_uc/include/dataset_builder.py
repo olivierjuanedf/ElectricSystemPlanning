@@ -335,7 +335,7 @@ from itertools import product
 
 
 def get_current_interco_capa(interco_capas: Dict[Tuple[str, str], float], country_origin: str, 
-                             country_dest: str) -> (Optional[float], Optional[bool]):
+                             country_dest: str) -> Tuple[Optional[float], Optional[bool]]:
     link_tuple = (country_origin, country_dest)
     reverse_link_tuple = (country_dest, country_origin)
     if link_tuple in interco_capas:
