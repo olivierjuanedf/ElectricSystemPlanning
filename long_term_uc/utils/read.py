@@ -8,7 +8,7 @@ from long_term_uc.common.long_term_uc_io import get_json_usage_params_file, get_
             get_json_data_analysis_params_file
 from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
-from long_term_uc.common.constants.uc_json_inputs import CountryJsonParamNames
+from long_term_uc.common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
 from long_term_uc.common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
 from long_term_uc.common.uc_run_params import UCRunParams
 from long_term_uc.include.dataset_analyzer import DataAnalysis
@@ -93,8 +93,9 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
                     if c != country:
                         logging.warning(f'Ignoring {k} for {country} from file {file}')
 
-    # add key for selected prod. types 
-    json_params_tb_modif[selected_pt_param_name] = {}
+    # init. selected prod. types, with 'all' value for all selected countries 
+    json_params_tb_modif[selected_pt_param_name] = \
+        {c: [ALL_KEYWORD] for c in json_params_tb_modif[EuropeJsonParamNames.selected_countries]}
     if len(countries_data[selected_pt_param_name]) > 0:
         for c, v in countries_data[selected_pt_param_name].items():
             logging.info(f'Selected production type overwritten (not all the ones from ERAA) for {c}')

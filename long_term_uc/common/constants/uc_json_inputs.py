@@ -18,3 +18,6 @@ class EuropeJsonParamNames:
     selected_target_year: str = 'selected_target_year'
     uc_period_end: str = 'uc_period_end'
     uc_period_start: str = 'uc_period_start'
+
+
+ALL_KEYWORD = 'all'

@@ -6,6 +6,7 @@ import logging
 from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
 from long_term_uc.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
+from long_term_uc.common.constants.uc_json_inputs import ALL_KEYWORD
 from long_term_uc.common.error_msgs import uncoherent_param_stop
 from long_term_uc.utils.basic_utils import get_period_str, are_lists_eq
 from long_term_uc.utils.eraa_utils import set_interco_to_tuples
@@ -118,7 +119,7 @@ class UCRunParams:
             errors_list.append(f'Unknown selected country(ies): {unknown_countries}')
 
         for elt_country, current_agg_pt in self.selected_prod_types.items():
-            if current_agg_pt == ['all']:
+            if current_agg_pt == [ALL_KEYWORD]:
                 self.selected_prod_types[elt_country] = eraa_data_descr.available_aggreg_prod_types[elt_country][year]
         
         # check that countries in aggreg. prod. types are not repeated, and known
