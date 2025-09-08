@@ -2,10 +2,8 @@
 TODO
 
 MAIN actions (M)
-M1) Set UCRunParams.selected_prod_types to all available values for countries selected in a run and 
-for which no subselection has been set in JSON input file(s) - either 1 if solo mode, or 
-all per country files if team mode
--> cf. coherence_check function in uc_run_params.py script
+M1) Set UCRunParams.selected_prod_types to all available values for countries selected in a run
+-> (OB) OK commit 1351d06
 M2) [CR] Voir "TODO[CR]"
 
 DATA (D)
@@ -13,6 +11,8 @@ D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv"
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
 DA1) Rendre fonctionnelle v1 de ce script !
+-> (OB) OK commit 1351d06
+DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les étudiants sur Excel ?
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
@@ -37,7 +37,7 @@ P2) Add plot functions to get demand/cf/capas values for the selected values of 
 P3) Set up per country colors so that all groups will obtain directly comparable graphs
 
 OTHERS
-O1) Doc baba utilisation codespace en dehors du repot ?
+O1) Doc b.a.-ba utilisation codespace en dehors du repot ?
 O2) Scripts avec qques exemples de base Python ? "[coding tricks]"
 O3) / by efficiency in FuelSources and not * for primary cost?
 O4) Iberian-peninsula -> Iberia
