@@ -5,6 +5,7 @@ MAIN actions (M)
 M1) Set UCRunParams.selected_prod_types to all available values for countries selected in a run
 -> (OB) OK commit 1351d06
 M2) [CR] Voir "TODO[CR]"
+M3) Restructurer l'arborescence en enlevant le sous-dossier long_term_uc (présent à l'origine car il y avait aussi un autre sous-dossier)
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions...

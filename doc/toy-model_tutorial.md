@@ -1,3 +1,5 @@
+N.B. The planning associated to this tutorial (and references to the theoretical sessions) was dedicated to a course in 2024; it can be modified according to the usage of this code environment
+
 # Monday afternoon session tutorial: start simple, with a "toy model" (of a unique country Unit Commitment model)
 
 This **session exercise consists in**:
@@ -7,16 +9,22 @@ This **session exercise consists in**:
 You can **proceed in order**:
 1. **Read the two example scripts above**, following comments in them to understand the main stages when writing a PyPSA model
 2. **Copy/paste the two following scripts and rename them** *my_toy_ex_{country}.py* and *long_term_uc/toy_model_params/{country}_parameters.py* - with "country" the name of your country (or create two new ones with same names)
-2. **Considering installed generation assets data from file** *data/generation_capas/generation-capa_{year}_{country}.csv* - with "year" the one considered in this simulation, update values list of generator (dictionaries) in list of function *get_generators* in script *{country}_parameters.py*. This mainly consists in: (i) Extracting from Italy case the assets that are also present in your country, and only adapt "p_nom" value based on *generation-capa_{year}_{country}.csv* file; (ii) Complement the obtained list with assets in *generation-capa_{year}_{country}.csv* and not in Italy ex. - looking at file *long_term_uc/toy_model_params/ex_italy-complem_parameters.py* - again setting "p_nom" based on values in generation capas csv file.
+2. **Considering installed generation assets data from file** *data/generation_capas/generation-capa_{year}_{country}.csv* - with "year" the one considered in this simulation, update values list of generator (dictionaries) in list of function *get_generators* in script *{country}_parameters.py*. This mainly consists in: (i) Extracting from Italy case the assets that are also present in your country, and only adapt "p_nom" value based on *generation-capa_{year}_{country}.csv* file; (ii) Complement the obtained list with assets in *generation-capa_{year}_{country}.csv* for the ones not present in Italy ex. - looking at file *long_term_uc/toy_model_params/ex_italy-complem_parameters.py* - again setting "p_nom" based on values in generation capas csv file.
 
-Note that **technology names do not directly coincide between the "level" used in this exercise** (see XXX JSON file) **and data found in csv files** (here, the one with generation capacities). For some cases an aggregation from names in csv files to the ones in PyPSA will be needed; the correspondence to be used for that is provided at the very beginning of *my_toy_ex_italy.py" script (see global constant AGG_PROD_TYPES_DEF).
+Note that **technology names do not directly coincide between the "level" used in this exercise** (see, e.g. the production types infos in *input/long_term_uc/countries/france.json*) **and data found in csv files** (here, the one with generation capacities). For some cases an aggregation from names in csv files to the ones in PyPSA will be needed; the correspondence to be used for that is provided at the very beginning of *my_toy_ex_italy.py" script (see global constant AGG_PROD_TYPES_DEF).
+
+Note also that **available values in data** (years, climatic years, aggregate production types, etc.) **can be found in file** *input/long_term_uc/elec-europe_eraa-available-values.json*
+
+3. **Run your script** and observe the solution of your single-country Unit Commitment problem! **Do you get a "feasible" solution?**
+
+# More information: to understand/modify PyPSA code
 
 Based on the **two following websites**:
 
 * PyPSA documentation: https://pypsa.readthedocs.io/en/latest/
 * ERAA documentation (2023.2 will be used): https://www.entsoe.eu/outlooks/eraa/
 
-and an **"extract" of the first one regarding generator objects given below** you may be able to build your own country "Unit Commitment" model.
+and an **"extract" of PyPSA documentation regarding generator objects given below** you could be able to build your own country "Unit Commitment" model/modify provided piece of code.
 
 **Main parameters to define PyPSA generator objects** - that could be sufficient in this course:
 * (required) **bus** -> to which the generator is attached. **Format**: str
@@ -28,5 +36,3 @@ and an **"extract" of the first one regarding generator objects given below** yo
 * (optional) **"p_nom"** -> capacity (a power, in MW). **Format**: int. **Default**: 0
 * (optional) **p_min_pu** -> minimal power level - as % of capacity ("pu" stands for "per unit"), set to 0 to start simple. **Format**: float or vector (list or NumPy array). **Default**: 0
 * (optional) **p_max_pu** -> idem, maximal power. Can integrate "Capacity Factors" (or maintenance); in this case it can be variable in time. **Format**: float or vector (list or NumPy array). **Default**: 1
-
-TODO: available values in JSON file xxx

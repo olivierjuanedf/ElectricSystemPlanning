@@ -3,7 +3,7 @@
 First very simple toy Unit Commitment model of Italy zone - alone -> with PyPSA and ERAA data
 """
 import warnings
-#deactivate some annoying and useless warnings in pypsa/pandas
+# deactivate some annoying and useless warnings in pypsa/pandas
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 
