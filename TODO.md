@@ -7,6 +7,7 @@ M1) Set UCRunParams.selected_prod_types to all available values for countries se
 M2) [CR] Voir "TODO[CR]"
 M3) Restructurer l'arborescence en enlevant le sous-dossier long_term_uc (présent à l'origine car il y avait aussi un autre sous-dossier)
 M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les infaisabilités ? (bcp au début... surtout si on leur fait passer les embûches pédagos - ne pas mettre d'actif défaillance par ex !)
+M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions...
