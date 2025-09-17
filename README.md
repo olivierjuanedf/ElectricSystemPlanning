@@ -1,4 +1,4 @@
-# SupEnR 2024: Planning the European Electric System
+Planning the European Electric System
 
 ## Requirements 
 
