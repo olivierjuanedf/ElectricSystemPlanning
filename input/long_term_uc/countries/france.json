@@ -2,12 +2,12 @@
   "team": "france",
   "selected_prod_types": {
     "france": [
-      "nuclear", "wind_on_shore"
+      "nuclear", "wind_onshore"
     ],
-    "germany": ["nuclear"]
+    "germany": ["coal"]
   },
   "capacities_tb_overwritten": {
     "france": {"nuclear": 80000},
-    "germany": {"nuclear": 20000}
+    "germany": {"coal": 20000}
   }
 }

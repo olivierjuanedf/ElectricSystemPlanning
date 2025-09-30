@@ -119,14 +119,15 @@ class PypsaModel:
             country_bus_name = get_country_bus_name(country=country)
             for gen_unit_data in gen_units_data:
                 pypsa_gen_unit_dict = gen_unit_data.__dict__
-                logging.info(f'{country}, {pypsa_gen_unit_dict}')
+                logging.debug(f'{country}, {pypsa_gen_unit_dict}')
                 if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
                     self.network.add('StorageUnit', bus=f'{country_bus_name}', **pypsa_gen_unit_dict, state_of_charge_initial = pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa] * pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8
     )
                 else:
                     self.network.add('Generator', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
-        logging.info(f'Considered generators: {self.network.generators}')
-        logging.info(f'Considered storage units: {self.network.storage_units}')
+        # TODO: better msg with per bus list of generators/stocks (easier to be read) 
+        logging.info(f'Considered generators: {list(self.network.generators.index)}')
+        logging.info(f'Considered storage units: {list(self.network.storage_units.index)}')
 
     def add_loads(self, demand: Dict[str, pd.DataFrame]):
         logging.info('Add loads - associated to their respective buses')

@@ -22,7 +22,7 @@ usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
 logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_lt_uc_pb.log',
                      log_level=usage_params.log_level)
 
-logging.info(f'Start ERAA-PyPSA long-term Unit Commitment (UC) simulation')
+logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation')
 
 """
 Get needed data (demand, RES Capa. Factors, installed generation capacities)

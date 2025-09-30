@@ -48,6 +48,10 @@ def setup_logger(log_file_name: str, log_level_str: str) -> logging.Logger:
 
     log = logging.getLogger()
 
+    # Clear any default or previously added handlers
+    for handler in log.handlers[:]:
+        log.removeHandler(handler)
+    
     # log file
     formatter_log = logging.Formatter('%(asctime)s -- general -- %(filename)s '
                                       '-- %(levelname)s -- %(message)s')

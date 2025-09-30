@@ -83,7 +83,7 @@ class Dataset:
         aggreg_pt_gen_capa_def = aggreg_prod_types_def[DATATYPE_NAMES.installed_capa]
 
         for country in countries:
-            logging.info(f'For country: {country}')
+            logging.info(5 * '#' + f' For country: {country}')
             # read csv files
             # [Coding trick] f'{year}_{country}' directly fullfill string with value of year 
             # and country variables (f-string completion)
@@ -116,7 +116,7 @@ class Dataset:
                 for agg_prod_type in agg_prod_types_tb_read:
                     # if prod type with CF data
                     if agg_prod_type in self.agg_prod_types_with_cf_data:
-                        logging.info(n_spaces_msg * ' ' + f'- For aggreg. prod. type: {agg_prod_type}')
+                        logging.debug(n_spaces_msg * ' ' + f'- For aggreg. prod. type: {agg_prod_type}')
                         current_agg_pt_df_res_cf_list = []
                         for prod_type in aggreg_pt_cf_def[agg_prod_type]:
                             if self.is_stress_test:
@@ -128,7 +128,7 @@ class Dataset:
                             if not os.path.exists(cf_data_file):
                                 logging.warning(2*n_spaces_msg * ' ' + f'RES capa. factor data file does not exist: {prod_type} not accounted for here')
                             else:
-                                logging.info(2*n_spaces_msg * ' ' + f'* Prod. type: {prod_type}')
+                                logging.debug(2*n_spaces_msg * ' ' + f'* Prod. type: {prod_type}')
                                 current_df_res_cf = pd.read_csv(cf_data_file, sep=column_sep, decimal=decimal_sep) 
                                 current_df_res_cf = \
                                     filter_input_data(df=current_df_res_cf, date_col=date_col,
@@ -192,7 +192,12 @@ class Dataset:
                         for k, v in power_capacities[country].items():
                             current_df_gen_capa.loc[current_df_gen_capa['production_type_agg']==k, 'power_capacity'] = v
                     self.agg_gen_capa_data[country] = current_df_gen_capa
-                    logging.info('#'*100 + f'{current_df_gen_capa}' + '#'*100)
+                    # get dict. with only power capacity values to get less verbose logs
+                    power_capa_dict = create_dict_from_cols_in_df(df=current_df_gen_capa, 
+                                                                  key_col='production_type_agg', 
+                                                                  val_col='power_capacity')
+                    logging.info(f'-> power capa. values, in MW: {power_capa_dict}')
+                    logging.debug('#'*100 + f'{current_df_gen_capa}' + '#'*100)
 
         if DATATYPE_NAMES.interco_capa in datatypes_selec: 
             # read interconnection capas file
@@ -235,7 +240,7 @@ class Dataset:
 
         self.generation_units_data = {}
         for country in countries:
-            logging.info(f'- for country {country}')
+            logging.debug(f'- for country {country}')
             self.generation_units_data[country] = []
             current_capa_data = self.agg_gen_capa_data[country]
             current_res_cf_data = self.agg_cf_data[country]
@@ -245,7 +250,7 @@ class Dataset:
             current_assets_data = {agg_pt: pypsa_unit_params_per_agg_pt[agg_pt] for agg_pt in agg_prod_types}
             # and loop over pt to add complementary params
             for agg_pt in agg_prod_types:
-                logging.info(n_spaces_msg * ' ' + f'* for aggreg. prod. type {agg_pt}')
+                logging.debug(n_spaces_msg * ' ' + f'* for aggreg. prod. type {agg_pt}')
                 # set and add asset name
                 gen_unit_name = set_gen_unit_name(country=country, agg_prod_type=agg_pt)
                 current_assets_data[agg_pt]['name'] = gen_unit_name
@@ -255,7 +260,7 @@ class Dataset:
                 if agg_pt in units_complem_params_per_agg_pt and len(units_complem_params_per_agg_pt[agg_pt]) > 0:
                     # add pnom attribute if needed
                     if power_capa_key in units_complem_params_per_agg_pt[agg_pt]:
-                        logging.info(2*n_spaces_msg * ' ' + f'-> add {power_capa_key}')
+                        logging.debug(2*n_spaces_msg * ' ' + f'-> add {power_capa_key}')
                         current_power_capa = \
                             get_val_of_agg_pt_in_df(df_data=current_capa_data, prod_type_agg_col=prod_type_agg_col,
                                                     agg_prod_type=agg_pt, value_col='power_capacity',
@@ -264,7 +269,7 @@ class Dataset:
                             
                     # add pmax_pu when variable for RES/fatal units
                     if capa_factor_key in units_complem_params_per_agg_pt[agg_pt]:
-                        logging.info(2*n_spaces_msg * ' ' + f'-> add {capa_factor_key}')
+                        logging.debug(2*n_spaces_msg * ' ' + f'-> add {capa_factor_key}')
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = \
                             get_val_of_agg_pt_in_df(df_data=current_res_cf_data, prod_type_agg_col=prod_type_agg_col,
                                                     agg_prod_type=agg_pt, value_col=value_col, static_val=False)

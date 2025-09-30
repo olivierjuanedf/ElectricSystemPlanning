@@ -1,3 +1,4 @@
+import sys
 import logging
 from typing import List
 
@@ -8,6 +9,7 @@ def print_errors_list(error_name: str, errors_list: List[str]):
         error_msg += f'\n- {elt_error}'
     error_msg += '\n-> STOP'
     logging.error(error_msg)
+    sys.exit(1)
     
 
 def uncoherent_param_stop(param_errors: List[str]):
