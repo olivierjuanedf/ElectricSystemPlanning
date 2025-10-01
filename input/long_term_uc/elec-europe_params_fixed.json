@@ -115,7 +115,7 @@
       "p_max_pu": 1
     },
     "biofuel": {
-      "carrier": "biofuel",
+      "carrier": "biomass",
       "p_min_pu": 0,
       "p_max_pu": 1,
       "marginal_cost": 0,
@@ -186,7 +186,7 @@
       "committable": "false"
     },
     "nuclear": {
-      "carrier": "nuclear",
+      "carrier": "uranium",
       "p_min_pu": 0.25,
       "p_max_pu": 1,
       "efficiency": 0.33,
