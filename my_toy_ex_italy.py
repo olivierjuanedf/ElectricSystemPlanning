@@ -77,14 +77,6 @@ uc_run_params = UCRunParams(selected_countries=selected_countries, selected_targ
                             uc_period_start=uc_period_start,
                             uc_period_end=uc_period_end)
 
-import pandas as pd
-
-horizon = pd.date_range(
-    start=uc_period_start.replace(year=uc_run_params.selected_target_year),
-    end=uc_period_end.replace(year=uc_run_params.selected_target_year),
-    freq='h'
-)
-
 # initialize dataset object
 from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
 from long_term_uc.include.dataset import Dataset
@@ -136,8 +128,6 @@ wind_off_shore = {
 IV) Build PyPSA model - with unique country (Italy here)
 """
 # IV.1) Initialize PyPSA Network (basis of all your simulations this week!). 
-import pypsa
-
 print('Initialize PyPSA network')
 # Here snapshots is used to defined the temporal period associated to considered UC model
 # -> for ex. as a list of indices (other formats; like data ranges can be used instead) 
@@ -199,8 +189,6 @@ generators = get_generators(country_trigram=country_trigram, fuel_sources=FUEL_S
                             wind_on_shore_data=wind_on_shore[country], wind_off_shore_data=wind_off_shore[country],
                             solar_pv_data=solar_pv[country])
 # set generation units data from this list
-from long_term_uc.include.dataset_builder import GenerationUnitData
-
 generation_units_data = set_gen_as_list_of_gen_units_data(generators=generators)
 eraa_dataset.set_generation_units_data(gen_units_data={unique_country: generation_units_data})
 
@@ -258,6 +246,7 @@ result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year, n
 # -> will be saved in output folder output/long_term_uc/data
 # you can observe if you find the equations corresponding to the UC problem modeled
 from long_term_uc.include.dataset_builder import save_lp_model
+
 save_lp_model(network=pypsa_model.network, year=uc_run_params.selected_target_year,
               n_countries=n_countries, period_start=uc_run_params.uc_period_start)
 print(result)  # Note 2nd component of result, the resolution status (optimal?)

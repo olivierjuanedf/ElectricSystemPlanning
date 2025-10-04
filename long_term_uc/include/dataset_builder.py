@@ -85,6 +85,16 @@ def set_full_coll_for_storage_df(df: pd.DataFrame, col_suffix: str) -> pd.DataFr
 OUTPUT_DATE_COL = 'date'
 
 
+def check_gen_unit_params(params: dict, n_ts: int) -> bool:
+    # check that max and min power pu are either constant or of the length of considered horizon
+    for param_name in [GEN_UNITS_PYPSA_PARAMS.min_power_pu, GEN_UNITS_PYPSA_PARAMS.max_power_pu]:
+        param_value = params[param_name]
+        if isinstance(param_value, list) or isinstance(param_value, np.ndarray):
+            if not len(param_value) == n_ts:
+                return False
+    return True
+
+
 @dataclass
 class PypsaModel:
     name: str
@@ -120,6 +130,13 @@ class PypsaModel:
             for gen_unit_data in gen_units_data:
                 pypsa_gen_unit_dict = gen_unit_data.__dict__
                 logging.debug(f'{country}, {pypsa_gen_unit_dict}')
+                params_ok = check_gen_unit_params(params=pypsa_gen_unit_dict, n_ts=len(self.network.snapshots))
+                if not params_ok:
+                    logging.warning(f'Pb with generator parameters {pypsa_gen_unit_dict} '
+                                    f'-> generator not added to the PyPSA model')
+                    continue
+
+                # case of storage units, identified via the presence of max_hours param
                 if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
                     self.network.add('StorageUnit', bus=f'{country_bus_name}', **pypsa_gen_unit_dict,
                                      state_of_charge_initial=pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa] *

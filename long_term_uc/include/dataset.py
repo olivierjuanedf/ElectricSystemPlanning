@@ -30,7 +30,7 @@ class Dataset:
     # {country: list of associated generation units data}
     generation_units_data: Dict[str, List[GenerationUnitData]] = None
 
-    def get_countries_data(self, uc_run_params: UCRunParams, aggreg_prod_types_def: Dict[str, List[str]], 
+    def get_countries_data(self, uc_run_params: UCRunParams, aggreg_prod_types_def: Dict[str, Dict[str, List[str]]],
                            datatypes_selec: List[str] = None, subdt_selec: List[str] = None):
         """
         Get ERAA data necessary for the selected countries
@@ -291,7 +291,7 @@ class Dataset:
                         p_min_pu = power_capacity_pumping / p_nom
                         p_max_pu = power_capacity_turbine / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power] = p_min_pu
+                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power_pu] = p_min_pu
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
                         max_hours = energy_capacity / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
@@ -302,7 +302,7 @@ class Dataset:
                         p_min_pu = -power_capacity_offtake / p_nom
                         p_max_pu = power_capacity_injection / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power] = p_min_pu
+                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power_pu] = p_min_pu
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
                         max_hours = energy_capacity / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
@@ -311,7 +311,7 @@ class Dataset:
                 elif power_capacity_turbine > 0:
                     p_nom = abs(power_capacity_turbine)
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
-                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power] = 0
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power_pu] = 0
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = 1
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity

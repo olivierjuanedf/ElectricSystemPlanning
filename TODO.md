@@ -11,6 +11,7 @@ M7) Tester avec des dates start/end sans hh:mm
 M8) Sortir/tracer les émissions CO2
 M9) Constantes à mettre dans des fichiers de données (json par ex) -> FUEL_SOURCES par ex. 
 (et vérif cohérence avec ProdTypes)
+M10) Dossier de sortie toy model différent de celui Eur model
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7

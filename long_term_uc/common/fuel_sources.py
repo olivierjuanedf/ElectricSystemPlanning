@@ -12,6 +12,7 @@ class FuelNames:
     gas: str = 'gas'
     hydro: str = 'hydro'
     oil: str = 'oil'
+    other_non_renewables: str = 'other_non_renew'
     other_renewables: str = 'other_renew'
     solar: str = 'solar'
     uranium: str = 'uranium'
@@ -57,15 +58,24 @@ FUEL_SOURCES = {
     FuelNames.hydro: FuelSources(FuelNames.hydro.capitalize(), 0, True, 0, 0),
     FuelNames.biomass: FuelSources(FuelNames.biomass.capitalize(), 0, True, 5, 30)
 }
+
+# add "other" fuel sources
+FUEL_SOURCES |= {FuelNames.other_renewables: FuelSources(FuelNames.other_renewables.capitalize(),
+                                                         FUEL_SOURCES[FuelNames.biomass].co2_emissions,
+                                                         FUEL_SOURCES[FuelNames.biomass].committable,
+                                                         FUEL_SOURCES[FuelNames.biomass].energy_density_per_ton,
+                                                         FUEL_SOURCES[FuelNames.biomass].cost_per_ton),
+                 FuelNames.other_non_renewables: FuelSources(FuelNames.other_non_renewables.capitalize(),
+                                                             FUEL_SOURCES[FuelNames.oil].co2_emissions,
+                                                             FUEL_SOURCES[FuelNames.oil].committable,
+                                                             FUEL_SOURCES[FuelNames.oil].energy_density_per_ton,
+                                                             FUEL_SOURCES[FuelNames.oil].cost_per_ton)
+                 }
+
 # to have carriers defined for all prod units in PyPSA
 # TODO: make code ok without dummy CO2 emission values
 dummy_co2_emissions = 0
 DUMMY_FUEL_SOURCES = {DummyFuelNames.failure: FuelSources(DummyFuelNames.failure.capitalize(), dummy_co2_emissions),
-                      FuelNames.other_renewables: FuelSources(FuelNames.other_renewables.capitalize(),
-                                                              FUEL_SOURCES[FuelNames.biomass].co2_emissions,
-                                                              FUEL_SOURCES[FuelNames.biomass].committable,
-                                                              FUEL_SOURCES[FuelNames.biomass].energy_density_per_ton,
-                                                              FUEL_SOURCES[FuelNames.biomass].cost_per_ton),
                       DummyFuelNames.flexibility: FuelSources(DummyFuelNames.flexibility.capitalize(),
                                                               dummy_co2_emissions),
                       DummyFuelNames.demande_side_resp: FuelSources(DummyFuelNames.demande_side_resp.capitalize(),
