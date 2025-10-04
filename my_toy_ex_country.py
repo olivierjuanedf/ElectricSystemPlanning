@@ -8,12 +8,14 @@ First very simple toy Unit Commitment model of... YOUR COUNTRY zone - alone -> w
 following/adapting model of long_term_uc/toy_model_params/italy_parameters.py
 """
 import warnings
-#deactivate some annoying and useless warnings in pypsa/pandas
+
+# deactivate some annoying and useless warnings in pypsa/pandas
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 
 # use global constant names of different prod. types to be sure of extracting data wo any pb  
 from long_term_uc.common.constants.prod_types import ProdTypeNames
+
 AGG_PROD_TYPES_DEF = {
     'res_capa-factors': {
         'solar_pv': [ProdTypeNames.solar_pv_in_cf_data],
@@ -32,13 +34,12 @@ AGG_PROD_TYPES_DEF = {
         'hydro_pump_storage_open_loop': [ProdTypeNames.hydro_pump_storage_open],
         'hydro_reservoir': [ProdTypeNames.hydro_reservoir],
         'hydro_run_of_river': [ProdTypeNames.hydro_ror],
-        'nuclear': [ProdTypeNames.nuclear], 
+        'nuclear': [ProdTypeNames.nuclear],
         'oil': [ProdTypeNames.oil],
         'others_fatal': [ProdTypeNames.others_non_renewable, ProdTypeNames.others_renewable],
         'solar_pv': [ProdTypeNames.solar_pv],
         'solar_thermal': [ProdTypeNames.solar_thermal],
-        'wind_offshore': [ProdTypeNames.wind_offshore], 
+        'wind_offshore': [ProdTypeNames.wind_offshore],
         'wind_onshore': [ProdTypeNames.wind_onshore]
     }
 }
-
