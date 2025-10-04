@@ -7,14 +7,17 @@ M3) Restructurer l'arborescence en enlevant le sous-dossier long_term_uc (prése
 M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les infaisabilités ? (bcp au début... surtout si on leur fait passer les embûches pédagos - ne pas mettre d'actif défaillance par ex !)
 M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
 M6) Ajouter les carriers dans le modèle Pypsa pour faire disparaître les msgs d'erreur "The following storage_units/prod/etc. have carriers which are not defined"
+M7) Tester avec des dates start/end sans hh:mm
+M8) Sortir/tracer les émissions CO2
+M9) Constantes à mettre dans des fichiers de données (json par ex) -> FUEL_SOURCES par ex. 
+(et vérif cohérence avec ProdTypes)
 
 DATA (D)
-D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions...
+D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
-DA1) Rendre fonctionnelle v1 de ce script !
--> (OB) OK commit 1351d06
 DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les étudiants sur Excel ?
+Monotone de demande (résiduelle)
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
@@ -22,6 +25,9 @@ TE2) conserver FUEL_SOURCES ou bien trop compliqué pour les étudiants ?
 TE3) voir si certains warning sont de notre fait... même si en ligne il semble que PyPSA en génère pas mal - notamment en lien avec Linopy
 TE4) doc/toy-model_tutorial.md to be completed/improved
 TE5) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec des exs complémentaires au cas italien (hydrau, batteries)
+TE6) IV.7.2) Ajouter save lp file
+TE7) Ne pas mentionner diff clé PV entre les données de capa et de CF -> embrouille...
+TE8) Donner un ex. d'ajout d'un stock/batterie dans le cas italien/ou pointeur sur Internet
 
 MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
 MAS1) Doc doc/... pour clarifier les choses et permettre utilisation autonome
