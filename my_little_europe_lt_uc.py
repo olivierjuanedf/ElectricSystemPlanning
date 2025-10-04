@@ -73,7 +73,7 @@ selec_countries_gps_coords = \
 pypsa_model.add_gps_coordinates(countries_gps_coords=selec_countries_gps_coords)
 all_fuel_sources = FUEL_SOURCES
 all_fuel_sources |= DUMMY_FUEL_SOURCES
-pypsa_model.add_energy_carrier(fuel_sources=all_fuel_sources)
+pypsa_model.add_energy_carriers(fuel_sources=all_fuel_sources)
 pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 pypsa_model.add_loads(demand=eraa_dataset.demand, carrier_name=DummyFuelNames.load)
 pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)

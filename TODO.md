@@ -24,9 +24,8 @@ TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
 TE2) conserver FUEL_SOURCES ou bien trop compliqué pour les étudiants ?
 TE3) voir si certains warning sont de notre fait... même si en ligne il semble que PyPSA en génère pas mal - notamment en lien avec Linopy
-TE4) doc/toy-model_tutorial.md to be completed/improved
+TE4) doc/toy-model_tutorial.md to be completed/improved + commentaires dans le code à garder/MAJ ?
 TE5) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec des exs complémentaires au cas italien (hydrau, batteries)
-TE6) IV.7.2) Ajouter save lp file
 TE7) Ne pas mentionner diff clé PV entre les données de capa et de CF -> embrouille...
 TE8) Donner un ex. d'ajout d'un stock/batterie dans le cas italien/ou pointeur sur Internet
 

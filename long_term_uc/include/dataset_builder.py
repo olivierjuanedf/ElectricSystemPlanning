@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from long_term_uc.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from long_term_uc.common.error_msgs import print_errors_list
-from long_term_uc.common.fuel_sources import FuelSources
+from long_term_uc.common.fuel_sources import FuelSources, DummyFuelNames
 from long_term_uc.common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
     get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file, \
     get_capacity_figure, get_figure_file_named
@@ -116,12 +116,21 @@ class PypsaModel:
         logging.info('Add GPS coordinates')
         for country, gps_coords in countries_gps_coords.items():
             country_bus_name = get_country_bus_name(country=country)
-            self.network.add('Bus', name=f'{country_bus_name}', x=gps_coords[0], y=gps_coords[1])
+            self.network.add(GEN_UNITS_PYPSA_PARAMS.bus.capitalize(), name=f'{country_bus_name}',
+                             x=gps_coords[0], y=gps_coords[1])
 
-    def add_energy_carrier(self, fuel_sources: Dict[str, FuelSources]):
+    def add_energy_carriers(self, fuel_sources: Dict[str, FuelSources]):
         logging.info('Add energy carriers')
         for carrier in list(fuel_sources.keys()):
-            self.network.add('Carrier', name=carrier, co2_emissions=fuel_sources[carrier].co2_emissions / 1000)
+            self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=carrier,
+                             co2_emissions=fuel_sources[carrier].co2_emissions / 1000)
+
+    def add_per_bus_energy_carriers(self, fuel_sources: Dict[str, FuelSources]):
+        all_bus_names = self.get_bus_names()
+        logging.info(f'Add per-bus energy carriers for: {all_bus_names}')
+        for bus_name in all_bus_names:
+            self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=bus_name,
+                             co2_emissions=fuel_sources[DummyFuelNames.bus].co2_emissions / 1000)
 
     def add_generators(self, generators_data: Dict[str, List[GenerationUnitData]]):
         logging.info('Add generators - associated to their respective buses')
@@ -204,6 +213,9 @@ class PypsaModel:
         for link in links:
             if link[GEN_UNITS_PYPSA_PARAMS.power_capa] > 0:
                 self.network.add('Link', **link)
+
+    def get_bus_names(self) -> List[str]:
+        return list(set(self.network.buses.index))
 
     def plot_network(self):
         self.network.plot(title=f'{self.name.capitalize()} network', color_geomap=True, jitter=0.3)

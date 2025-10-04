@@ -133,7 +133,12 @@ print('Initialize PyPSA network')
 # -> for ex. as a list of indices (other formats; like data ranges can be used instead) 
 from long_term_uc.include.dataset_builder import PypsaModel
 
-pypsa_model = PypsaModel(name='my little europe')
+unique_country = 'italy'
+# IV.2.1) For brevity, set country trigram as the 'id' of this zone in following model definition (and observed outputs)
+from long_term_uc.include.dataset_builder import set_country_trigram
+country_trigram = set_country_trigram(country=country)
+
+pypsa_model = PypsaModel(name=f'my 1-zone {country_trigram} toy model')
 date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
 # set a date horizon, to have more explicit axis labels hereafter
 import pandas as pd
@@ -159,12 +164,8 @@ print(pypsa_model.network)
 # N.B. Italy coordinates set randomly! (not useful in the calculation that will be done this week)
 from long_term_uc.toy_model_params.italy_parameters import gps_coords
 
-unique_country = 'italy'
 coordinates = {unique_country: gps_coords}
-# IV.2.1) For brevity, set country trigram as the 'id' of this zone in following model definition (and observed outputs)
-from long_term_uc.include.dataset_builder import set_country_trigram
 
-country_trigram = set_country_trigram(country=country)
 # N.B. Multiple bus would be added if multiple countries were considered
 pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # [Multiple-count. ext., start] Loop over the different countries to add an associated bus
@@ -196,7 +197,9 @@ eraa_dataset.set_generation_units_data(gen_units_data={unique_country: generatio
 # [Coding trick] ** used to 'unpack' the dictionary as named parameters
 all_fuel_sources = FUEL_SOURCES
 all_fuel_sources |= DUMMY_FUEL_SOURCES
-pypsa_model.add_energy_carrier(fuel_sources=all_fuel_sources)
+print('bob')
+pypsa_model.add_energy_carriers(fuel_sources=all_fuel_sources)
+pypsa_model.add_per_bus_energy_carriers(fuel_sources=all_fuel_sources)
 pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 
 # [Multiple-count. ext., start] Idem but adding the different generators to the bus (country) they are connected to
@@ -205,14 +208,6 @@ pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 # [Multiple-count. ext., end]
 
 # IV.5) Add load
-# N.B. 'carrier' associated to demand here just to explicit that an AC current network is considered
-# IV.5.1) Setting attribute values in a dictionary
-# loads = [
-#    {
-#        'name': f'{country_trigram}-load', 'bus': country_trigram,
-#        'carrier': 'AC', 'p_set': demand[country]['value'].values
-#    }
-# ]
 # IV.5.2) Then adding Load objects to PyPSA model
 # for load in loads:
 #    network.add('Load', **load)
@@ -298,8 +293,8 @@ if result[1] == pypsa_opt_resol_status:
                                             climatic_year=uc_run_params.selected_climatic_year,
                                             start_horizon=uc_run_params.uc_period_start)
 else:
-    print(
-        f'Optimisation resolution status is not {pypsa_opt_resol_status} -> output data (resp. figures) cannot be saved (resp. plotted), excepting installed capas one')
+    print(f'Optimisation resolution status is not {pypsa_opt_resol_status} '
+          f'-> output data (resp. figures) cannot be saved (resp. plotted), excepting installed capas one')
     pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year)
 
 print(f'THE END of ERAA-PyPSA long-term UC toy model of country {unique_country} simulation!')

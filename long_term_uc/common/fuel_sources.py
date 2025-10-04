@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Dict, List
 
 """
 **[Optional, for better parametrization of assets]**
