@@ -148,12 +148,16 @@ class PypsaModel:
         logging.info(f'Considered generators: {list(self.network.generators.index)}')
         logging.info(f'Considered storage units: {list(self.network.storage_units.index)}')
 
-    def add_loads(self, demand: Dict[str, pd.DataFrame]):
+    def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
+        if carrier_name is None:
+            carrier_name = 'AC'
         logging.info('Add loads - associated to their respective buses')
         for country in demand:
             country_bus_name = get_country_bus_name(country=country)
-            load_data = {'name': f'{country_bus_name}-load', 'bus': f'{country_bus_name}',
-                         'carrier': 'AC', 'p_set': demand[country]['value'].values}
+            load_data = {GEN_UNITS_PYPSA_PARAMS.name: f'{country_bus_name}-load',
+                         GEN_UNITS_PYPSA_PARAMS.bus: f'{country_bus_name}',
+                         GEN_UNITS_PYPSA_PARAMS.carrier: carrier_name,
+                         GEN_UNITS_PYPSA_PARAMS.set_power: demand[country]['value'].values}
             self.network.add('Load', **load_data)
 
     def add_interco_links(self, countries: List[str], interco_capas: Dict[Tuple[str, str], float]):

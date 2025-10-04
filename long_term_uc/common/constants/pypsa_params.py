@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class GenUnitsPypsaParams:
+    bus: str = 'bus'
     carrier: str = 'carrier'
     capa_factors: str = 'p_max_pu'
     committable: str = 'committable'
@@ -16,6 +17,7 @@ class GenUnitsPypsaParams:
     name: str = 'name'
     nominal_power: str = 'p_nom'
     power_capa: str = 'p_nom'
+    set_power: str = 'p_set'
 
 
 GEN_UNITS_PYPSA_PARAMS = GenUnitsPypsaParams()

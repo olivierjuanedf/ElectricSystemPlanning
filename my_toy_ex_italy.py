@@ -180,7 +180,7 @@ pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # fictive alternative values instead -> plenty infos on Internet on this... sometimes of 'varying' quality! 
 # (keeping format of dataclass - sort of enriched dictionary -, just change values in 
 # file long_term_uc/common/fuel_sources.py)
-from long_term_uc.common.fuel_sources import FUEL_SOURCES
+from long_term_uc.common.fuel_sources import FUEL_SOURCES, DUMMY_FUEL_SOURCES, DummyFuelNames
 from long_term_uc.toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
 
 # IV.4.1) get generators to be set on the unique considered bus here
@@ -194,7 +194,9 @@ eraa_dataset.set_generation_units_data(gen_units_data={unique_country: generatio
 
 # IV.4.2) Loop over previous list of dictionaries to add each of the generators to PyPSA network
 # [Coding trick] ** used to 'unpack' the dictionary as named parameters
-pypsa_model.add_energy_carrier(fuel_sources=FUEL_SOURCES)
+all_fuel_sources = FUEL_SOURCES
+all_fuel_sources |= DUMMY_FUEL_SOURCES
+pypsa_model.add_energy_carrier(fuel_sources=all_fuel_sources)
 pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 
 # [Multiple-count. ext., start] Idem but adding the different generators to the bus (country) they are connected to
@@ -220,7 +222,7 @@ pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 # each of them corresponding to a given bus (country)
 # [Multiple-count. ext., end]
 # Here attribute eraa_dataset.demand has a unique key -> 'italy'
-pypsa_model.add_loads(demand=eraa_dataset.demand)
+pypsa_model.add_loads(demand=eraa_dataset.demand, carrier_name=DummyFuelNames.load)
 
 # IV.6) A few prints to check/observe that created PyPSA model be coherent 
 # IV.6.1) Print the network after having completed it
