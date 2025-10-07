@@ -117,7 +117,7 @@ class PypsaModel:
         for country, gps_coords in countries_gps_coords.items():
             country_bus_name = get_country_bus_name(country=country)
             self.network.add(GEN_UNITS_PYPSA_PARAMS.bus.capitalize(), name=f'{country_bus_name}',
-                             x=gps_coords[0], y=gps_coords[1])
+                             x=gps_coords[0], y=gps_coords[1], carrier=f'{country_bus_name}')
 
     def add_energy_carriers(self, fuel_sources: Dict[str, FuelSources]):
         logging.info('Add energy carriers')

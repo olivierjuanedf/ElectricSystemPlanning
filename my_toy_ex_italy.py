@@ -7,6 +7,8 @@ import warnings
 # deactivate some annoying and useless warnings in pypsa/pandas
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
+# Suppress matplotlib specific DeprecationWarning from Pillow
+warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="matplotlib.backends._backend_tk")
 
 # use global constant names of different prod. types to be sure of extracting data wo any pb  
 from long_term_uc.common.constants.prod_types import ProdTypeNames
@@ -190,7 +192,7 @@ eraa_dataset.set_generation_units_data(gen_units_data={unique_country: generatio
 # [Coding trick] ** used to 'unpack' the dictionary as named parameters
 all_fuel_sources = FUEL_SOURCES
 all_fuel_sources |= DUMMY_FUEL_SOURCES
-print('bob')
+
 pypsa_model.add_energy_carriers(fuel_sources=all_fuel_sources)
 pypsa_model.add_per_bus_energy_carriers(fuel_sources=all_fuel_sources)
 pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
