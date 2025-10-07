@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from long_term_uc.common.constants.prod_types import ProdTypeNames
 
+
 @dataclass
 class DatatypesNames:
     demand: str = 'demand'
@@ -12,7 +13,8 @@ class DatatypesNames:
 
 DATATYPE_NAMES = DatatypesNames()
 PROD_TYPES_PER_DT = {DATATYPE_NAMES.capa_factor: 
-                     [ProdTypeNames.csp_no_storage, 'lfsolarpv', ProdTypeNames.wind_offshore, ProdTypeNames.wind_onshore],
+                     [ProdTypeNames.csp_no_storage, 'lfsolarpv', ProdTypeNames.wind_offshore,
+                      ProdTypeNames.wind_onshore],
                      DATATYPE_NAMES.installed_capa: 
                      [ProdTypeNames.batteries, ProdTypeNames.biofuel, ProdTypeNames.coal, ProdTypeNames.hard_coal,
                       ProdTypeNames.lignite, ProdTypeNames.demand_side_response, ProdTypeNames.gas,
