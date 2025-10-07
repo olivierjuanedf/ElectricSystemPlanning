@@ -17,29 +17,21 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 from long_term_uc.common.constants.prod_types import ProdTypeNames
 
 AGG_PROD_TYPES_DEF = {
-    'res_capa-factors': {
-        'solar_pv': [ProdTypeNames.solar_pv_in_cf_data],
-        'solar_thermal': [ProdTypeNames.solar_thermal],
-        'wind_offshore': [ProdTypeNames.wind_offshore],
-        'wind_onshore': [ProdTypeNames.wind_onshore]
-    },
-    'generation_capas': {
-        'batteries': [ProdTypeNames.batteries],
-        'biofuel': [ProdTypeNames.biofuel],
-        'coal': [ProdTypeNames.coal, ProdTypeNames.hard_coal, ProdTypeNames.lignite],
-        'dsr': [ProdTypeNames.demand_side_response],
-        'gas': [ProdTypeNames.gas],
-        'hydro_pondage': [ProdTypeNames.hydro_pondage],
-        'hydro_pump_storage_closed_loop': [ProdTypeNames.hydro_pump_storage_closed],
-        'hydro_pump_storage_open_loop': [ProdTypeNames.hydro_pump_storage_open],
-        'hydro_reservoir': [ProdTypeNames.hydro_reservoir],
-        'hydro_run_of_river': [ProdTypeNames.hydro_ror],
-        'nuclear': [ProdTypeNames.nuclear],
-        'oil': [ProdTypeNames.oil],
-        'others_fatal': [ProdTypeNames.others_non_renewable, ProdTypeNames.others_renewable],
-        'solar_pv': [ProdTypeNames.solar_pv],
-        'solar_thermal': [ProdTypeNames.solar_thermal],
-        'wind_offshore': [ProdTypeNames.wind_offshore],
-        'wind_onshore': [ProdTypeNames.wind_onshore]
-    }
+    'batteries': [ProdTypeNames.batteries],
+    'biofuel': [ProdTypeNames.biofuel],
+    'coal': [ProdTypeNames.coal, ProdTypeNames.hard_coal, ProdTypeNames.lignite],
+    'dsr': [ProdTypeNames.demand_side_response],
+    'gas': [ProdTypeNames.gas],
+    'hydro_pondage': [ProdTypeNames.hydro_pondage],
+    'hydro_pump_storage_closed_loop': [ProdTypeNames.hydro_pump_storage_closed],
+    'hydro_pump_storage_open_loop': [ProdTypeNames.hydro_pump_storage_open],
+    'hydro_reservoir': [ProdTypeNames.hydro_reservoir],
+    'hydro_run_of_river': [ProdTypeNames.hydro_ror],
+    'nuclear': [ProdTypeNames.nuclear],
+    'oil': [ProdTypeNames.oil],
+    'others_fatal': [ProdTypeNames.others_non_renewable, ProdTypeNames.others_renewable],
+    'solar_pv': [ProdTypeNames.solar_pv],
+    'solar_thermal': [ProdTypeNames.solar_thermal],
+    'wind_offshore': [ProdTypeNames.wind_offshore],
+    'wind_onshore': [ProdTypeNames.wind_onshore]
 }

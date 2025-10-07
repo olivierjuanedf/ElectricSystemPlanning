@@ -13,7 +13,7 @@ class DatatypesNames:
 
 DATATYPE_NAMES = DatatypesNames()
 PROD_TYPES_PER_DT = {DATATYPE_NAMES.capa_factor: 
-                     [ProdTypeNames.csp_no_storage, 'lfsolarpv', ProdTypeNames.wind_offshore,
+                     [ProdTypeNames.csp_no_storage, ProdTypeNames.solar_pv, ProdTypeNames.wind_offshore,
                       ProdTypeNames.wind_onshore],
                      DATATYPE_NAMES.installed_capa: 
                      [ProdTypeNames.batteries, ProdTypeNames.biofuel, ProdTypeNames.coal, ProdTypeNames.hard_coal,
