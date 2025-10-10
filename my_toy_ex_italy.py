@@ -8,7 +8,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 # Suppress matplotlib specific DeprecationWarning from Pillow
-warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="matplotlib.backends._backend_tk")
+warnings.simplefilter(action="ignore", category=DeprecationWarning)
 
 # use global constant names of different prod. types to be sure of extracting data wo any pb  
 from long_term_uc.common.constants.prod_types import ProdTypeNames

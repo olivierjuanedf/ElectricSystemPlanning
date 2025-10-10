@@ -12,6 +12,7 @@ M8) Sortir/tracer les émissions CO2
 M9) Constantes à mettre dans des fichiers de données (json par ex) -> FUEL_SOURCES par ex. 
 (et vérif cohérence avec ProdTypes)
 M10) Dossier de sortie toy model différent de celui Eur model
+M11) Version de Python ok?
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
@@ -28,6 +29,7 @@ TE4) doc/toy-model_tutorial.md to be completed/improved + commentaires dans le c
 TE5) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec des exs complémentaires au cas italien (hydrau, batteries)
 TE7) Ne pas mentionner diff clé PV entre les données de capa et de CF -> embrouille...
 TE8) Donner un ex. d'ajout d'un stock/batterie dans le cas italien/ou pointeur sur Internet
+TE9) Voir sens suffixe du lp généré -> rendre les choses explicites
 
 MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
 MAS1) Doc doc/... pour clarifier les choses et permettre utilisation autonome
