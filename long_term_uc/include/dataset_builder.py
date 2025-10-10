@@ -142,7 +142,7 @@ class PypsaModel:
                 params_ok = check_gen_unit_params(params=pypsa_gen_unit_dict, n_ts=len(self.network.snapshots))
                 if not params_ok:
                     logging.warning(f'Pb with generator parameters {pypsa_gen_unit_dict} '
-                                    f'-> generator not added to the PyPSA model')
+                                    f'\n-> generator not added to the PyPSA model')
                     continue
 
                 # case of storage units, identified via the presence of max_hours param
@@ -394,16 +394,34 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
     return datetime(year=year, month=period_start.month, day=period_start.day).strftime('%Y-%m-%d')
 
 
-def save_lp_model(network: pypsa.Network, year: int, n_countries: int, period_start: datetime):
+def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
+                  n_countries: int = None, add_random_suffix: bool = False):
     logging.info('Save lp model')
     import pypsa.optimization as opt
     from long_term_uc.common.long_term_uc_io import OUTPUT_DATA_FOLDER
 
     m = opt.create_model(network)
+
+    # set prefix
+    n_countries_max_in_prefix = 3
+    if countries is not None:
+        if len(countries) <= n_countries_max_in_prefix:
+            prefix = '-'.join(countries)
+            n_countries = None
+        else:
+            n_countries = len(countries)
+    if n_countries is not None:
+        prefix = '1-country' if n_countries == 1 else f'{n_countries}-countries'
+
     # to avoid suppressing previous runs results
-    run_id = np.random.randint(99)
+    if add_random_suffix:
+        run_id = np.random.randint(99)
+        random_suffix = f'_{run_id}'
+    else:
+        random_suffix = ''
+
     period_start_file = set_period_start_file(year=year, period_start=period_start)
-    file_suffix = f'{n_countries}-countries_{period_start_file}_{run_id}'
+    file_suffix = f'{prefix}_{period_start_file}{random_suffix}'
     m.to_file(Path(f'{OUTPUT_DATA_FOLDER}/model_{file_suffix}.lp'))
 
 

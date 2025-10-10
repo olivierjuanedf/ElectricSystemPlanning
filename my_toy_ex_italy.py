@@ -240,7 +240,7 @@ result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year, n
 from long_term_uc.include.dataset_builder import save_lp_model
 
 save_lp_model(network=pypsa_model.network, year=uc_run_params.selected_target_year,
-              n_countries=n_countries, period_start=uc_run_params.uc_period_start)
+              countries=[country_trigram], period_start=uc_run_params.uc_period_start)
 print(result)  # Note 2nd component of result, the resolution status (optimal?)
 
 # get objective value, and associated optimal decisions / dual variables
