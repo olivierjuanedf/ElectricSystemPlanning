@@ -111,7 +111,7 @@ in VSCode terminal, create a python environment and activate it :
 python -m venv uc-env
 
 
-. uc-env/Script/activate
+. uc-env/Scripts/activate
 
 ```
 
@@ -121,7 +121,7 @@ install requirements
 ```
 
 
-pip install requirements.txt
+pip install -r requirements.txt
 
 
 ```
