@@ -19,81 +19,77 @@ def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources], w
     :param wind_on_shore_data
     :param wind_off_shore_data
     :param solar_pv_data
-    N.B. Better in this function to use CONSTANT names of the different fuel sources to avoid trouble
+    N.B.
+    (i) Better in this function to use CONSTANT names of the different fuel sources to avoid trouble
     in the code (i.e. GEN_UNITS_PYPSA_PARAMS, FuelNames and DummyFuelNames dataclasses = sort of dict.). If you prefer
     to directly use str you can Ctrl+click on the constants below and see the corresponding str (e.g.,
     'name' for GEN_UNITS_PYPSA_PARAMS.name)
+    (ii) When default PyPSA values have to be used for the generator parameters they are not provided below -> e.g.,
+    efficiency=1, committable=False (i.e., not switch on/off integer variables in the model),
+    min_power_pu/max_power_pu=0/1, marginal_cost=0
+    -> see field 'generator_params_default_vals' in file input/long_term_uc/pypsa_static_params.json
     """
     generators = [
         {
-            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_hard-coal', GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.coal,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 2362, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
-            GEN_UNITS_PYPSA_PARAMS.max_power_pu: 1,
+            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_hard-coal',
+            GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.coal,
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 2362,
             GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.coal].primary_cost * 0.37,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.37, GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.37
         },
         {
-            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_gas', GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.gas,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 43672, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
-            GEN_UNITS_PYPSA_PARAMS.max_power_pu: 1,
+            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_gas',
+            GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.gas,
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 43672,
             GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.gas].primary_cost * 0.5,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.5, GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.5
         },
         {
-            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_oil', GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.oil,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 866, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
-            GEN_UNITS_PYPSA_PARAMS.max_power_pu: 1,
+            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_oil',
+            GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.oil,
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 866,
             GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.oil].primary_cost * 0.4,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.4, GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.4
         },
         {
             GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_other-non-renewables',
             GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.other_non_renewables,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 8239, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
-            GEN_UNITS_PYPSA_PARAMS.max_power_pu: 1,
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 8239,
             GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.other_non_renewables].primary_cost * 0.4,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.4, GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.efficiency: 0.4
         },
         {
             GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_wind-on-shore',
             GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.wind,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 14512, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 14512,
             GEN_UNITS_PYPSA_PARAMS.max_power_pu: wind_on_shore_data['value'].values,
-            GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.wind].primary_cost,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 1,
-            GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.wind].primary_cost
         },
         {
             GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_wind-off-shore',
             GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.wind,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 791, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 791,
             GEN_UNITS_PYPSA_PARAMS.max_power_pu: wind_off_shore_data['value'].values,
-            GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.wind].primary_cost,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 1,
-            GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.wind].primary_cost
         },
         {
-            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_solar-pv', GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.solar,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 39954, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
+            GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_solar-pv',
+            GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.solar,
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 39954,
             GEN_UNITS_PYPSA_PARAMS.max_power_pu: solar_pv_data['value'].values,
-            GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.solar].primary_cost,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 1,
-            GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.marginal_cost: fuel_sources[FuelNames.solar].primary_cost
         },
         {
             GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_other-renewables',
             GEN_UNITS_PYPSA_PARAMS.carrier: FuelNames.other_renewables,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 4466, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
-            GEN_UNITS_PYPSA_PARAMS.max_power_pu: 1, GEN_UNITS_PYPSA_PARAMS.marginal_cost: 0,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 1, GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 4466,
         },
         # QUESTION: what is this - very necessary - last fictive asset?
         {
             GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_failure',
             GEN_UNITS_PYPSA_PARAMS.carrier: DummyFuelNames.failure,
-            GEN_UNITS_PYPSA_PARAMS.nominal_power: 1e10, GEN_UNITS_PYPSA_PARAMS.min_power_pu: 0,
-            GEN_UNITS_PYPSA_PARAMS.max_power_pu: 1, GEN_UNITS_PYPSA_PARAMS.marginal_cost: 1e5,
-            GEN_UNITS_PYPSA_PARAMS.efficiency: 1, GEN_UNITS_PYPSA_PARAMS.committable: False
+            GEN_UNITS_PYPSA_PARAMS.nominal_power: 1e10,
+            GEN_UNITS_PYPSA_PARAMS.marginal_cost: 1e5
         }
     ]
     return generators
