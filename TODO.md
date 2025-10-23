@@ -8,12 +8,11 @@ M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les i
 M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
 M7) Tester avec des dates start/end sans hh:mm
 M8) Sortir/tracer les émissions CO2
-M9) Constantes à mettre dans des fichiers de données (json par ex) -> FUEL_SOURCES par ex. 
-(et vérif cohérence avec ProdTypes)
 M10) Dossier de sortie toy model différent de celui Eur model
 M11) Version de Python ok?
 M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
 -> needs Python >= 3.10...
+M13) Vérif cohérence FuelNames avec ProdTypeNames -> utilité des 2 ?
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
