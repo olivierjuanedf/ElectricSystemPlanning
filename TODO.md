@@ -6,7 +6,6 @@ M1) See "TODO[debug]"
 M2) [CR] Voir "TODO[CR]"
 M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les infaisabilités ? (bcp au début... surtout si on leur fait passer les embûches pédagos - ne pas mettre d'actif défaillance par ex !)
 M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
-M6) Ajouter les carriers dans le modèle Pypsa pour faire disparaître les msgs d'erreur "The following storage_units/prod/etc. have carriers which are not defined"
 M7) Tester avec des dates start/end sans hh:mm
 M8) Sortir/tracer les émissions CO2
 M9) Constantes à mettre dans des fichiers de données (json par ex) -> FUEL_SOURCES par ex. 
