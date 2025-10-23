@@ -15,7 +15,7 @@ from long_term_uc.common.long_term_uc_io import get_marginal_prices_file, get_ne
     get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file, \
     get_capacity_figure, get_figure_file_named
 from long_term_uc.include.plotter import PlotParams
-from long_term_uc.utils.basic_utils import lexico_compar_str
+from long_term_uc.utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
 from long_term_uc.utils.df_utils import rename_df_columns
 from long_term_uc.utils.pypsa_utils import get_network_obj_value
 
@@ -241,6 +241,8 @@ class PypsaModel:
             country_bus_name = get_country_bus_name(country=country)
             for gen_unit_data in gen_units_data:
                 pypsa_gen_unit_dict = gen_unit_data.__dict__
+                # remove elements with None values, as all attrs were listed in this dict.
+                pypsa_gen_unit_dict = rm_elts_with_none_val(my_dict=pypsa_gen_unit_dict)
                 logging.debug(f'{country}, {pypsa_gen_unit_dict}')
                 params_ok = check_gen_unit_params(params=pypsa_gen_unit_dict, n_ts=len(self.network.snapshots))
                 if not params_ok:

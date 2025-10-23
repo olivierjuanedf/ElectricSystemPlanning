@@ -26,6 +26,10 @@ def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True,
     return sanitized_str
 
 
+def rm_elts_with_none_val(my_dict: dict) -> dict:
+    return {key: val for key, val in my_dict.items() if val is not None}
+
+
 def get_key_of_val(val, my_dict: dict, dict_name: str = None):
     corresp_keys = []
     for key in my_dict:
