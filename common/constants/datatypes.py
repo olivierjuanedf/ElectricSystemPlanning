@@ -5,10 +5,11 @@ from common.constants.prod_types import ProdTypeNames
 
 @dataclass
 class DatatypesNames:
-    demand: str = 'demand'
     capa_factor: str = 'res_capa-factors'
+    demand: str = 'demand'
     installed_capa: str = 'generation_capas'
     interco_capa: str = 'intercos_capas'
+    net_demand: str = 'net_demand'
 
 
 DATATYPE_NAMES = DatatypesNames()
