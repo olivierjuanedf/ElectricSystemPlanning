@@ -2,11 +2,11 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from long_term_uc.common.constants.datatypes import DatatypesNames
-from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
-from long_term_uc.common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_DAYS_DATA_ANALYSIS_DEFAULT
-from long_term_uc.common.error_msgs import uncoherent_param_stop
-from long_term_uc.utils.type_checker import CheckerNames, apply_params_type_check
+from common.constants.datatypes import DatatypesNames
+from common.constants.extract_eraa_data import ERAADatasetDescr
+from common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_DAYS_DATA_ANALYSIS_DEFAULT
+from common.error_msgs import uncoherent_param_stop
+from utils.type_checker import CheckerNames, apply_params_type_check
 
 
 @dataclass

@@ -2,8 +2,6 @@ from pypsa import Network
 import numpy as np
 from typing import Dict
 
-from long_term_uc.common.constants.optimisation import OPTIM_RESOL_STATUS
-
 
 def get_generators_opt_p(network: Network) -> Dict[str, np.array]:
     generator_names = list(network.generators_t.p.columns)

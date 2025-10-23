@@ -11,7 +11,7 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 warnings.simplefilter(action="ignore", category=DeprecationWarning)
 
 # use global constant names of different prod. types to be sure of extracting data wo any pb  
-from long_term_uc.common.constants.prod_types import ProdTypeNames
+from common.constants.prod_types import ProdTypeNames
 
 AGG_PROD_TYPES_DEF = {
     'batteries': [ProdTypeNames.batteries],
@@ -56,7 +56,7 @@ II) Initialize a UCRunParams object
 # N.B. UC = Unit Commitment, i.e. supply-demand equilibrium problem 
 # - for given electricity generation capacities
 from datetime import datetime, timedelta
-from long_term_uc.common.uc_run_params import UCRunParams
+from common.uc_run_params import UCRunParams
 
 # Set start and end date corresponding to the period to be simulated
 # ATTENTION: uc_period_end not included -> here period {1900/1/1 00:00, 1900/1/1 01:00, ..., 1900/1/13 23:00}
@@ -72,10 +72,10 @@ uc_run_params = UCRunParams(selected_countries=selected_countries, selected_targ
                             uc_period_end=uc_period_end)
 
 # initialize dataset object
-from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
-from long_term_uc.include.dataset import Dataset
-from long_term_uc.utils.read import check_and_load_json_file
-from long_term_uc.common.long_term_uc_io import get_json_fixed_params_file
+from common.constants.extract_eraa_data import ERAADatasetDescr
+from include.dataset import Dataset
+from utils.read import check_and_load_json_file
+from common.long_term_uc_io import get_json_fixed_params_file
 
 json_fixed_params_file = get_json_fixed_params_file()
 json_params_fixed = check_and_load_json_file(json_file=json_fixed_params_file,
@@ -103,7 +103,7 @@ eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                 aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
 
 # III.2) In this case, decompose aggreg. CF data into three sub-dicts (for following ex. to be more explicit)
-from long_term_uc.utils.df_utils import selec_in_df_based_on_list
+from utils.df_utils import selec_in_df_based_on_list
 
 solar_pv = {
     country: selec_in_df_based_on_list(df=eraa_dataset.agg_cf_data[country], selec_col='production_type_agg',
@@ -125,11 +125,11 @@ IV) Build PyPSA model - with unique country (Italy here)
 print('Initialize PyPSA network')
 # Here snapshots is used to defined the temporal period associated to considered UC model
 # -> for ex. as a list of indices (other formats; like data ranges can be used instead) 
-from long_term_uc.include.dataset_builder import PypsaModel
+from include.dataset_builder import PypsaModel
 
 unique_country = 'italy'
 # IV.2.1) For brevity, set country trigram as the 'id' of this zone in following model definition (and observed outputs)
-from long_term_uc.include.dataset_builder import set_country_trigram
+from include.dataset_builder import set_country_trigram
 
 country_trigram = set_country_trigram(country=country)
 
@@ -157,7 +157,7 @@ print(pypsa_model.network)
 
 # IV.2) Add bus for considered country
 # N.B. Italy coordinates set randomly! (not useful in the calculation that will be done this week)
-from long_term_uc.toy_model_params.italy_parameters import gps_coords
+from toy_model_params.italy_parameters import gps_coords
 
 coordinates = {unique_country: gps_coords}
 
@@ -176,8 +176,8 @@ pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # fictive alternative values instead -> plenty infos on Internet on this... sometimes of 'varying' quality! 
 # (keeping format of dataclass - sort of enriched dictionary -, just change values in 
 # file long_term_uc/common/fuel_sources.py)
-from long_term_uc.common.fuel_sources import FUEL_SOURCES, DUMMY_FUEL_SOURCES, DummyFuelNames
-from long_term_uc.toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
+from common.fuel_sources import FUEL_SOURCES, DUMMY_FUEL_SOURCES, DummyFuelNames
+from toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
 
 # IV.4.1) get generators to be set on the unique considered bus here
 # -> from long_term_uc.toy_model_params.italy_parameters.py script
@@ -219,7 +219,7 @@ pypsa_model.add_loads(demand=eraa_dataset.demand, carrier_name=DummyFuelNames.lo
 print(f'PyPSA network main properties: {pypsa_model.network}')
 # IV.6.2) And plot it. Surely better when having multiple buses (countries)!!
 # plot network
-from long_term_uc.include.plotter import PlotParams
+from include.plotter import PlotParams
 
 plot_params = PlotParams()
 plot_params.read_and_check()
@@ -237,14 +237,14 @@ result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year, n
 # the equations associated to the solved problem
 # -> will be saved in output folder output/long_term_uc/data
 # you can observe if you find the equations corresponding to the UC problem modeled
-from long_term_uc.include.dataset_builder import save_lp_model
+from include.dataset_builder import save_lp_model
 
 save_lp_model(network=pypsa_model.network, year=uc_run_params.selected_target_year,
               countries=[country_trigram], period_start=uc_run_params.uc_period_start)
 print(result)  # Note 2nd component of result, the resolution status (optimal?)
 
 # get objective value, and associated optimal decisions / dual variables
-from long_term_uc.utils.pypsa_utils import OPTIM_RESOL_STATUS
+from common.constants.optimisation import OPTIM_RESOL_STATUS
 
 pypsa_opt_resol_status = OPTIM_RESOL_STATUS.optimal
 # if optimal resolution status, save output data and plot associated figures

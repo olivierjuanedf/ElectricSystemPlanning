@@ -4,17 +4,16 @@ import logging
 from typing import Dict, List, Tuple
 import pandas as pd
 
-from long_term_uc.common.constants.aggreg_operations import AggregOpeNames
-from long_term_uc.common.constants.datatypes import DATATYPE_NAMES
-from long_term_uc.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
-from long_term_uc.common.error_msgs import print_errors_list
-from long_term_uc.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
+from common.constants.aggreg_operations import AggregOpeNames
+from common.constants.datatypes import DATATYPE_NAMES
+from common.error_msgs import print_errors_list
+from common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER
-from long_term_uc.common.uc_run_params import UCRunParams
-from long_term_uc.include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, get_val_of_agg_pt_in_df, set_gen_unit_name
-from long_term_uc.utils.basic_utils import get_intersection_of_lists
-from long_term_uc.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp
-from long_term_uc.utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
+from common.uc_run_params import UCRunParams
+from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, get_val_of_agg_pt_in_df, set_gen_unit_name
+from utils.basic_utils import get_intersection_of_lists
+from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp
+from utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
     set_aggreg_cf_prod_types_data
 
 

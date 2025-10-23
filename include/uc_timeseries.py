@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 import numpy as np
 import pandas as pd
 
-from long_term_uc.utils.plot import simple_plot
+from utils.plot import simple_plot
 
 
 def set_uc_ts_name(full_data_type: tuple, country: str, year: int, climatic_year: int):

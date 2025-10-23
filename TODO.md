@@ -2,6 +2,7 @@
 TODO
 
 MAIN actions (M)
+M1) See "TODO[debug]"
 M2) [CR] Voir "TODO[CR]"
 M3) Restructurer l'arborescence en enlevant le sous-dossier long_term_uc (présent à l'origine car il y avait aussi un autre sous-dossier)
 M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les infaisabilités ? (bcp au début... surtout si on leur fait passer les embûches pédagos - ne pas mettre d'actif défaillance par ex !)
@@ -13,6 +14,7 @@ M9) Constantes à mettre dans des fichiers de données (json par ex) -> FUEL_SOU
 (et vérif cohérence avec ProdTypes)
 M10) Dossier de sortie toy model différent de celui Eur model
 M11) Version de Python ok?
+M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7

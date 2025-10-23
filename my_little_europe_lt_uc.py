@@ -8,14 +8,14 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 import logging
 
-from long_term_uc.common.fuel_sources import FUEL_SOURCES, DUMMY_FUEL_SOURCES, DummyFuelNames
-from long_term_uc.common.logger import init_logger, stop_logger
-from long_term_uc.common.long_term_uc_io import OUTPUT_FOLDER_LT
-from long_term_uc.include.dataset_builder import PypsaModel
-from long_term_uc.utils.basic_utils import get_period_str
-from long_term_uc.include.dataset import Dataset
-from long_term_uc.utils.pypsa_utils import OPTIM_RESOL_STATUS
-from long_term_uc.utils.read import read_and_check_uc_run_params, read_and_check_pypsa_static_params
+from common.fuel_sources import FUEL_SOURCES, DUMMY_FUEL_SOURCES, DummyFuelNames
+from common.logger import init_logger, stop_logger
+from common.long_term_uc_io import OUTPUT_FOLDER_LT
+from include.dataset_builder import PypsaModel
+from utils.basic_utils import get_period_str
+from include.dataset import Dataset
+from common.constants.optimisation import OPTIM_RESOL_STATUS
+from utils.read import read_and_check_uc_run_params, read_and_check_pypsa_static_params
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
 
@@ -79,7 +79,7 @@ pypsa_model.add_loads(demand=eraa_dataset.demand, carrier_name=DummyFuelNames.lo
 pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
 logging.info(f'PyPSA network main properties: {pypsa_model.network}')
 # plot network
-from long_term_uc.include.plotter import PlotParams
+from include.plotter import PlotParams
 
 plot_params = PlotParams()
 plot_params.read_and_check()

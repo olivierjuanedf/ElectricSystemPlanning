@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple, Union
 
-from long_term_uc.common.long_term_uc_io import INTERCO_STR_SEP
+from common.long_term_uc_io import INTERCO_STR_SEP
 
 
 def set_interco_to_tuples(interco_names: str, return_corresp: bool = False) \

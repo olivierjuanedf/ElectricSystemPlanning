@@ -14,7 +14,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
 
 # use global constant names of different prod. types to be sure of extracting data wo any pb  
-from long_term_uc.common.constants.prod_types import ProdTypeNames
+from common.constants.prod_types import ProdTypeNames
 
 AGG_PROD_TYPES_DEF = {
     'batteries': [ProdTypeNames.batteries],

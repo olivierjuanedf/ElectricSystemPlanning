@@ -2,8 +2,8 @@ import os
 from dataclasses import dataclass
 from typing import Dict, List
 
-from long_term_uc.utils.read import check_and_load_json_file
-from long_term_uc.common.long_term_uc_io import INPUT_FUNC_PARAMS_SUBFOLDER
+from utils.read import check_and_load_json_file
+from common.long_term_uc_io import INPUT_FUNC_PARAMS_SUBFOLDER
 
 
 @dataclass

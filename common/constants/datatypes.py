@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from long_term_uc.common.constants.prod_types import ProdTypeNames
+from common.constants.prod_types import ProdTypeNames
 
 
 @dataclass

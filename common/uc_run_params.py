@@ -3,13 +3,13 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
 import logging
 
-from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr
-from long_term_uc.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
+from common.constants.extract_eraa_data import ERAADatasetDescr
+from common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
-from long_term_uc.common.constants.uc_json_inputs import ALL_KEYWORD
-from long_term_uc.common.error_msgs import uncoherent_param_stop
-from long_term_uc.utils.basic_utils import get_period_str, are_lists_eq
-from long_term_uc.utils.eraa_utils import set_interco_to_tuples
+from common.constants.uc_json_inputs import ALL_KEYWORD
+from common.error_msgs import uncoherent_param_stop
+from utils.basic_utils import get_period_str, are_lists_eq
+from utils.eraa_utils import set_interco_to_tuples
 
 
 def check_unique_int_value(param_name: str, param_value) -> Optional[str]:

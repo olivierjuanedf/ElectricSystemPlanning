@@ -2,10 +2,10 @@ from typing import List
 import pandas as pd
 from datetime import datetime
 
-from long_term_uc.common.constants.aggreg_operations import AggregOpeNames
-from long_term_uc.common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT
-from long_term_uc.utils.basic_utils import str_sanitizer
-from long_term_uc.utils.df_utils import cast_df_col_as_date, concatenate_dfs, selec_in_df_based_on_list, \
+from common.constants.aggreg_operations import AggregOpeNames
+from common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT
+from utils.basic_utils import str_sanitizer
+from utils.df_utils import cast_df_col_as_date, concatenate_dfs, selec_in_df_based_on_list, \
     get_subdf_from_date_range
 
 

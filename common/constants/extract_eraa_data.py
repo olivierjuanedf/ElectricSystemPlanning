@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union, Optional, Literal
 
-from long_term_uc.utils.basic_utils import is_str_bool
-from long_term_uc.utils.eraa_utils import set_interco_to_tuples
-from long_term_uc.utils.type_checker import apply_params_type_check
+from utils.basic_utils import is_str_bool
+from utils.eraa_utils import set_interco_to_tuples
+from utils.type_checker import apply_params_type_check
 
 
 INTERCO_STR_SEP = '2'

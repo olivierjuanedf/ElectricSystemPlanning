@@ -2,17 +2,17 @@ import json
 from typing import List
 import logging
 
-from long_term_uc.common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
+from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
         get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
             get_json_data_analysis_params_file
-from long_term_uc.common.constants.extract_eraa_data import ERAADatasetDescr, \
+from common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
-from long_term_uc.common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
-from long_term_uc.common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
-from long_term_uc.common.uc_run_params import UCRunParams
-from long_term_uc.include.dataset_analyzer import DataAnalysis
-from long_term_uc.utils.dir_utils import check_file_existence
+from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
+from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
+from common.uc_run_params import UCRunParams
+from include.dataset_analyzer import DataAnalysis
+from utils.dir_utils import check_file_existence
 
 
 def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:

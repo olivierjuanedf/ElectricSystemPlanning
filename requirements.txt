@@ -1,6 +1,7 @@
 ipykernel
 linopy
 highspy
+numpy
 pandas
 matplotlib
 matplotlib-inline

@@ -8,16 +8,16 @@ from dataclasses import dataclass
 import pypsa
 import matplotlib.pyplot as plt
 
-from long_term_uc.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
-from long_term_uc.common.error_msgs import print_errors_list
-from long_term_uc.common.fuel_sources import FuelSources, DummyFuelNames
-from long_term_uc.common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
+from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
+from common.error_msgs import print_errors_list
+from common.fuel_sources import FuelSources, DummyFuelNames
+from common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
     get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file, \
     get_capacity_figure, get_figure_file_named
-from long_term_uc.include.plotter import PlotParams
-from long_term_uc.utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
-from long_term_uc.utils.df_utils import rename_df_columns
-from long_term_uc.utils.pypsa_utils import get_network_obj_value
+from include.plotter import PlotParams
+from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
+from utils.df_utils import rename_df_columns
+from utils.pypsa_utils import get_network_obj_value
 
 
 @dataclass
@@ -553,7 +553,7 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
                   n_countries: int = None, add_random_suffix: bool = False):
     logging.info('Save lp model')
     import pypsa.optimization as opt
-    from long_term_uc.common.long_term_uc_io import OUTPUT_DATA_FOLDER
+    from common.long_term_uc_io import OUTPUT_DATA_FOLDER
 
     m = opt.create_model(network)
 

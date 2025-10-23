@@ -2,9 +2,9 @@ from typing import Dict, List, Union
 
 import pandas as pd
 
-from long_term_uc.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
-from long_term_uc.common.fuel_sources import FuelSources, FuelNames, DummyFuelNames
-from long_term_uc.include.dataset_builder import GenerationUnitData
+from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
+from common.fuel_sources import FuelSources, FuelNames, DummyFuelNames
+from include.dataset_builder import GenerationUnitData
 
 GENERATOR_DICT_TYPE = Dict[str, Union[float, int, str]]
 gps_coords = (12.5674, 41.8719)

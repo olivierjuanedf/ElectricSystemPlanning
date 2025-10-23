@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from long_term_uc.common.fuel_sources import FuelSources
+from common.fuel_sources import FuelSources
 
 
 def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources],
