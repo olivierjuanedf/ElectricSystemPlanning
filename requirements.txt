@@ -4,7 +4,7 @@ highspy
 pandas
 matplotlib
 matplotlib-inline
-pypsa
+pypsa==0.32.2
 cartopy
 Requests
 gurobipy
