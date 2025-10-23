@@ -77,7 +77,7 @@ for elt_analysis in data_analyses:
     elif elt_analysis.analysis_type in [ANALYSIS_TYPES.extract, ANALYSIS_TYPES.extract_to_mat]:
         to_matrix = True if elt_analysis == ANALYSIS_TYPES.extract_to_mat else False
         # TODO[debug]: to_matrix_format not an arg of this method..., complem_columns missing...
-        uc_timeseries.to_csv(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, to_matrix_format=to_matrix)
+        uc_timeseries.to_csv(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER)
 
 logging.info('THE END of ERAA (input) data analysis!')
 stop_logger()

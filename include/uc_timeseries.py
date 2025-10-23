@@ -27,7 +27,7 @@ class UCTimeseries:
         if unit is not None:
             self.unit = unit
 
-    def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray]]):
+    def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray]] = None):
         if self.dates is None:
             idx_col = 'time_slot'
             idx_range = np.arange(len(self.values)) + 1
@@ -35,10 +35,12 @@ class UCTimeseries:
             idx_col = 'date'
             idx_range = self.dates
         values_dict = {idx_col: idx_range, 'value': self.values}
-        for col_name, col_vals in complem_columns.items():
-            values_dict[col_name] = col_vals
+        if complem_columns is not None:
+            for col_name, col_vals in complem_columns.items():
+                values_dict[col_name] = col_vals
         df_to_csv = pd.DataFrame(values_dict)
-        
+        output_file = os.path.join(output_dir, f'{self.name.lower()}_uc-timeseries.csv')
+        df_to_csv.to_csv(output_file)
 
     def set_plot_ylabel(self) -> str:
         ylabel = self.data_type[0].capitalize()
@@ -69,8 +71,7 @@ class UCTimeseries:
             xlabel = 'Duration (%)'
         else:
             xlabel = 'Duration (nber of time-slots - hours)'
-        name_label = self.name.capitalize()
-        fig_file = os.path.join(output_dir, f'{name_label.lower()}_duration_curve.png')
+        fig_file = os.path.join(output_dir, f'{self.name.lower()}_duration_curve.png')
         simple_plot(x=duration_curve, y=vals_desc_order, fig_file=fig_file,
                     title=f'{self.set_plot_title()} duration curve', xlabel=xlabel, 
                     ylabel=self.set_plot_ylabel())
