@@ -211,7 +211,7 @@ class PypsaModel:
     def init_pypsa_network(self, date_idx: pd.Index, date_range: pd.DatetimeIndex = None):
         # TODO: type date_idx, date_range
         logging.info('Initialize PyPSA network')
-        self.network = pypsa.Network(snapshots=date_idx)
+        self.network = pypsa.Network(name=self.name, snapshots=date_idx)
         if date_range is not None:
             self.network.set_snapshots(date_range[:-1])
 
