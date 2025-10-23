@@ -1,12 +1,12 @@
 from typing import Dict, List
 
-from common.fuel_sources import FuelSources
+from common.fuel_sources import FuelSource
 
 
 gps_coords = (0, 0)  # Your choice!
 
 
-def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources],
+def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSource],
                    wind_on_shore_data, wind_off_shore_data, solar_pv_data) -> List[dict]:
     """
     Get list of generators to be set on a given node of a PyPSA model

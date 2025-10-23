@@ -46,6 +46,7 @@ class ComplemDataSources:
 LT_UC_COMMON_FOLDER = 'long_term_uc/common'
 COLUMN_NAMES = ColumnNames()
 COMPLEM_DATA_SOURCES = ComplemDataSources()
+DATA_FOLDER = 'data'
 DATE_FORMAT_FILE = '%Y-%m-%d'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 DATE_FORMAT_PRINT = '%Y/%m/%d'
@@ -54,8 +55,9 @@ DT_SUBFOLDERS = DtSubfolders()
 FILES_FORMAT = FilesFormat()
 GEN_CAPA_SUBDT_COLS = ['power_capacity', 'power_capacity_turbine', 'power_capacity_pumping', 
                        'power_capacity_injection', 'power_capacity_offtake', 'energy_capacity']
-INPUT_ERAA_FOLDER = 'data/ERAA_2023-2'
+INPUT_ERAA_FOLDER = f'{DATA_FOLDER}/ERAA_2023-2'
 INPUT_FOLDER = 'input'
+INPUT_FUEL_SOURCES_FOLDER = f'{DATA_FOLDER}/fuel_sources'
 INPUT_LT_UC_SUBFOLDER = f'{INPUT_FOLDER}/long_term_uc'
 INPUT_LT_UC_COUNTRY_SUBFOLDER = f'{INPUT_LT_UC_SUBFOLDER}/countries'
 INPUT_FUNC_PARAMS_SUBFOLDER = f'{INPUT_FOLDER}/functional_params'
@@ -102,6 +104,10 @@ def get_json_pypsa_static_params_file() -> str:
 
 def get_json_data_analysis_params_file() -> str:
     return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, 'data-analysis_params_to-be-modif.json') 
+
+
+def get_json_fuel_sources_file() -> str:
+    return os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'params.json')
 
 
 def get_network_figure() -> str:

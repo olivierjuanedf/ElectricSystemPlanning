@@ -3,14 +3,14 @@ from typing import Dict, List, Union
 import pandas as pd
 
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
-from common.fuel_sources import FuelSources, FuelNames, DummyFuelNames
+from common.fuel_sources import FuelSource, FuelNames, DummyFuelNames
 from include.dataset_builder import GenerationUnitData
 
 GENERATOR_DICT_TYPE = Dict[str, Union[float, int, str]]
 gps_coords = (12.5674, 41.8719)
 
 
-def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSources], wind_on_shore_data: pd.DataFrame,
+def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSource], wind_on_shore_data: pd.DataFrame,
                    wind_off_shore_data: pd.DataFrame, solar_pv_data: pd.DataFrame) -> List[GENERATOR_DICT_TYPE]:
     """
     Get list of generators to be set on a given node of a PyPSA model

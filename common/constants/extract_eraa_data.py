@@ -119,6 +119,7 @@ class ERAADatasetDescr:
         # replace '.' by '-' in edition
         self.eraa_edition = self.eraa_edition.replace('.', '-')
 
+
 ALL_UNITS_KEY = 'all_units'
 
 
@@ -126,6 +127,7 @@ ALL_UNITS_KEY = 'all_units'
 class PypsaStaticParams:
     # per aggreg. prod. unit list of minimal parameters for PyPSA generators to be built
     min_unit_params_per_agg_pt: Dict[str, List[str]]
+    generator_params_default_vals: Dict[str, Union[str, float, int]]
 
     def check_types(self):
         """

@@ -176,12 +176,13 @@ pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # fictive alternative values instead -> plenty infos on Internet on this... sometimes of 'varying' quality! 
 # (keeping format of dataclass - sort of enriched dictionary -, just change values in 
 # file long_term_uc/common/fuel_sources.py)
-from common.fuel_sources import FUEL_SOURCES, DUMMY_FUEL_SOURCES, DummyFuelNames
+from common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, DummyFuelNames
 from toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
+fuel_sources = set_fuel_sources_from_json()
 
 # IV.4.1) get generators to be set on the unique considered bus here
 # -> from long_term_uc.toy_model_params.italy_parameters.py script
-generators = get_generators(country_trigram=country_trigram, fuel_sources=FUEL_SOURCES,
+generators = get_generators(country_trigram=country_trigram, fuel_sources=fuel_sources,
                             wind_on_shore_data=wind_on_shore[country], wind_off_shore_data=wind_off_shore[country],
                             solar_pv_data=solar_pv[country])
 # set generation units data from this list
@@ -190,11 +191,10 @@ eraa_dataset.set_generation_units_data(gen_units_data={unique_country: generatio
 
 # IV.4.2) Loop over previous list of dictionaries to add each of the generators to PyPSA network
 # [Coding trick] ** used to 'unpack' the dictionary as named parameters
-all_fuel_sources = FUEL_SOURCES
-all_fuel_sources |= DUMMY_FUEL_SOURCES
+fuel_sources |= DUMMY_FUEL_SOURCES
 
-pypsa_model.add_energy_carriers(fuel_sources=all_fuel_sources)
-pypsa_model.add_per_bus_energy_carriers(fuel_sources=all_fuel_sources)
+pypsa_model.add_energy_carriers(fuel_sources=fuel_sources)
+pypsa_model.add_per_bus_energy_carriers(fuel_sources=fuel_sources)
 pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 
 # [Multiple-count. ext., start] Idem but adding the different generators to the bus (country) they are connected to

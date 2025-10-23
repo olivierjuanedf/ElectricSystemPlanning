@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from common.error_msgs import print_errors_list
-from common.fuel_sources import FuelSources, DummyFuelNames
+from common.fuel_sources import FuelSource, DummyFuelNames
 from common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
     get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file, \
     get_capacity_figure, get_figure_file_named
@@ -191,10 +191,11 @@ OUTPUT_DATE_COL = 'date'
 def check_gen_unit_params(params: dict, n_ts: int) -> bool:
     # check that max and min power pu are either constant or of the length of considered horizon
     for param_name in [GEN_UNITS_PYPSA_PARAMS.min_power_pu, GEN_UNITS_PYPSA_PARAMS.max_power_pu]:
-        param_value = params[param_name]
-        if isinstance(param_value, list) or isinstance(param_value, np.ndarray):
-            if not len(param_value) == n_ts:
-                return False
+        if param_name in params:
+            param_value = params[param_name]
+            if isinstance(param_value, list) or isinstance(param_value, np.ndarray):
+                if not len(param_value) == n_ts:
+                    return False
     return True
 
 
@@ -222,13 +223,13 @@ class PypsaModel:
             self.network.add(GEN_UNITS_PYPSA_PARAMS.bus.capitalize(), name=f'{country_bus_name}',
                              x=gps_coords[0], y=gps_coords[1], carrier=f'{country_bus_name}')
 
-    def add_energy_carriers(self, fuel_sources: Dict[str, FuelSources]):
+    def add_energy_carriers(self, fuel_sources: Dict[str, FuelSource]):
         logging.info('Add energy carriers')
         for carrier in list(fuel_sources.keys()):
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=carrier,
                              co2_emissions=fuel_sources[carrier].co2_emissions / 1000)
 
-    def add_per_bus_energy_carriers(self, fuel_sources: Dict[str, FuelSources]):
+    def add_per_bus_energy_carriers(self, fuel_sources: Dict[str, FuelSource]):
         all_bus_names = self.get_bus_names()
         logging.info(f'Add per-bus energy carriers for: {all_bus_names}')
         for bus_name in all_bus_names:
