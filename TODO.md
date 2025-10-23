@@ -13,13 +13,13 @@ M11) Version de Python ok?
 M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
 -> needs Python >= 3.10...
 M13) Vérif cohérence FuelNames avec ProdTypeNames -> utilité des 2 ?
+M14) Virer les gitignore qui traînent...
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
 DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les étudiants sur Excel ?
-Monotone de demande (résiduelle)
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)

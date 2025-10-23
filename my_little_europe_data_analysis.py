@@ -54,8 +54,7 @@ for elt_analysis in data_analyses:
     elif elt_analysis.data_type == DATATYPE_NAMES.capa_factor:
         current_df = eraa_dataset.agg_cf_data[elt_analysis.country]
     elif elt_analysis.data_type == DATATYPE_NAMES.net_demand:
-        # TODO[DA2]
-        current_df = 1
+        current_df = eraa_dataset.net_demand[elt_analysis.country]
     else:
         current_df = None
     try:

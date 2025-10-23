@@ -16,6 +16,15 @@
       "country": "italy",
       "year": 2025,
       "climatic_year": 1989
+    },
+    {
+      "analysis_type": "plot",
+      "data_type": "net_demand",
+      "country": "france",
+      "year": 2025,
+      "climatic_year": 1985,
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29"
     }
   ]
 }

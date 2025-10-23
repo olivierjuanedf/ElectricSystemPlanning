@@ -25,4 +25,4 @@ PROD_TYPES_PER_DT = {DATATYPE_NAMES.capa_factor:
                       ProdTypeNames.solar_pv, ProdTypeNames.solar_thermal,
                       ProdTypeNames.wind_offshore, ProdTypeNames.wind_onshore]
                       }
-UNITS_PER_DT = {DATATYPE_NAMES.demand: 'mw', DATATYPE_NAMES.capa_factor: '%'}
+UNITS_PER_DT = {DATATYPE_NAMES.demand: 'mw', DATATYPE_NAMES.net_demand: 'mw', DATATYPE_NAMES.capa_factor: '%'}

@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from dataclasses import dataclass
 import logging
 from typing import Dict, List, Tuple
@@ -10,7 +11,8 @@ from common.error_msgs import print_errors_list
 from common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER
 from common.uc_run_params import UCRunParams
-from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, get_val_of_agg_pt_in_df, set_gen_unit_name
+from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, get_val_of_agg_pt_in_df, \
+    set_gen_unit_name
 from utils.basic_utils import get_intersection_of_lists
 from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp
 from utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
@@ -73,8 +75,15 @@ class Dataset:
         decimal_sep = FILES_FORMAT.decimal_sep
 
         self.demand = {}
+        self.net_demand = {}
         self.agg_cf_data = {}
         self.agg_gen_capa_data = {}
+
+        dts_tb_read = deepcopy(datatypes_selec)
+        # datatypes to be added to list of read ones, to be able to obtain net demand
+        if DATATYPE_NAMES.net_demand in datatypes_selec:
+            dts_tb_read.extend([DATATYPE_NAMES.demand, DATATYPE_NAMES.installed_capa, DATATYPE_NAMES.capa_factor])
+            dts_tb_read = list(set(dts_tb_read))
 
         n_spaces_msg = 2
 
@@ -87,7 +96,7 @@ class Dataset:
             # [Coding trick] f'{year}_{country}' directly fullfill string with value of year 
             # and country variables (f-string completion)
             current_suffix = f'{year}_{country}'  # common suffix to all ERAA data files
-            if DATATYPE_NAMES.demand in datatypes_selec:
+            if DATATYPE_NAMES.demand in dts_tb_read:
                 # get demand
                 logging.info('Get demand')
                 if self.is_stress_test:
@@ -97,14 +106,18 @@ class Dataset:
                 demand_file = f'{demand_folder_full}/{demand_prefix}_{current_suffix}.csv'
                 current_df_demand = pd.read_csv(demand_file, sep=column_sep, decimal=decimal_sep)
                 # then keep only selected period date range and climatic year
-                self.demand[country] = filter_input_data(df=current_df_demand, date_col=date_col,
-                                                        climatic_year_col=climatic_year_col, period_start=period_start,
-                                                        period_end=period_end, climatic_year=climatic_year)
+                current_df_demand = filter_input_data(df=current_df_demand, date_col=date_col,
+                                                      climatic_year_col=climatic_year_col, period_start=period_start,
+                                                      period_end=period_end, climatic_year=climatic_year)
+                # if demand selected add it to dataset
+                if DATATYPE_NAMES.demand in datatypes_selec:
+                    self.demand[country] = current_df_demand
 
-            if DATATYPE_NAMES.capa_factor in datatypes_selec:
+            if DATATYPE_NAMES.capa_factor in dts_tb_read:
                 # get RES capacity factor data
                 logging.info('Get RES capacity factors')
-                self.agg_cf_data[country] = None
+                if DATATYPE_NAMES.capa_factor in datatypes_selec:
+                    self.agg_cf_data[country] = None
                 df_res_cf_list = []
                 if subdt_selec is not None:
                     agg_prod_types_tb_read = \
@@ -122,59 +135,75 @@ class Dataset:
                                 res_cf_folder_full = f'{res_cf_folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}'
                             else:
                                 res_cf_folder_full = f'{res_cf_folder}'
-                            cf_filename = f'{res_cf_prefix}_{prod_type}_{current_suffix}.csv' 
+                            cf_filename = f'{res_cf_prefix}_{prod_type}_{current_suffix}.csv'
                             cf_data_file = f'{res_cf_folder_full}/{cf_filename}'
                             if not os.path.exists(cf_data_file):
-                                logging.warning(2*n_spaces_msg * ' ' + f'RES capa. factor data file does not exist: {prod_type} not accounted for here')
+                                logging.warning(
+                                    2 * n_spaces_msg * ' ' + f'RES capa. factor data file does not exist: '
+                                                             f'{prod_type} not accounted for here')
                             else:
-                                logging.debug(2*n_spaces_msg * ' ' + f'* Prod. type: {prod_type}')
-                                current_df_res_cf = pd.read_csv(cf_data_file, sep=column_sep, decimal=decimal_sep) 
+                                logging.debug(2 * n_spaces_msg * ' ' + f'* Prod. type: {prod_type}')
+                                current_df_res_cf = pd.read_csv(cf_data_file, sep=column_sep, decimal=decimal_sep)
                                 current_df_res_cf = \
                                     filter_input_data(df=current_df_res_cf, date_col=date_col,
-                                                    climatic_year_col=climatic_year_col, 
-                                                    period_start=period_start, period_end=period_end, 
-                                                    climatic_year=climatic_year)
+                                                      climatic_year_col=climatic_year_col,
+                                                      period_start=period_start, period_end=period_end,
+                                                      climatic_year=climatic_year)
                                 if len(current_df_res_cf) == 0:
-                                    logging.warning(2*n_spaces_msg * ' ' + f'No RES capa. factor data for prod. type {prod_type} and climatic year {climatic_year}')
+                                    logging.warning(
+                                        2 * n_spaces_msg * ' ' + f'No RES capa. factor data for prod. type '
+                                                                 f'{prod_type} and climatic year {climatic_year}')
                                 else:
                                     # add column with production type (for later aggreg.)
                                     current_df_res_cf[prod_type_agg_col] = agg_prod_type
                                     current_agg_pt_df_res_cf_list.append(current_df_res_cf)
                         if len(current_agg_pt_df_res_cf_list) == 0:
-                            logging.warning(n_spaces_msg * ' ' + f'No data available for aggregate RES prod. type {agg_prod_type} -> not accounted for in UC model here')
+                            logging.warning(
+                                n_spaces_msg * ' ' + f'No data available for aggregate RES prod. type '
+                                                     f'{agg_prod_type} -> not accounted for in UC model here')
                         else:
                             df_res_cf_list.extend(current_agg_pt_df_res_cf_list)
 
                 # concatenate, aggreg. over prod type of same aggreg. type and avg
                 if len(df_res_cf_list) == 0:
-                    logging.warning(n_spaces_msg * ' ' + f'No RES data available for country {country} -> not accounted for in UC model here')
+                    logging.warning(
+                        n_spaces_msg * ' ' + f'No RES data available for country {country} '
+                                             f'-> not accounted for in UC model here')
+                    agg_cf_data_read = None
                 else:
-                    self.agg_cf_data[country] = \
-                        set_aggreg_cf_prod_types_data(df_cf_list=df_res_cf_list, pt_agg_col=prod_type_agg_col, date_col=date_col,
-                                                      val_col=value_col)
+                    agg_cf_data_read = (
+                        set_aggreg_cf_prod_types_data(df_cf_list=df_res_cf_list, pt_agg_col=prod_type_agg_col,
+                                                      date_col=date_col, val_col=value_col))
+                    if DATATYPE_NAMES.capa_factor in datatypes_selec:
+                        self.agg_cf_data[country] = agg_cf_data_read
 
-            if DATATYPE_NAMES.installed_capa in datatypes_selec:            
+            if DATATYPE_NAMES.installed_capa in dts_tb_read:
                 # get installed generation capacity data
-                logging.info('Get installed generation capacities (unique file per country and year, with all prod. types in it)')
+                logging.info(
+                    'Get installed generation capacities (unique file per country and year, with all prod. types in it)')
                 gen_capa_data_file = f'{gen_capas_folder}/{gen_capas_prefix}_{current_suffix}.csv'
                 if not os.path.exists(gen_capa_data_file):
                     logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
                 else:
                     current_df_gen_capa = pd.read_csv(gen_capa_data_file, sep=column_sep, decimal=decimal_sep)
                     # Keep sanitize prod. types col values
-                    current_df_gen_capa[prod_type_col] = current_df_gen_capa[prod_type_col].apply(gen_capa_pt_str_sanitizer)
+                    current_df_gen_capa[prod_type_col] = current_df_gen_capa[prod_type_col].apply(
+                        gen_capa_pt_str_sanitizer)
                     # Keep only selected aggreg. prod. types
                     current_df_gen_capa = \
                         set_aggreg_col_based_on_corresp(df=current_df_gen_capa, col_name=prod_type_col,
-                                                        created_agg_col_name=prod_type_agg_col, val_cols=GEN_CAPA_SUBDT_COLS, 
-                                                        agg_corresp=aggreg_pt_gen_capa_def, common_aggreg_ope=AggregOpeNames.sum)
+                                                        created_agg_col_name=prod_type_agg_col,
+                                                        val_cols=GEN_CAPA_SUBDT_COLS,
+                                                        agg_corresp=aggreg_pt_gen_capa_def,
+                                                        common_aggreg_ope=AggregOpeNames.sum)
                     current_df_gen_capa = \
                         selec_in_df_based_on_list(df=current_df_gen_capa, selec_col=prod_type_agg_col,
-                                                selec_vals=selec_agg_prod_types[country])
+                                                  selec_vals=selec_agg_prod_types[country])
                     if country in power_capacities:
                         for k, v in power_capacities[country].items():
-                            current_df_gen_capa.loc[current_df_gen_capa['production_type_agg']==k, 'power_capacity'] = v
-                    
+                            current_df_gen_capa.loc[
+                                current_df_gen_capa['production_type_agg'] == k, 'power_capacity'] = v
+
                     if 'failure' in selec_agg_prod_types[country]:
                         failure_df = pd.DataFrame.from_dict({
                             'production_type_agg': ['failure'],
@@ -186,19 +215,33 @@ class Dataset:
                             'energy_capacity': [0.0]
                         })
                         current_df_gen_capa = pd.concat([current_df_gen_capa, failure_df], ignore_index=True)
-                    
+
                     if country in power_capacities:
                         for k, v in power_capacities[country].items():
-                            current_df_gen_capa.loc[current_df_gen_capa['production_type_agg']==k, 'power_capacity'] = v
-                    self.agg_gen_capa_data[country] = current_df_gen_capa
+                            current_df_gen_capa.loc[
+                                current_df_gen_capa['production_type_agg'] == k, 'power_capacity'] = v
+                    if DATATYPE_NAMES.installed_capa in datatypes_selec:
+                        self.agg_gen_capa_data[country] = current_df_gen_capa
                     # get dict. with only power capacity values to get less verbose logs
-                    power_capa_dict = create_dict_from_cols_in_df(df=current_df_gen_capa, 
-                                                                  key_col='production_type_agg', 
+                    power_capa_dict = create_dict_from_cols_in_df(df=current_df_gen_capa,
+                                                                  key_col='production_type_agg',
                                                                   val_col='power_capacity')
                     logging.info(f'-> power capa. values, in MW: {power_capa_dict}')
-                    logging.debug('#'*100 + f'{current_df_gen_capa}' + '#'*100)
+                    logging.debug('#' * 100 + f'{current_df_gen_capa}' + '#' * 100)
 
-        if DATATYPE_NAMES.interco_capa in datatypes_selec: 
+            if DATATYPE_NAMES.net_demand in datatypes_selec:
+                current_df_net_demand = current_df_demand
+                for agg_prod_type in agg_prod_types_tb_read:
+                    # if prod type with CF data
+                    if agg_prod_type in self.agg_prod_types_with_cf_data:
+                        current_capa = (
+                            current_df_gen_capa.loc[current_df_gen_capa['production_type_agg'] == agg_prod_type,
+                            'power_capacity'].values)[0]
+                        current_cf_data = agg_cf_data_read[agg_cf_data_read['production_type_agg'] == agg_prod_type]
+                        current_df_net_demand['value'] -= current_capa * current_cf_data['value']
+                self.net_demand[country] = current_df_net_demand
+
+        if DATATYPE_NAMES.interco_capa in datatypes_selec:
             # read interconnection capas file
             logging.info('Get interconnection capacities, with unique file for all nodes (zones=countries) and year')
             interco_capas_data_file = f'{interco_capas_folder}/{interco_capas_prefix}_{year}.csv'
@@ -214,12 +257,12 @@ class Dataset:
             tuple_key_col = 'tuple_key'
             df_interco_capas[tuple_key_col] = \
                 df_interco_capas.apply(lambda col: (col[origin_col], col[destination_col]),
-                                    axis=1)
+                                       axis=1)
             interco_capas = create_dict_from_cols_in_df(df=df_interco_capas, key_col=tuple_key_col, val_col=value_col)
             # add interco capas values set by user
             interco_capas |= uc_run_params.interco_capas_tb_overwritten
             self.interco_capas = interco_capas
-    
+
     def get_generation_units_data(self, uc_run_params: UCRunParams, pypsa_unit_params_per_agg_pt: Dict[str, dict],
                                   units_complem_params_per_agg_pt: Dict[str, Dict[str, str]]):
         """
@@ -259,16 +302,16 @@ class Dataset:
                 if agg_pt in units_complem_params_per_agg_pt and len(units_complem_params_per_agg_pt[agg_pt]) > 0:
                     # add pnom attribute if needed
                     if power_capa_key in units_complem_params_per_agg_pt[agg_pt]:
-                        logging.debug(2*n_spaces_msg * ' ' + f'-> add {power_capa_key}')
+                        logging.debug(2 * n_spaces_msg * ' ' + f'-> add {power_capa_key}')
                         current_power_capa = \
                             get_val_of_agg_pt_in_df(df_data=current_capa_data, prod_type_agg_col=prod_type_agg_col,
                                                     agg_prod_type=agg_pt, value_col='power_capacity',
                                                     static_val=True)
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = int(current_power_capa)
-                            
+
                     # add pmax_pu when variable for RES/fatal units
                     if capa_factor_key in units_complem_params_per_agg_pt[agg_pt]:
-                        logging.debug(2*n_spaces_msg * ' ' + f'-> add {capa_factor_key}')
+                        logging.debug(2 * n_spaces_msg * ' ' + f'-> add {capa_factor_key}')
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = \
                             get_val_of_agg_pt_in_df(df_data=current_res_cf_data, prod_type_agg_col=prod_type_agg_col,
                                                     agg_prod_type=agg_pt, value_col=value_col, static_val=False)
@@ -276,15 +319,23 @@ class Dataset:
 
                     # marginal costs/efficiency, from FuelSources
                 elif agg_pt == 'failure':
-                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country]['production_type_agg']=='failure', 'power_capacity'].iloc[0]
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = \
+                        self.agg_gen_capa_data[country].loc[
+                            self.agg_gen_capa_data[country]['production_type_agg'] == 'failure', 'power_capacity'].iloc[
+                            0]
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.marginal_cost] = uc_run_params.failure_penalty
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = False
-                power_capacity = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity'].iloc[0]
+                power_capacity = self.agg_gen_capa_data[country].loc[
+                    self.agg_gen_capa_data[country]['production_type_agg'] == agg_pt, 'power_capacity'].iloc[0]
                 current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
-                energy_capacity = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'energy_capacity'].iloc[0]
-                power_capacity_turbine = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_turbine'].iloc[0]
+                energy_capacity = self.agg_gen_capa_data[country].loc[
+                    self.agg_gen_capa_data[country]['production_type_agg'] == agg_pt, 'energy_capacity'].iloc[0]
+                power_capacity_turbine = self.agg_gen_capa_data[country].loc[
+                    self.agg_gen_capa_data[country]['production_type_agg'] == agg_pt, 'power_capacity_turbine'].iloc[0]
                 if energy_capacity > 0:
-                    power_capacity_pumping = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_pumping'].iloc[0]
+                    power_capacity_pumping = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                                                                                     'production_type_agg'] == agg_pt, 'power_capacity_pumping'].iloc[
+                        0]
                     if power_capacity_turbine > 0:
                         p_nom = max(abs(power_capacity_turbine), abs(power_capacity_pumping))
                         p_min_pu = power_capacity_pumping / p_nom
@@ -294,8 +345,12 @@ class Dataset:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
                         max_hours = energy_capacity / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
-                    power_capacity_injection = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_injection'].iloc[0]
-                    power_capacity_offtake = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country]['production_type_agg']==agg_pt, 'power_capacity_offtake'].iloc[0]
+                    power_capacity_injection = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                                                                                       'production_type_agg'] == agg_pt, 'power_capacity_injection'].iloc[
+                        0]
+                    power_capacity_offtake = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                                                                                     'production_type_agg'] == agg_pt, 'power_capacity_offtake'].iloc[
+                        0]
                     if power_capacity_injection > 0:
                         p_nom = max(abs(power_capacity_injection), abs(power_capacity_offtake))
                         p_min_pu = -power_capacity_offtake / p_nom
@@ -314,13 +369,12 @@ class Dataset:
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = 1
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
-                    
-                
+
                 self.generation_units_data[country].append(GenerationUnitData(**current_assets_data[agg_pt]))
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
         self.generation_units_data = gen_units_data
-        
+
     def set_committable_param(self):
         for country, val in self.generation_units_data.items():
             for i in range(len(val)):
@@ -344,7 +398,7 @@ class Dataset:
                     current_msg = f'country {country}, unit name {current_unit_name} and type {current_unit_type} -> {missing_pypsa_params}'
                     pypsa_params_errors_list.append(current_msg)
         if len(pypsa_params_errors_list) > 0:
-            print_errors_list(error_name='on "minimal" PyPSA gen. units parameters; missing ones for', 
-                            errors_list=pypsa_params_errors_list)     
+            print_errors_list(error_name='on "minimal" PyPSA gen. units parameters; missing ones for',
+                              errors_list=pypsa_params_errors_list)
         else:
             logging.info('PyPSA NEEDED PARAMETERS FOR GENERATION UNITS CREATION HAVE BEEN LOADED!')
