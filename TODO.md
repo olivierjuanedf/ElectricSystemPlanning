@@ -14,6 +14,7 @@ M9) Constantes à mettre dans des fichiers de données (json par ex) -> FUEL_SOU
 M10) Dossier de sortie toy model différent de celui Eur model
 M11) Version de Python ok?
 M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
+-> needs Python >= 3.10...
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
