@@ -147,6 +147,7 @@ class PypsaModel:
 
                 # case of storage units, identified via the presence of max_hours param
                 if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
+                    # initial SoC fixed to 80% statically here
                     self.network.add('StorageUnit', bus=f'{country_bus_name}', **pypsa_gen_unit_dict,
                                      state_of_charge_initial=pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa] *
                                                              pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8
