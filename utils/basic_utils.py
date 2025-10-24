@@ -102,3 +102,17 @@ def flatten_list_of_lists(list_of_lists: List[list]) -> list:
 
 def get_intersection_of_lists(list1: list, list2: list) -> list:
     return list(set(list1) & set(list2))
+
+
+def set_years_suffix(years: List[int]) -> str:
+    if len(years) == 0:
+        return ''
+    if len(years) == 1:
+        return f'{years[0]}'
+    if len(years) == 2:
+        min_date = f'{min(years)}'
+        max_date = f'{min(years)}'
+        if min_date[:2] == max_date[:2]:
+            return f'{min_date}-{max_date[2:]}'
+        else:
+            return f'{min_date}-{max_date}'

@@ -17,7 +17,7 @@ def check_unique_int_value(param_name: str, param_value) -> Optional[str]:
         f'Unique {param_name} to be provided; must be an int'
     else:
         return None
-    
+
 
 @dataclass
 class UCRunParams:
@@ -33,7 +33,7 @@ class UCRunParams:
     capacities_tb_overwritten: Dict[str, Optional[Dict[str, float]]] = field(default_factory=dict)
     updated_fuel_sources_params: Dict[str, Dict[str, Optional[float]]] = None
     # to indicate that some parameters have been changed compared to the set of the ones used for CP decision-making
-    is_stress_test: bool = None 
+    is_stress_test: bool = None
 
     def __repr__(self):
         repr_str = 'UC long-term model run with params:'
@@ -45,20 +45,22 @@ class UCRunParams:
         return repr_str
 
     def process(self, available_countries: List[str]):
-        logging.info('*'*30 + f'{self.capacities_tb_overwritten}' + '*'*30)
+        logging.info('*' * 30 + f'{self.capacities_tb_overwritten}' + '*' * 30)
         # if dates in str format, cast them as datetime
         # - setting end of period to default value if not provided
         if isinstance(self.uc_period_start, str):
             self.uc_period_start = datetime.strptime(self.uc_period_start, DATE_FORMAT_IN_JSON)
         if self.uc_period_end is None:
             self.uc_period_end = min(MAX_DATE_IN_DATA, self.uc_period_start + timedelta(days=N_DAYS_UC_DEFAULT))
-            logging.info(f'End of period set to default value: {self.uc_period_end:%Y/%m/%d} (period of {N_DAYS_UC_DEFAULT} days; with bound on 1900, Dec. 31th)')
+            logging.info(
+                f'End of period set to default value: {self.uc_period_end:%Y/%m/%d} (period of {N_DAYS_UC_DEFAULT} '
+                f'days; with bound on 1900, Dec. 31th)')
         elif isinstance(self.uc_period_end, str):
             self.uc_period_end = datetime.strptime(self.uc_period_end, DATE_FORMAT_IN_JSON)
         # replace None and missing countries in dict of aggreg. prod. types
         for country in available_countries:
             if country not in self.selected_prod_types \
-                or self.selected_prod_types[country] is None:
+                    or self.selected_prod_types[country] is None:
                 self.selected_prod_types[country] = []
         # empty dict if interco. added values is empty
         if self.interco_capas_tb_overwritten is None:
@@ -67,8 +69,8 @@ class UCRunParams:
             interco_tuples = set_interco_to_tuples(interco_names=self.interco_capas_tb_overwritten,
                                                    return_corresp=True)
             self.interco_capas_tb_overwritten = {interco_tuples[key]: val
-                                               for key, val in self.interco_capas_tb_overwritten.items()}
-        logging.info('*'*30 + f'self.selected_prod_types' + '*'*30)
+                                                 for key, val in self.interco_capas_tb_overwritten.items()}
+        logging.info('*' * 30 + f'self.selected_prod_types' + '*' * 30)
         # keep only updated source params values that are non None
         new_updated_fuel_source_params = {}
         for source, params in self.updated_fuel_sources_params.items():
@@ -80,7 +82,7 @@ class UCRunParams:
     def set_is_stress_test(self, avail_cy_stress_test: List[int]):
         self.is_stress_test = self.selected_climatic_year in avail_cy_stress_test
 
-    def coherence_check_ty_and_cy(self, eraa_data_descr: ERAADatasetDescr, 
+    def coherence_check_ty_and_cy(self, eraa_data_descr: ERAADatasetDescr,
                                   stop_if_error: bool = False) -> List[str]:
         errors_list = []
         # check that unique value provided
@@ -91,11 +93,11 @@ class UCRunParams:
         if climatic_yr_msg is not None:
             errors_list.append(climatic_yr_msg)
         if isinstance(self.selected_target_year, int) \
-            and self.selected_target_year not in eraa_data_descr.available_target_years:
+                and self.selected_target_year not in eraa_data_descr.available_target_years:
             errors_list.append(f'Unknown target year {self.selected_target_year}')
         if isinstance(self.selected_climatic_year, int) \
-            and (self.selected_climatic_year not in eraa_data_descr.available_climatic_years \
-                 and self.selected_climatic_year not in eraa_data_descr.available_climatic_years_stress_test):
+                and (self.selected_climatic_year not in eraa_data_descr.available_climatic_years \
+                     and self.selected_climatic_year not in eraa_data_descr.available_climatic_years_stress_test):
             errors_list.append(f'Unknown climatic year {self.selected_climatic_year}')
         # stop if any error
         if stop_if_error and len(errors_list) > 0:
@@ -106,13 +108,13 @@ class UCRunParams:
     def coherence_check(self, eraa_data_descr: ERAADatasetDescr, year: int):
         # start by checking Target Year (TY) and Climatic Year (CY)
         errors_list = self.coherence_check_ty_and_cy(eraa_data_descr=eraa_data_descr)
-    
+
         # check that there is no repetition of countries
         countries_set = set(self.selected_countries)
         if len(countries_set) < len(self.selected_countries):
-            errors_list.append('Repetition in selected countries') 
+            errors_list.append('Repetition in selected countries')
 
-        # check coherence of values with fixed params
+            # check coherence of values with fixed params
         # for selected countries
         unknown_countries = list(countries_set - set(eraa_data_descr.available_countries))
         if len(unknown_countries) > 0:
@@ -121,7 +123,7 @@ class UCRunParams:
         for elt_country, current_agg_pt in self.selected_prod_types.items():
             if current_agg_pt == [ALL_KEYWORD]:
                 self.selected_prod_types[elt_country] = eraa_data_descr.available_aggreg_prod_types[elt_country][year]
-        
+
         # check that countries in aggreg. prod. types are not repeated, and known
         agg_pt_countries = list(self.selected_prod_types)
         agg_pt_countries_set = set(agg_pt_countries)
@@ -131,13 +133,15 @@ class UCRunParams:
         unknown_agg_pt_countries = list(agg_pt_countries_set - set(eraa_data_descr.available_countries))
         if len(unknown_agg_pt_countries) > 0:
             errors_list.append(f'Unknown countrie(s) {msg_suffix}: {unknown_agg_pt_countries}')
- 
-         # check coherence of prod types in all different params
-        agg_pt_countries_with_val = [elt_country for elt_country in agg_pt_countries 
+
+        # check coherence of prod types in all different params
+        agg_pt_countries_with_val = [elt_country for elt_country in agg_pt_countries
                                      if len(self.selected_prod_types[elt_country]) > 0]
         countries_lists = [self.selected_countries, agg_pt_countries_with_val]
         if not are_lists_eq(list_of_lists=countries_lists):
-            errors_list.append(f'Countries are different in selection list ({self.selected_countries}) versus keys of aggreg. prod. types selection dict. - wo None value ({agg_pt_countries_with_val})')
+            errors_list.append(
+                f'Countries are different in selection list ({self.selected_countries}) versus keys of aggreg. prod. '
+                f'types selection dict. - wo None value ({agg_pt_countries_with_val})')
 
         # check that aggreg. prod types are not repeated, and known
         msg_suffix = 'in values of dict. of aggreg. prod. types selection, for country'
@@ -148,20 +152,27 @@ class UCRunParams:
                 errors_list.append(f'Repetition of aggreg. prod. types {msg_suffix} {elt_country}')
             unknown_agg_prod_types = list(current_agg_pt_set - current_avail_aggreg_pt_set)
             if len(unknown_agg_prod_types) > 0:
-                errors_list.append(f'Unknown/not available aggreg. prod. types {msg_suffix} {elt_country}: {unknown_agg_prod_types}')
+                errors_list.append(
+                    f'Unknown/not available aggreg. prod. types {msg_suffix} {elt_country}: {unknown_agg_prod_types}')
 
         # check that both dates are in allowed period
-        allowed_period_msg = f'[{MIN_DATE_IN_DATA.strftime(DATE_FORMAT_IN_JSON)}, {MAX_DATE_IN_DATA.strftime(DATE_FORMAT_IN_JSON)}]'
+        allowed_period_msg = (f'[{MIN_DATE_IN_DATA.strftime(DATE_FORMAT_IN_JSON)}, '
+                              f'{MAX_DATE_IN_DATA.strftime(DATE_FORMAT_IN_JSON)}]')
         if not (MIN_DATE_IN_DATA <= self.uc_period_start <= MAX_DATE_IN_DATA):
-            errors_list.append(f'UC period start {self.uc_period_start.strftime(DATE_FORMAT_IN_JSON)} not in allowed period {allowed_period_msg}')
+            errors_list.append(
+                f'UC period start {self.uc_period_start.strftime(DATE_FORMAT_IN_JSON)} not in '
+                f'allowed period {allowed_period_msg}')
         if not (MIN_DATE_IN_DATA <= self.uc_period_end <= MAX_DATE_IN_DATA):
-            errors_list.append(f'UC period end {self.uc_period_end.strftime(DATE_FORMAT_IN_JSON)} not in allowed period {allowed_period_msg}')
+            errors_list.append(
+                f'UC period end {self.uc_period_end.strftime(DATE_FORMAT_IN_JSON)} not in '
+                f'allowed period {allowed_period_msg}')
 
         # updated fuel sources params -> check non-negative marginal cost and CO2 emission values
         for source, params in self.updated_fuel_sources_params.items():
             for name, val in params.items():
                 if val < 0:
-                    errors_list.append(f'Updated fuel source {source} param {name} must be non-negative; but value read {val}')
+                    errors_list.append(
+                        f'Updated fuel source {source} param {name} must be non-negative; but value read {val}')
 
         # stop if any error
         if len(errors_list) > 0:

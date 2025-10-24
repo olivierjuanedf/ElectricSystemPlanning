@@ -1,34 +1,28 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import List, Union
+from itertools import product
+from typing import List, Union, Dict, Tuple
 
-from common.constants.datatypes import DatatypesNames
+import numpy as np
+import pandas as pd
+
+from common.constants.data_analysis_types import ANALYSIS_TYPES, ANALYSIS_TYPES_PLOT, AVAILABLE_ANALYSIS_TYPES
+from common.constants.datatypes import DatatypesNames, UNITS_PER_DT
 from common.constants.extract_eraa_data import ERAADatasetDescr
 from common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_DAYS_DATA_ANALYSIS_DEFAULT
 from common.error_msgs import uncoherent_param_stop
+from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
+from include.uc_timeseries import set_uc_ts_name, UCTimeseries
 from utils.type_checker import CheckerNames, apply_params_type_check
 
 
-@dataclass
-class AnalysisTypes: 
-    calc: str = 'calc'
-    # only extract data from data folder and put it in output folder
-    extract: str = 'extract'
-    # idem, put putting it on 'matricial format', with different climatic years in column
-    extract_to_mat: str = 'extract_to_mat'
-    plot: str = 'plot'  # simple plot
-    plot_duration_curve: str = 'plot_duration_curve'  # duration curve plot
-    plot_rolling_horizon_avg: str = 'plot_rolling_horizon_avg'  # rolling horizon avg plot
-
-
-ANALYSIS_TYPES = AnalysisTypes()
-AVAILABLE_ANALYSIS_TYPES = list(ANALYSIS_TYPES.__dict__.values())
 AVAILABLE_DATA_TYPES = list(DatatypesNames.__annotations__.values())
 DATA_SUBTYPE_KEY = 'data_subtype'  # TODO[Q2OJ]: cleaner way to set/get it?
 RAW_TYPES_FOR_CHECK = {'analysis_type': CheckerNames.is_str, 'data_type': CheckerNames.is_str, 
                        'data_subtype': CheckerNames.is_str, 'country': CheckerNames.is_str_or_list_of_str,
                        'year': CheckerNames.is_int_or_list_of_int, 'climatic_year': CheckerNames.is_int_or_list_of_int}
+N_CURVES_MAX = 6
 
 
 @dataclass
@@ -108,6 +102,13 @@ class DataAnalysis:
         if len(unknown_clim_years) > 0:
             errors_list.append(f'Unknown climatic years: {unknown_clim_years}')
 
+        # check maximal nber of curves
+        if self.analysis_type in ANALYSIS_TYPES_PLOT:
+            n_curves = len(self.countries) * len(self.years) * len(self.climatic_years)
+            if n_curves > N_CURVES_MAX:
+                errors_list.append(f'Too many curves for {self.analysis_type}: {n_curves} '
+                                   f'(vs. max allowed {N_CURVES_MAX})')
+
         # coherence of start and end period
         if self.period_end <= self.period_start:
             errors_list.append(f'{self.period_end.strftime(DATE_FORMAT_IN_JSON)} '
@@ -125,3 +126,42 @@ class DataAnalysis:
             return (self.data_type,)
         else:
             return self.data_type, self.data_subtype
+
+    def apply_analysis(self, per_case_data: Dict[Tuple[str, int, int], pd.DataFrame]):
+        """
+        Apply 'analysis', either saving data to csv, or plotting it
+        :param per_case_data: per tuple (country, year, climatic year) data in a dict. {tuple: df},
+        or unique dataframe if unique case considered
+        """
+        current_full_dt = self.get_full_datatype()
+        date_col = 'date'
+        value_col = 'value'
+        uc_ts_name = set_uc_ts_name(full_data_type=current_full_dt, countries=self.countries,
+                                    years=self.years, climatic_years=self.climatic_years)
+        # loop over (country, year, clim_year) of this analysis
+        dates = {}
+        values = {}
+        for country, year, clim_year in product(self.countries, self.years, self.climatic_years):
+            try:
+                current_dates = list(per_case_data[(country, year, clim_year)][date_col])
+            except:
+                logging.error(f'No dates obtained from data {self.data_type}, for (country, year, clim. year) '
+                              f'= ({country}, {year}, {clim_year}) -> not integrated in this data analysis')
+                continue
+            # if data available continue analysis (and plot)
+            dates[(country, year, clim_year)] = [elt_date.replace(year=year) for elt_date in current_dates]
+            values[(country, year, clim_year)] = np.array(per_case_data[(country, year, clim_year)][value_col])
+
+        uc_timeseries = UCTimeseries(name=uc_ts_name, data_type=current_full_dt, dates=dates,
+                                     values=values, unit=UNITS_PER_DT[self.data_type])
+        # And apply calc./plot... and other operations
+        if len(values) == 0:
+            logging.warning(f'No data obtained for type {self.data_type} -> analysis not done')
+        elif self.analysis_type == ANALYSIS_TYPES.plot:
+            uc_timeseries.plot(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER)
+        elif self.analysis_type == ANALYSIS_TYPES.plot_duration_curve:
+            uc_timeseries.plot_duration_curve(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER)
+        elif self.analysis_type in [ANALYSIS_TYPES.extract, ANALYSIS_TYPES.extract_to_mat]:
+            to_matrix = True if self.analysis_type == ANALYSIS_TYPES.extract_to_mat else False
+            # TODO[debug]: to_matrix_format not an arg of this method..., complem_columns missing...
+            uc_timeseries.to_csv(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER)

@@ -25,6 +25,7 @@ class Dataset:
     source: str = 'eraa'
     is_stress_test: bool = False
     demand: Dict[str, pd.DataFrame] = None
+    net_demand: Dict[str, pd.DataFrame] = None
     agg_cf_data: Dict[str, pd.DataFrame] = None
     agg_gen_capa_data: Dict[str, pd.DataFrame] = None
     interco_capas: Dict[Tuple[str, str], float] = None
@@ -66,7 +67,7 @@ class Dataset:
         interco_capas_prefix = DT_FILE_PREFIX.interco_capas
         # column names
         date_col = COLUMN_NAMES.date
-        climatic_year_col = COLUMN_NAMES.climatic_years
+        climatic_year_col = COLUMN_NAMES.climatic_year
         prod_type_col = COLUMN_NAMES.production_type
         prod_type_agg_col = f'{prod_type_col}_agg'
         value_col = COLUMN_NAMES.value

@@ -1,25 +1,52 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 import numpy as np
 import pandas as pd
 
+from common.constants.data_analysis_types import ANALYSIS_TYPES_PLOT, COMMON_PLOT_YEAR
+from utils.basic_utils import set_years_suffix
+from utils.dates import set_year_in_date
 from utils.plot import simple_plot
 
 
-def set_uc_ts_name(full_data_type: tuple, country: str, year: int, climatic_year: int):
+def set_uc_ts_name(full_data_type: tuple, countries: str, years: int, climatic_years: int):
     data_type_prefix = '-'.join(list(full_data_type))
-    return f'{data_type_prefix}_{country}_{year}_cy{climatic_year}'
+    n_countries = len(countries)
+    n_countries_max_in_suffix = 2
+    n_countries_min_with_trigram = 2
+    if n_countries_min_with_trigram <= n_countries <= n_countries_max_in_suffix:
+        countries = [elt[:3] for elt in countries]
+    countries_suffix = '-'.join(countries) if n_countries <= n_countries_max_in_suffix else f'{n_countries}-countries'
+    years_suffix = set_years_suffix(years=years)
+    clim_years_suffix = set_years_suffix(years=climatic_years)
+    return f'{data_type_prefix}_{countries_suffix}_{years_suffix}_cy{clim_years_suffix}'
 
-    
+
+def set_curve_label(country: str = None, year: int = None, climatic_year: int = None) -> str:
+    sep = ', '
+    label = ''
+    if country is not None:
+        label += country
+    yr_labels = {'ty': year, 'cy': climatic_year}
+    for key, val in yr_labels.items():
+        if val is not None:
+            if len(label) > 0:
+                label += sep
+            label += f'{key}={val}'
+    return label
+
+
 @dataclass
 class UCTimeseries:
     name: str = None
     data_type: tuple = None
-    values: np.ndarray = None
+    # can be a dict. {(year, clim year): vector of values}, in case multiple (year, climatic year) be considered
+    values: Union[np.ndarray, Dict[Tuple[int, int], np.ndarray]] = None
     unit: str = None
-    dates: List[datetime] = None
+    # can be a dict. {(year, clim year): dates}, in case multiple (year, climatic year) be considered
+    dates: Union[List[datetime], Dict[Tuple[int, int], List[datetime]]] = None
 
     def from_df_col(self, df: pd.DataFrame, col_name: str, unit: str = None):
         self.name = col_name
@@ -27,14 +54,61 @@ class UCTimeseries:
         if unit is not None:
             self.unit = unit
 
-    def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray]] = None):
-        if self.dates is None:
-            idx_col = 'time_slot'
-            idx_range = np.arange(len(self.values)) + 1
+    def set_output_dates(self) -> Union[List[int], List[datetime]]:
+        is_plot = self.data_type in ANALYSIS_TYPES_PLOT
+        # per (country, year, clim year) values
+        if isinstance(self.values, dict):
+            first_key = list(self.values)[0]
+            # repeat these ts index when saving a csv file, not when plotting (common x-axis)
+            n_tile = len(self.values) if not is_plot else 1
         else:
-            idx_col = 'date'
-            idx_range = self.dates
-        values_dict = {idx_col: idx_range, 'value': self.values}
+            first_key = None
+            n_tile = 1
+        # dates as time-slots index
+        if self.dates is None:
+            if first_key is not None:
+                vals_for_dates = self.values[first_key]
+            else:
+                vals_for_dates = self.values
+            output_dates = np.tile(np.arange(len(vals_for_dates)) + 1, n_tile)
+        # ... or dates (if provided)
+        else:
+            if first_key is not None:
+                # saving to csv file -> concatenate the dates of all (country, year, clim year) cases
+                if not is_plot:
+                    output_dates = []
+                    for key, dates_val in self.dates.items():
+                        output_dates.extend(dates_val)
+                else:
+                    output_dates = self.dates[first_key]
+                    # reset year to common values
+                    output_dates = [set_year_in_date(my_date=elt, new_year=COMMON_PLOT_YEAR) for elt in output_dates]
+            else:
+                output_dates = self.dates
+        return output_dates
+
+    def set_output_values(self) -> Union[list, dict]:
+        is_plot = self.data_type in ANALYSIS_TYPES_PLOT
+        # per (country, year, clim year) values
+        if isinstance(self.values, dict):
+            # saving to csv file -> concatenate the values of all (country, year, clim year) cases
+            if not is_plot:
+                output_vals = []
+                for key, vals in self.values.items():
+                    output_vals.extend(vals)
+            # plot -> dict.
+            else:
+                output_vals = self.values
+        else:
+            output_vals = self.values
+        return output_vals
+
+    def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray, float]] = None):
+        output_dates = self.set_output_dates()
+        date_col = 'time_slot' if isinstance(output_dates[0], int) else 'date'
+        output_vals = self.set_output_values()
+        values_dict = {date_col: output_dates, 'value': output_vals}
+        # TODO: add columns corresp. to the (country, ty, cy)
         if complem_columns is not None:
             for col_name, col_vals in complem_columns.items():
                 values_dict[col_name] = col_vals
@@ -54,18 +128,28 @@ class UCTimeseries:
     def plot(self, output_dir: str):
         name_label = self.name.capitalize()
         fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
-        if self.dates is not None:
-            x = self.dates
-        else:
-            x = np.arange(len(self.values)) + 1
-        simple_plot(x=x, y=self.values, fig_file=fig_file, title=self.set_plot_title(), 
+        x = self.set_output_dates()
+        y = self.set_output_values()
+        # replace (country, year, clim year) keys by labels to be used for plot
+        if isinstance(y, dict):
+            y = {set_curve_label(*key): vals for key, vals in y.items()}
+        simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(),
                     xlabel='Time-slots', ylabel=self.set_plot_ylabel())
 
     def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False) -> np.ndarray:
+        y = self.set_output_values()
         # sort values in descending order
-        vals_desc_order = np.sort(self.values)[::-1]
+        # per (country, year, climatic year) values
+        if isinstance(y, dict):
+            vals_desc_order = {key: np.sort(vals)[::-1] for key, vals in y.items()}
+            first_key = list(y)[0]
+            n_vals = len(vals_desc_order[first_key])
+            vals_desc_order = {set_curve_label(*key): vals for key, vals in vals_desc_order.items()}
+        else:
+            vals_desc_order = np.sort(y)[::-1]
+            n_vals = len(vals_desc_order)
         # this calculation is done assuming uniform time-slot duration
-        duration_curve = np.arange(1, len(vals_desc_order) + 1)
+        duration_curve = np.arange(1, n_vals + 1)
         if as_a_percentage:
             duration_curve = np.cumsum(duration_curve) / len(duration_curve)
             xlabel = 'Duration (%)'
