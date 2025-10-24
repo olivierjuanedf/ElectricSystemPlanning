@@ -38,6 +38,10 @@ def set_curve_label(country: str = None, year: int = None, climatic_year: int = 
     return label
 
 
+def set_date_col(first_date: Union[int, datetime]) -> str:
+    return 'time_slot' if isinstance(first_date, int) else 'date'
+
+
 @dataclass
 class UCTimeseries:
     name: str = None
@@ -54,8 +58,7 @@ class UCTimeseries:
         if unit is not None:
             self.unit = unit
 
-    def set_output_dates(self) -> Union[List[int], List[datetime]]:
-        is_plot = self.data_type in ANALYSIS_TYPES_PLOT
+    def set_output_dates(self, is_plot: bool) -> Union[List[int], List[datetime]]:
         # per (country, year, clim year) values
         if isinstance(self.values, dict):
             first_key = list(self.values)[0]
@@ -87,8 +90,7 @@ class UCTimeseries:
                 output_dates = self.dates
         return output_dates
 
-    def set_output_values(self) -> Union[list, dict]:
-        is_plot = self.data_type in ANALYSIS_TYPES_PLOT
+    def set_output_values(self, is_plot: bool) -> Union[list, dict]:
         # per (country, year, clim year) values
         if isinstance(self.values, dict):
             # saving to csv file -> concatenate the values of all (country, year, clim year) cases
@@ -104,9 +106,9 @@ class UCTimeseries:
         return output_vals
 
     def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray, float]] = None):
-        output_dates = self.set_output_dates()
-        date_col = 'time_slot' if isinstance(output_dates[0], int) else 'date'
-        output_vals = self.set_output_values()
+        output_dates = self.set_output_dates(is_plot=False)
+        date_col = set_date_col(first_date=output_dates[0])
+        output_vals = self.set_output_values(is_plot=False)
         values_dict = {date_col: output_dates, 'value': output_vals}
         # TODO: add columns corresp. to the (country, ty, cy)
         if complem_columns is not None:
@@ -128,16 +130,18 @@ class UCTimeseries:
     def plot(self, output_dir: str):
         name_label = self.name.capitalize()
         fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
-        x = self.set_output_dates()
-        y = self.set_output_values()
+        x = self.set_output_dates(is_plot=True)
+        y = self.set_output_values(is_plot=True)
+        xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
         # replace (country, year, clim year) keys by labels to be used for plot
         if isinstance(y, dict):
             y = {set_curve_label(*key): vals for key, vals in y.items()}
-        simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(),
-                    xlabel='Time-slots', ylabel=self.set_plot_ylabel())
+        with_curve_labels = isinstance(y, dict) and len(y) > 1
+        simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(), xlabel=xlabel,
+                    ylabel=self.set_plot_ylabel(), with_curve_labels=with_curve_labels)
 
     def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False) -> np.ndarray:
-        y = self.set_output_values()
+        y = self.set_output_values(is_plot=True)
         # sort values in descending order
         # per (country, year, climatic year) values
         if isinstance(y, dict):
@@ -156,9 +160,10 @@ class UCTimeseries:
         else:
             xlabel = 'Duration (nber of time-slots - hours)'
         fig_file = os.path.join(output_dir, f'{self.name.lower()}_duration_curve.png')
+        with_curve_labels = isinstance(y, dict) and len(y) > 1
         simple_plot(x=duration_curve, y=vals_desc_order, fig_file=fig_file,
                     title=f'{self.set_plot_title()} duration curve', xlabel=xlabel, 
-                    ylabel=self.set_plot_ylabel())
+                    ylabel=self.set_plot_ylabel(), with_curve_labels=with_curve_labels)
     
     def plot_rolling_horizon_avg(self):
         bob = 1
