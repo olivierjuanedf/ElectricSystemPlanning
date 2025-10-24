@@ -8,6 +8,7 @@ import pandas as pd
 from common.constants.data_analysis_types import ANALYSIS_TYPES_PLOT, COMMON_PLOT_YEAR
 from utils.basic_utils import set_years_suffix
 from utils.dates import set_year_in_date
+from utils.df_utils import set_key_columns
 from utils.plot import simple_plot
 
 
@@ -113,13 +114,19 @@ class UCTimeseries:
         date_col = set_date_col(first_date=output_dates[0])
         output_vals = self.set_output_values(is_plot=False)
         values_dict = {date_col: output_dates, 'value': output_vals}
-        # TODO: add columns corresp. to the (country, ty, cy)
         if complem_columns is not None:
             for col_name, col_vals in complem_columns.items():
                 values_dict[col_name] = col_vals
         df_to_csv = pd.DataFrame(values_dict)
-        output_file = os.path.join(output_dir, f'{self.name.lower()}_uc-timeseries.csv')
-        df_to_csv.to_csv(output_file)
+        # add "key" columns corresp. to the (country, ty, cy) tuples
+        if isinstance(self.dates, dict):
+            all_keys = list(self.dates)
+            n_dates = len(self.dates[all_keys[0]])
+            df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year'],
+                                      tuple_values=all_keys, n_repeat=n_dates)
+            df_to_csv = pd.concat([df_keys, df_to_csv], axis=1)
+        output_file = os.path.join(output_dir, f'{self.name.lower()}.csv')
+        df_to_csv.to_csv(output_file, index=None)
 
     def set_plot_ylabel(self) -> str:
         ylabel = self.data_type[0].capitalize()

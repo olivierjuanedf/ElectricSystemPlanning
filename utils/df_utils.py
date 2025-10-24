@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from typing import Dict, List
 from datetime import datetime
@@ -53,3 +54,18 @@ def create_dict_from_cols_in_df(df: pd.DataFrame, key_col, val_col) -> dict:
 def rename_df_columns(df: pd.DataFrame, old_to_new_cols: dict) -> pd.DataFrame:
     df.rename(columns=old_to_new_cols, inplace=True)
     return df
+
+
+def set_key_columns(col_names: list, tuple_values: List[tuple], n_repeat: int = None) -> pd.DataFrame:
+    """
+    :param col_names: list of key column names
+    :param tuple_values
+    :param n_repeat: number of repetition of each tuple in the df e.g., when dates are commonly used per
+    each tuple value
+    """
+    if n_repeat is None:
+        n_repeat = 1
+    n_keys = len(tuple_values[0])
+    concat_keys = np.concatenate([np.array(elt).reshape(1, n_keys) for elt in tuple_values], axis=0)
+    concat_keys = np.repeat(concat_keys, n_repeat, axis=0)
+    return pd.DataFrame(data=concat_keys, columns=col_names)
