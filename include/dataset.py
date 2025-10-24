@@ -66,7 +66,7 @@ class Dataset:
         interco_capas_prefix = DT_FILE_PREFIX.interco_capas
         # column names
         date_col = COLUMN_NAMES.date
-        climatic_year_col = COLUMN_NAMES.climatic_year
+        climatic_year_col = COLUMN_NAMES.climatic_years
         prod_type_col = COLUMN_NAMES.production_type
         prod_type_agg_col = f'{prod_type_col}_agg'
         value_col = COLUMN_NAMES.value

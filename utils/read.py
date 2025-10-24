@@ -126,7 +126,8 @@ def read_and_check_pypsa_static_params() -> PypsaStaticParams:
 
 def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> List[DataAnalysis]:
     json_data_analysis_params_file = get_json_data_analysis_params_file()
-    logging.info(f'Read and check data analysis parameters file; the ones modified in file {json_data_analysis_params_file}')
+    logging.info(f'Read and check data analysis parameters file; '
+                 f'the ones modified in file {json_data_analysis_params_file}')
 
     json_data_analysis_params = check_and_load_json_file(json_file=json_data_analysis_params_file,
                                                          file_descr='JSON data analysis params')

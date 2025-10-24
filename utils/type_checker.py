@@ -17,6 +17,9 @@ class CheckerNames:
     is_dict_str_str: str = 'dict_str_str'
     is_two_level_dict_str_str_list_of_str: str = 'two_level_dict_str_str_list-of-str'
     is_two_level_dict_str_str_str: str = 'two_level_dict_str_str_str'
+    # "combination" of checkers above
+    is_str_or_list_of_str: str = 'str_or_list_of_str'
+    is_int_or_list_of_int: str = 'int_or_list_of_int'
 
 
 # basic checker
@@ -106,6 +109,14 @@ def check_str_str_list_of_str_dict(data_val) -> bool:
         all([check_str_list_of_str_dict(data_val=val) for val in vals])
 
 
+def check_str_or_list_of_str(data_val) -> bool:
+    return check_str(data_val=data_val) or check_list_of_str(data_val=data_val)
+
+
+def check_int_or_list_of_int(data_val) -> bool:
+    return check_int(data_val=data_val) or check_list_of_int(data_val=data_val)
+
+
 # generic function to apply a given type checker
 def apply_data_type_check(data_type: str, data_val) -> bool:
     if data_type not in CHECK_FUNCTIONS:
@@ -127,7 +138,9 @@ CHECK_FUNCTIONS = {CheckerNames.is_str: check_str,
                    CheckerNames.is_dict_str_list_of_str: check_str_list_of_str_dict,
                    CheckerNames.is_dict_str_str: check_str_str_dict,
                    CheckerNames.is_two_level_dict_str_str_list_of_str: check_str_str_list_of_str_dict,
-                   CheckerNames.is_two_level_dict_str_str_str: check_three_level_str_dict
+                   CheckerNames.is_two_level_dict_str_str_str: check_three_level_str_dict,
+                   CheckerNames.is_str_or_list_of_str: check_str_or_list_of_str,
+                   CheckerNames.is_int_or_list_of_int: check_int_or_list_of_int
                    }
 
 
