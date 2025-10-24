@@ -37,6 +37,18 @@
       "climatic_years": 1985,
       "period_start": "1900/1/15",
       "period_end": "1900/1/29"
+    },
+    {
+      "analysis_type": "plot_duration_curve",
+      "data_type": "demand",
+      "countries": "france",
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": 1985,
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29"
     }
   ]
 }

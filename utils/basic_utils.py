@@ -111,7 +111,7 @@ def set_years_suffix(years: List[int]) -> str:
         return f'{years[0]}'
     if len(years) == 2:
         min_date = f'{min(years)}'
-        max_date = f'{min(years)}'
+        max_date = f'{max(years)}'
         if min_date[:2] == max_date[:2]:
             return f'{min_date}-{max_date[2:]}'
         else:
