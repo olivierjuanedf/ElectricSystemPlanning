@@ -13,7 +13,7 @@ fuel_sources = set_fuel_sources_from_json()
 from common.logger import init_logger, stop_logger
 from common.long_term_uc_io import OUTPUT_FOLDER_LT
 from include.dataset_builder import PypsaModel
-from utils.basic_utils import get_period_str
+from utils.dates import get_period_str
 from include.dataset import Dataset
 from common.constants.optimisation import OPTIM_RESOL_STATUS
 from utils.read import read_and_check_uc_run_params, read_and_check_pypsa_static_params

@@ -1,10 +1,6 @@
-from datetime import datetime
 import logging
 from typing import List, Optional, Tuple, Union
 import numpy as np
-
-from common.constants.temporal import DAY_OF_WEEK
-from common.long_term_uc_io import DATE_FORMAT_PRINT
 
 
 CLIM_YEARS_SUFFIX = 'clim-years'
@@ -49,14 +45,6 @@ def get_key_of_val(val, my_dict: dict, dict_name: str = None):
         logging.warning(f'Multiple corresponding keys found in{dict_name} dict. for value {val} '
                         f'-> only first one returned')
     return corresp_keys[0]
-
-
-def get_period_str(period_start: datetime, period_end: datetime):
-    dow_start = DAY_OF_WEEK[period_start.isoweekday()]
-    dow_end = DAY_OF_WEEK[period_end.isoweekday()]
-    period_start_str = f'{dow_start} {period_start.strftime(DATE_FORMAT_PRINT)}'
-    period_end_str = f'{dow_end} {period_end.strftime(DATE_FORMAT_PRINT)}'
-    return f'[{period_start_str}, {period_end_str}]'
 
 
 def is_str_bool(bool_str: Optional[str]) -> bool:

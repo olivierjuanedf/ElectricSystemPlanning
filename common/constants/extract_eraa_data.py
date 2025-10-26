@@ -6,6 +6,7 @@ from utils.eraa_utils import set_interco_to_tuples
 from utils.type_checker import apply_params_type_check
 
 
+FICTIVE_CALENDAR_YEAR = 1900
 INTERCO_STR_SEP = '2'
 
 

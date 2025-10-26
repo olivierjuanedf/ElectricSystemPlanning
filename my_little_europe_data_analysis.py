@@ -3,13 +3,11 @@ from itertools import product
 import numpy as np
 import logging
 
-from common.constants.datatypes import DATATYPE_NAMES, UNITS_PER_DT
+from common.constants.datatypes import DATATYPE_NAMES
 from common.logger import init_logger, stop_logger
-from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER, OUTPUT_FOLDER_LT
-from utils.basic_utils import get_period_str
+from common.long_term_uc_io import OUTPUT_FOLDER_LT
 from include.dataset import Dataset
-from include.dataset_analyzer import ANALYSIS_TYPES
-from include.uc_timeseries import UCTimeseries, set_uc_ts_name
+from utils.dates import get_period_str
 from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
@@ -19,15 +17,15 @@ logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_input_data_a
                      log_level=usage_params.log_level)
 logging.info('START ERAA (input) data analysis')
 
-uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
-                               period_end=uc_run_params.uc_period_end)
-
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:
     logging.info(elt_analysis)
     # set UC run params to the ones corresponding to this analysis
     current_countries = elt_analysis.countries
     uc_run_params.set_countries(countries=current_countries)
+    uc_run_params.set_uc_period(start=elt_analysis.period_start, end=elt_analysis.period_end)
+    uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
+                                   period_end=uc_run_params.uc_period_end)
     # currently loop over year, climatic_year; given that UC run params made for a unique (year, climatic year) couple
     # init. dict. to save data for each (country, year, clim_year) tuple
     current_df = {}

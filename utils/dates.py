@@ -1,4 +1,11 @@
+import logging
 from datetime import datetime
+from typing import List, Optional
+
+from common.constants.temporal import DAY_OF_WEEK
+from common.long_term_uc_io import DATE_FORMAT_PRINT
+
+ALLOWED_DATE_FMTS = ['%Y/%m/%d', '%m/%d', '%Y-%m-%d', '%m-%d']
 
 
 def set_year_in_date(my_date: datetime, new_year: int) -> datetime:
@@ -56,3 +63,34 @@ def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: 
         max_date_str = remove_useless_zero_in_date(date=max_date_str, date_sep=date_sep)
 
     return f'{min_date_str}{sep_str}{max_date_str}'
+
+
+def get_period_str(period_start: datetime, period_end: datetime) -> str:
+    dow_start = DAY_OF_WEEK[period_start.isoweekday()]
+    dow_end = DAY_OF_WEEK[period_end.isoweekday()]
+    period_start_str = f'{dow_start} {period_start.strftime(DATE_FORMAT_PRINT)}'
+    period_end_str = f'{dow_end} {period_end.strftime(DATE_FORMAT_PRINT)}'
+    return f'[{period_start_str}, {period_end_str}]'
+
+
+def robust_date_parser(my_date: str, allowed_formats: List[str] = None,
+                       raise_warning: bool = False) -> Optional[datetime]:
+    """
+    N.B. When no year defined in date format, the default year value set in datetime is 1900 -> coherently with the
+    usage of fictive 1900 calendar in this project!
+    """
+    if allowed_formats is None:
+        allowed_formats = ALLOWED_DATE_FMTS
+
+    timezone_str = '+00:00'
+    if timezone_str in my_date:
+        my_date = my_date.replace(timezone_str, '')
+    for date_format in allowed_formats:
+        try:
+            return datetime.strptime(my_date, date_format)
+        except ValueError:
+            pass
+    if raise_warning:
+        logging.warning(f'{my_date} cannot be cast as datetime with list of allowed formats {allowed_formats}'
+                        f' -> None returned')
+    return None
