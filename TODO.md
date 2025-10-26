@@ -23,7 +23,8 @@ DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les é
 DA3) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
 DA4) Sans start/end_date -> fonctionnel ? (avec année complète par défaut)
-DA5) Adapter legend (si plot) / nom de fichier (si extract) au cas avec start/end_date
+DA5) Adapter nom de fichier (si extract) au cas avec start/end_date
+
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
 TE2) conserver FUEL_SOURCES ou bien trop compliqué pour les étudiants ?

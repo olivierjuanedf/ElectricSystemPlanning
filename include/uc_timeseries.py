@@ -9,7 +9,7 @@ from common.constants.data_analysis_types import ANALYSIS_TYPES_PLOT, COMMON_PLO
 from utils.basic_utils import set_years_suffix
 from utils.dates import set_year_in_date
 from utils.df_utils import set_key_columns
-from utils.plot import simple_plot
+from utils.plot import simple_plot, set_temporal_period_title
 
 
 def set_uc_ts_name(full_data_type: tuple, countries: str, years: int, climatic_years: int):
@@ -50,11 +50,13 @@ def set_date_col(first_date: Union[int, datetime]) -> str:
 class UCTimeseries:
     name: str = None
     data_type: tuple = None
-    # can be a dict. {(year, clim year): vector of values}, in case multiple (year, climatic year) be considered
-    values: Union[np.ndarray, Dict[Tuple[int, int], np.ndarray]] = None
+    # can be a dict. {(country, year, clim year): vector of values}, in case multiple
+    # (country, year, climatic year) be considered
+    values: Union[np.ndarray, Dict[Tuple[str, int, int], np.ndarray]] = None
     unit: str = None
-    # can be a dict. {(year, clim year): dates}, in case multiple (year, climatic year) be considered
-    dates: Union[List[datetime], Dict[Tuple[int, int], List[datetime]]] = None
+    # can be a dict. {(country, year, clim year): dates}, in case multiple
+    # (country, year, climatic year) be considered
+    dates: Union[List[datetime], Dict[Tuple[str, int, int], List[datetime]]] = None
 
     def from_df_col(self, df: pd.DataFrame, col_name: str, unit: str = None):
         self.name = col_name
@@ -134,8 +136,21 @@ class UCTimeseries:
             ylabel += f' ({self.unit.upper()})'
         return ylabel
     
-    def set_plot_title(self) -> str:
-        return '-'.join(list(self.data_type)).capitalize()
+    def set_plot_title(self, dt_suffix: str = None) -> str:
+        plot_title = '-'.join(list(self.data_type)).capitalize()
+        if dt_suffix is not None:
+            plot_title += f' {dt_suffix}'
+        # add suffix to indicate temporal period
+        if isinstance(self.dates, list):
+            dates_for_title = self.dates
+        else:
+            first_key = list(self.dates)[0]
+            dates_for_title = self.dates[first_key]
+
+        min_date = min(dates_for_title)
+        max_date = max(dates_for_title)
+        plot_title += f', period {set_temporal_period_title(min_date=min_date, max_date=max_date)}'
+        return plot_title
 
     def set_attrs_in_plot_legend(self) -> List[str]:
         if not isinstance(self.values, dict):
@@ -191,7 +206,7 @@ class UCTimeseries:
         fig_file = os.path.join(output_dir, f'{self.name.lower()}_duration_curve.png')
         with_curve_labels = isinstance(y, dict) and len(y) > 1
         simple_plot(x=duration_curve, y=vals_desc_order, fig_file=fig_file,
-                    title=f'{self.set_plot_title()} duration curve', xlabel=xlabel, 
+                    title=f'{self.set_plot_title(dt_suffix="duration curve")}', xlabel=xlabel,
                     ylabel=self.set_plot_ylabel(), with_curve_labels=with_curve_labels)
     
     def plot_rolling_horizon_avg(self):
