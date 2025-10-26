@@ -4,21 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Dict
 
+from utils.dates import set_temporal_period_str
 
-def set_temporal_period_title(min_date: datetime, max_date: datetime, print_year: bool = False) -> str:
-    if not print_year and not max_date.year == min_date.year:
-        print_year = True
-    if print_year:
-        temp_period_title = f'{min_date:%Y/%m/%d}-'
-    else:
-        temp_period_title = f'{min_date:%m/%d}-'
-    if print_year and max_date.year > min_date.year:
-        temp_period_title += f'{max_date:%Y/%m/%d}'
-    elif max_date.month > min_date.month:
-        temp_period_title += f'{max_date:%m/%d}'
-    else:
-        temp_period_title += f'{max_date:%d}'
-    return temp_period_title
+
+def set_temporal_period_title(min_date: datetime, max_date: datetime) -> str:
+    print_year = max_date.year > min_date.year
+    return set_temporal_period_str(min_date=min_date, max_date=max_date, print_year=print_year)
 
 
 def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str, np.ndarray], Dict[str, list]],

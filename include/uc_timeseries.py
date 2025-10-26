@@ -7,7 +7,7 @@ import pandas as pd
 
 from common.constants.data_analysis_types import ANALYSIS_TYPES_PLOT, COMMON_PLOT_YEAR
 from utils.basic_utils import set_years_suffix
-from utils.dates import set_year_in_date
+from utils.dates import set_year_in_date, set_temporal_period_str
 from utils.df_utils import set_key_columns
 from utils.plot import simple_plot, set_temporal_period_title
 
@@ -112,6 +112,7 @@ class UCTimeseries:
         return output_vals
 
     def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray, float]] = None):
+        with_temp_period_suffix = True
         output_dates = self.set_output_dates(is_plot=False)
         date_col = set_date_col(first_date=output_dates[0])
         output_vals = self.set_output_values(is_plot=False)
@@ -127,7 +128,15 @@ class UCTimeseries:
             df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year'],
                                       tuple_values=all_keys, n_repeat=n_dates)
             df_to_csv = pd.concat([df_keys, df_to_csv], axis=1)
-        output_file = os.path.join(output_dir, f'{self.name.lower()}.csv')
+        if with_temp_period_suffix:
+            min_date = min(output_dates)
+            max_date = max(output_dates)
+            temp_period_str = set_temporal_period_str(min_date=min_date, max_date=max_date,
+                                                      print_year=False, date_sep='-')
+            temp_period_suffix = f'_{temp_period_str}'
+        else:
+            temp_period_suffix = ''
+        output_file = os.path.join(output_dir, f'{self.name.lower()}{temp_period_suffix}.csv')
         df_to_csv.to_csv(output_file, index=None)
 
     def set_plot_ylabel(self) -> str:
