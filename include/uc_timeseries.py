@@ -6,13 +6,13 @@ import numpy as np
 import pandas as pd
 
 from common.constants.data_analysis_types import ANALYSIS_TYPES_PLOT, COMMON_PLOT_YEAR
-from utils.basic_utils import set_years_suffix
+from utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
 from utils.dates import set_year_in_date, set_temporal_period_str
 from utils.df_utils import set_key_columns
 from utils.plot import simple_plot, set_temporal_period_title
 
 
-def set_uc_ts_name(full_data_type: tuple, countries: str, years: int, climatic_years: int):
+def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int], climatic_years: List[int]):
     data_type_prefix = '-'.join(list(full_data_type))
     n_countries = len(countries)
     n_countries_max_in_suffix = 2
@@ -21,8 +21,11 @@ def set_uc_ts_name(full_data_type: tuple, countries: str, years: int, climatic_y
         countries = [elt[:3] for elt in countries]
     countries_suffix = '-'.join(countries) if n_countries <= n_countries_max_in_suffix else f'{n_countries}-countries'
     years_suffix = set_years_suffix(years=years)
-    clim_years_suffix = set_years_suffix(years=climatic_years)
-    return f'{data_type_prefix}_{countries_suffix}_{years_suffix}_cy{clim_years_suffix}'
+    clim_years_suffix = set_years_suffix(years=climatic_years, is_climatic_year=True)
+    if CLIM_YEARS_SUFFIX not in clim_years_suffix:
+        clim_years_suffix = f'cy{clim_years_suffix}'
+
+    return f'{data_type_prefix}_{countries_suffix}_{years_suffix}_{clim_years_suffix}'
 
 
 def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int = None,

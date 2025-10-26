@@ -7,6 +7,9 @@ from common.constants.temporal import DAY_OF_WEEK
 from common.long_term_uc_io import DATE_FORMAT_PRINT
 
 
+CLIM_YEARS_SUFFIX = 'clim-years'
+
+
 def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True, 
                   ad_hoc_replacements: dict = None) -> Optional[str]:
     # sanitize only if str
@@ -104,15 +107,18 @@ def get_intersection_of_lists(list1: list, list2: list) -> list:
     return list(set(list1) & set(list2))
 
 
-def set_years_suffix(years: List[int]) -> str:
-    if len(years) == 0:
+def set_years_suffix(years: List[int], is_climatic_year: bool = False) -> str:
+    n_years = len(years)
+    if n_years == 0:
         return ''
-    if len(years) == 1:
+    if n_years == 1:
         return f'{years[0]}'
-    if len(years) == 2:
+    if n_years == 2:
         min_date = f'{min(years)}'
         max_date = f'{max(years)}'
         if min_date[:2] == max_date[:2]:
             return f'{min_date}-{max_date[2:]}'
         else:
             return f'{min_date}-{max_date}'
+    suffix = CLIM_YEARS_SUFFIX if is_climatic_year else 'years'
+    return f'{n_years}-{suffix}'
