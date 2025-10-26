@@ -1,4 +1,9 @@
 {
-    "datatypes": ["demand", "res_capa-factors", "generation_capas", "intercos_capas"
-    ]
+  "datatypes": [
+    "demand",
+    "net_demand",
+    "res_capa-factors",
+    "generation_capas",
+    "intercos_capas"
+  ]
 }

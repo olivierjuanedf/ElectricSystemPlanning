@@ -23,7 +23,8 @@ DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les é
 DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
 DA4) Sans start/end_date -> fonctionnel ? (avec année complète par défaut)
-DA5) Adapter nom de fichier (si extract) au cas avec start/end_date
+DA5) Prévoir valeur par défaut climatic_year, si on veut faire le data crunch sans présenter ce concept...
+DA6) AVec start et end date définis "seulement" au format m/d
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
