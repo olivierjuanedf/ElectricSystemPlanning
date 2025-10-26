@@ -20,7 +20,7 @@ D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv"
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
 DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les étudiants sur Excel ?
-DA3) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
+DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
 DA4) Sans start/end_date -> fonctionnel ? (avec année complète par défaut)
 DA5) Adapter nom de fichier (si extract) au cas avec start/end_date
