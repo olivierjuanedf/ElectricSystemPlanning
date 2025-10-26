@@ -6,6 +6,10 @@ from common.constants.temporal import DAY_OF_WEEK
 from common.long_term_uc_io import DATE_FORMAT_PRINT
 
 ALLOWED_DATE_FMTS = ['%Y/%m/%d', '%m/%d', '%Y-%m-%d', '%m-%d']
+DAY_EXP = {0: 'th', 1: 'st', 2: 'nd', 3: 'rd', 4: 'th', 5: 'th', 6: 'th', 7: 'th', 8: 'th', 9: 'th'}
+MONTHS_SHORT = {'January': 'Jan.', 'February': 'Feb.', 'March': 'March', 'April': 'April', 'May': 'May', 'June': 'June',
+                'July': 'July', 'August': 'Aug.', 'September': 'Sept.', 'October': 'Oct.', 'November': 'Nov.',
+                'December': 'Dec.'}
 
 
 def set_year_in_date(my_date: datetime, new_year: int) -> datetime:
@@ -27,10 +31,11 @@ def remove_useless_zero_in_date(date: str, date_sep: str = '/') -> str:
     return date
 
 
-def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: bool,
-                            min_str_fmt: bool = True, date_sep: str = '/', rm_useless_zeros: bool = True) -> str:
-    full_date_fmt = f'%Y{date_sep}%m{date_sep}%d'
-    date_wo_year_fmt = f'%m{date_sep}%d'
+def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: bool, min_str_fmt: bool = True,
+                            date_sep: str = '/', rm_useless_zeros: bool = True, in_letter: bool = False,
+                            short_months: bool = True, add_day_exp: bool = True) -> str:
+    full_date_fmt = f'%Y %B %d' if in_letter else f'%Y{date_sep}%m{date_sep}%d'
+    date_wo_year_fmt = f'%B %d' if in_letter else f'%m{date_sep}%d'
     date_with_only_day_fmt = '%d'
     sep_str = '-'
     if sep_str == date_sep:
@@ -61,6 +66,18 @@ def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: 
     max_date_str = max_date.strftime(format=max_date_fmt)
     if rm_useless_zeros:
         max_date_str = remove_useless_zero_in_date(date=max_date_str, date_sep=date_sep)
+
+    # use shortened names, day exponents for months
+    if in_letter:
+        if short_months:
+            for month, month_short in MONTHS_SHORT.items():
+                if month in min_date_str:
+                    min_date_str = min_date_str.replace(month, month_short)
+                if month in max_date_str:
+                    max_date_str = max_date_str.replace(month, month_short)
+        if add_day_exp:
+            min_date_str += DAY_EXP[int(min_date_str[-1])]
+            max_date_str += DAY_EXP[int(max_date_str[-1])]
 
     return f'{min_date_str}{sep_str}{max_date_str}'
 

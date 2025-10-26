@@ -105,7 +105,8 @@ class DataAnalysis:
         repr_str += f'\n- climatic years: {self.climatic_years}'
         if self.period_start is not None and self.period_end is not None:
             temp_period_str = (
-                set_temporal_period_str(min_date=self.period_start, max_date=self.period_end, print_year=False)
+                set_temporal_period_str(min_date=self.period_start, max_date=self.period_end,
+                                        print_year=False, in_letter=True)
             )
             repr_str += f'\n- period: {temp_period_str}'
         return repr_str
@@ -162,8 +163,8 @@ class DataAnalysis:
 
         # coherence of start and end period
         if self.period_end <= self.period_start:
-            errors_list.append(f'{self.period_end.strftime(DATE_FORMAT_IN_JSON)} '
-                               f'before {self.period_start.strftime(DATE_FORMAT_IN_JSON)}')
+            errors_list.append(f'Period end {self.period_end.strftime(DATE_FORMAT_IN_JSON)} '
+                               f'before start {self.period_start.strftime(DATE_FORMAT_IN_JSON)}')
 
         # restrict to same calendar year to simplify following treatments -> 1900 as the unique one in "modeled" data
         self.period_start, self.period_end = (
