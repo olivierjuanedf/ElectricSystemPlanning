@@ -91,6 +91,8 @@ def set_date_xtick_labels(x_dates: List[datetime], min_delta_xticks_h: int = 1, 
     """
     Set xtick labels when x-axis is composed of dates
     :param x_dates: list of datetime of figure for which xticks must be set
+    :param min_delta_xticks_h: min delta in hours between successive xtick labels
+    :param n_max_xticks: max number of xtick labels
     :param xtick_date_fmt: month_in_letter -> Jan 1st; dow -> day of week
     :param add_day_exp: add day exponent (st for 1, nd for 2, etc.) if xtick_date_fmt is month_in_letter?
     """
