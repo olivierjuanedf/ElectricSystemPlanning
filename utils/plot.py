@@ -38,47 +38,59 @@ def set_dow_xtick_labels(idx_xticks: List[int], x_dates: List[datetime]) -> List
     while i < n_xticks:
         # add dow only for first tick of this dow
         if new_date is None or not current_day_date == new_date:
-            new_date = x_dates[idx_xticks[i] - 1]
+            new_date = x_dates[idx_xticks[i]]
             new_date = datetime(year=new_date.year, month=new_date.month, day=new_date.day)
             current_dow = DAY_OF_WEEK[new_date.isoweekday() - 1]
             xtick_labels[i] = f"{current_dow}\n{new_date:%H:}"
         # only hours for the other dates
         else:
-            xtick_labels[i] = f"{x_dates[idx_xticks[i] - 1]:%H:}"
+            xtick_labels[i] = f"{x_dates[idx_xticks[i]]:%H:}"
         i += 1
         if i < n_xticks:
-            current_day_date = x_dates[idx_xticks[i] - 1]
+            current_day_date = x_dates[idx_xticks[i]]
             current_day_date = datetime(year=current_day_date.year, month=current_day_date.month,
                                         day=current_day_date.day)
     return xtick_labels
 
 
-def set_month_in_letter_xtick_labels(idx_xticks: List[int], x_dates: List[datetime],
-                                     add_day_exp: bool = False) -> List[str]:
+def set_date_in_letter_xtick_labels(idx_xticks: List[int], x_dates: List[datetime],
+                                    add_day_exp: bool = False) -> List[str]:
     with_year_in_xticks = x_dates[-1].year > x_dates[0].year
-    new_year_and_month = None
-    current_year_and_month = None
+    new_year_month_and_day = None
+    current_year_month_and_day = None
+    is_new_date = False
     i = 0
     n_xticks = len(idx_xticks)
     xtick_labels = []
     while i < n_xticks:
-        # add dow only for first tick of this dow
-        if new_year_and_month is None or not current_year_and_month == new_year_and_month:
-            new_date = x_dates[idx_xticks[i] - 1]
-            new_year_and_month = (new_date.year, new_date.month)
-            # TODO: set minimal xtick labels (H if common year, month, day...)
-            if with_year_in_xticks and (current_year_and_month is None
-                                        or current_year_and_month[0] > new_year_and_month[0]):
-                date_fmt = '%Y %B %d'
-            else:
-                bob = 1
-            date_str = new_date.strftime(date_fmt)
-            if add_day_exp:
-                date_str = add_day_exponent(date=date_str)
-            xtick_labels[i] = date_str
-        # only hours for the other dates
+        # TODO: fix this function...
+        # first date, or new year -> full label
+        if with_year_in_xticks and (new_year_and_month is None
+                                    or current_year_and_month[0] > new_year_and_month[0]):
+            date_fmt = '%Y %B %d'
+            is_new_date = True
+        # new month -> month, d label
+        elif current_year_and_month is None or not current_year_and_month[1] == new_year_and_month[1]:
+            date_fmt = '%B %d'
+            is_new_date = True
+        # only day
         else:
-            xtick_labels[i] = f"{x_dates[idx_xticks[i] - 1]:%H:}"
+            date_fmt = '%d'
+        if is_new_date:
+            new_date = x_dates[idx_xticks[i]]
+        date_str = new_date.strftime(date_fmt)
+        # add day exponent?
+        if add_day_exp:
+            date_str = add_day_exponent(date=date_str)
+        # add hours
+        # new line if year or month in str
+        if len(date_str) >= 3:
+            date_sep = '\n'
+        else:
+            date_sep = ' '
+        date_str += f'{date_sep}{new_date.hour}:'
+        xtick_labels[i] = date_str
+
         i += 1
         if i < n_xticks:
             current_date = x_dates[idx_xticks[i] - 1]
@@ -93,7 +105,7 @@ def set_date_xtick_labels(x_dates: List[datetime], min_delta_xticks_h: int = 1, 
     :param x_dates: list of datetime of figure for which xticks must be set
     :param min_delta_xticks_h: min delta in hours between successive xtick labels
     :param n_max_xticks: max number of xtick labels
-    :param xtick_date_fmt: month_in_letter -> Jan 1st; dow -> day of week
+    :param xtick_date_fmt: in_letter -> Jan 1st; dow -> day of week
     :param add_day_exp: add day exponent (st for 1, nd for 2, etc.) if xtick_date_fmt is month_in_letter?
     """
     # TODO: to be set based on min delta xticks value (1h) and max nber of ticks
@@ -102,9 +114,9 @@ def set_date_xtick_labels(x_dates: List[datetime], min_delta_xticks_h: int = 1, 
     if xtick_date_fmt is not None:
         if xtick_date_fmt == 'dow':
             xtick_labels = set_dow_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates)
-        elif xtick_date_fmt == 'month_in_letter':
-            xtick_labels = set_month_in_letter_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates,
-                                                            add_day_exp=add_day_exp)
+        elif xtick_date_fmt == 'in_letter':
+            xtick_labels = set_date_in_letter_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates,
+                                                           add_day_exp=add_day_exp)
     return idx_xticks, xtick_labels
 
 
