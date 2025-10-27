@@ -1,6 +1,7 @@
 import logging
 from typing import List, Optional, Tuple, Union
 import numpy as np
+import math
 
 
 CLIM_YEARS_SUFFIX = 'clim-years'
@@ -110,3 +111,7 @@ def set_years_suffix(years: List[int], is_climatic_year: bool = False) -> str:
             return f'{min_date}-{max_date}'
     suffix = CLIM_YEARS_SUFFIX if is_climatic_year else 'years'
     return f'{n_years}-{suffix}'
+
+
+def lowest_common_multiple(a, b):
+    return abs(a * b) // math.gcd(a, b)
