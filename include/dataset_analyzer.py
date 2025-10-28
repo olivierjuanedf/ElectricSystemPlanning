@@ -14,7 +14,8 @@ from common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_D
 from common.error_msgs import uncoherent_param_stop
 from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
 from include.uc_timeseries import set_uc_ts_name, UCTimeseries
-from utils.dates import robust_date_parser, ALLOWED_DATE_FMTS, set_year_in_date, set_temporal_period_str
+from utils.dates import robust_date_parser, set_year_in_date, set_temporal_period_str
+from utils.plot import FigureStyle
 from utils.type_checker import CheckerNames, apply_params_type_check
 
 
@@ -89,8 +90,8 @@ class DataAnalysis:
     years: Union[int, List[int]]  # idem above with int or List[int]
     climatic_years: Union[int, List[int]]
     data_subtype: str = None
-    period_start: datetime = None
-    period_end: datetime = None
+    period_start: Union[str, datetime] = None  # in JSON str, then datetime after parsing data
+    period_end: Union[str, datetime] = None  # idem
 
     def __repr__(self):
         repr_str = 'ERAA data analysis with params:'
@@ -188,11 +189,12 @@ class DataAnalysis:
         else:
             return self.data_type, self.data_subtype
 
-    def apply_analysis(self, per_case_data: Dict[Tuple[str, int, int], pd.DataFrame]):
+    def apply_analysis(self, per_case_data: Dict[Tuple[str, int, int], pd.DataFrame], fig_style: FigureStyle = None):
         """
         Apply 'analysis', either saving data to csv, or plotting it
         :param per_case_data: per tuple (country, year, climatic year) data in a dict. {tuple: df},
         or unique dataframe if unique case considered
+        :param fig_style: FigureStyle params, in case a plot be applied
         """
         current_full_dt = self.get_full_datatype()
         date_col = 'date'
@@ -219,9 +221,9 @@ class DataAnalysis:
         if len(values) == 0:
             logging.warning(f'No data obtained for type {self.data_type} -> analysis not done')
         elif self.analysis_type == ANALYSIS_TYPES.plot:
-            uc_timeseries.plot(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER)
+            uc_timeseries.plot(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style)
         elif self.analysis_type == ANALYSIS_TYPES.plot_duration_curve:
-            uc_timeseries.plot_duration_curve(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER)
+            uc_timeseries.plot_duration_curve(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style)
         elif self.analysis_type in [ANALYSIS_TYPES.extract, ANALYSIS_TYPES.extract_to_mat]:
             to_matrix = True if self.analysis_type == ANALYSIS_TYPES.extract_to_mat else False
             # TODO[debug]: to_matrix_format not an arg of this method..., complem_columns missing...

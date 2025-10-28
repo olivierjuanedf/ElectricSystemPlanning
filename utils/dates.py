@@ -36,6 +36,13 @@ def add_day_exponent(date: str) -> str:
     return date
 
 
+def set_month_short_in_date(date: str) -> str:
+    for month, month_short in MONTHS_SHORT.items():
+        if month in date:
+            date = date.replace(month, month_short)
+    return date
+
+
 def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: bool, min_str_fmt: bool = True,
                             date_sep: str = '/', rm_useless_zeros: bool = True, in_letter: bool = False,
                             short_months: bool = True, add_day_exp: bool = True) -> str:
@@ -75,11 +82,8 @@ def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: 
     # use shortened names, day exponents for months
     if in_letter:
         if short_months:
-            for month, month_short in MONTHS_SHORT.items():
-                if month in min_date_str:
-                    min_date_str = min_date_str.replace(month, month_short)
-                if month in max_date_str:
-                    max_date_str = max_date_str.replace(month, month_short)
+            min_date_str = set_month_short_in_date(date=min_date_str)
+            max_date_str = set_month_short_in_date(date=max_date_str)
         if add_day_exp:
             min_date_str = add_day_exponent(date=min_date_str)
             max_date_str = add_day_exponent(date=max_date_str)

@@ -5,11 +5,11 @@ from typing import Dict, List, Union, Tuple
 import numpy as np
 import pandas as pd
 
-from common.constants.data_analysis_types import ANALYSIS_TYPES_PLOT, COMMON_PLOT_YEAR
+from common.constants.data_analysis_types import COMMON_PLOT_YEAR
 from utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
 from utils.dates import set_year_in_date, set_temporal_period_str
 from utils.df_utils import set_key_columns
-from utils.plot import simple_plot, set_temporal_period_title
+from utils.plot import simple_plot, set_temporal_period_title, FigureStyle
 
 
 def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int], climatic_years: List[int]):
@@ -180,7 +180,7 @@ class UCTimeseries:
             attrs_in_plot_legend.append('climatic_year')
         return attrs_in_plot_legend
 
-    def plot(self, output_dir: str):
+    def plot(self, output_dir: str, fig_style: FigureStyle = None):
         name_label = self.name.capitalize()
         fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
         x = self.set_output_dates(is_plot=True)
@@ -192,9 +192,9 @@ class UCTimeseries:
             y = {set_curve_label(attrs_in_legend, *key): vals for key, vals in y.items()}
         with_curve_labels = isinstance(y, dict) and len(y) > 1
         simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(), xlabel=xlabel,
-                    ylabel=self.set_plot_ylabel(), with_curve_labels=with_curve_labels)
+                    ylabel=self.set_plot_ylabel(), fig_style=fig_style)
 
-    def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False) -> np.ndarray:
+    def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None):
         y = self.set_output_values(is_plot=True)
         # sort values in descending order
         # per (country, year, climatic year) values
@@ -216,10 +216,13 @@ class UCTimeseries:
         else:
             xlabel = 'Duration (nber of time-slots - hours)'
         fig_file = os.path.join(output_dir, f'{self.name.lower()}_duration_curve.png')
-        with_curve_labels = isinstance(y, dict) and len(y) > 1
+        if fig_style is None:
+            fig_style = FigureStyle()
+            print_legend = isinstance(y, dict) and len(y) > 1
+            fig_style.set_print_legend(value=print_legend)
         simple_plot(x=duration_curve, y=vals_desc_order, fig_file=fig_file,
                     title=f'{self.set_plot_title(dt_suffix="duration curve")}', xlabel=xlabel,
-                    ylabel=self.set_plot_ylabel(), with_curve_labels=with_curve_labels)
+                    ylabel=self.set_plot_ylabel(), fig_style=fig_style)
     
     def plot_rolling_horizon_avg(self):
         bob = 1
@@ -240,4 +243,3 @@ def list_of_uc_ts_to_csv(list_of_uc_ts: List[UCTimeseries], output_dir: str, to_
         for uc_ts in list_of_uc_ts:
             dummy_file = os.path.join(output_dir, 'dummy.csv')
             uc_ts.to_csv(dummy_file)
-
