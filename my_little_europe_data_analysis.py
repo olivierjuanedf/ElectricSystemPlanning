@@ -6,9 +6,10 @@ from common.constants.datatypes import DATATYPE_NAMES
 from common.logger import init_logger, stop_logger
 from common.long_term_uc_io import OUTPUT_FOLDER_LT
 from include.dataset import Dataset
+from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
 from utils.plot import FigureStyle
-from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params
+from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, read_data_analysis_plot_params
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
 data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
@@ -18,8 +19,8 @@ logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_input_data_a
 logging.info('START ERAA (input) data analysis')
 
 # set figure style for plots
-fig_style = FigureStyle()
-fig_style.set_add_day_exp(value=True)
+fig_style = read_data_analysis_plot_params()
+print_non_default(obj=fig_style, obj_name='FigureStyle')
 
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:

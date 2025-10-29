@@ -2,12 +2,12 @@ import logging
 from typing import List, Optional, Tuple, Union
 import numpy as np
 import math
-
+from dataclasses import fields, MISSING
 
 CLIM_YEARS_SUFFIX = 'clim-years'
 
 
-def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True, 
+def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True,
                   ad_hoc_replacements: dict = None) -> Optional[str]:
     # sanitize only if str
     if not isinstance(raw_str, str):
@@ -115,3 +115,18 @@ def set_years_suffix(years: List[int], is_climatic_year: bool = False) -> str:
 
 def lowest_common_multiple(a, b):
     return abs(a * b) // math.gcd(a, b)
+
+
+def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = None):
+    non_default_msg = ''
+    sep = '\n- '
+    for f in fields(obj):
+        default = f.default if f.default is not MISSING else None
+        value = getattr(obj, f.name)
+        if value != default:
+            non_default_msg += f"{sep}{f.name} = {value}"
+    if len(non_default_msg) > 0:
+        obj_name_suffix = f' for object {obj_name}' if obj_name is not None else ''
+        logging.info(f'Non-default attrs used{obj_name_suffix}:{non_default_msg}')
+    elif msg_if_all_defaults:
+        logging.info('All default values used')
