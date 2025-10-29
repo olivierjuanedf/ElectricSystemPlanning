@@ -3,6 +3,8 @@ from copy import deepcopy
 from dataclasses import dataclass
 import logging
 from typing import Dict, List, Tuple
+
+import numpy as np
 import pandas as pd
 
 from common.constants.aggreg_operations import AggregOpeNames
@@ -203,11 +205,11 @@ class Dataset:
                     if country in power_capacities:
                         for k, v in power_capacities[country].items():
                             current_df_gen_capa.loc[
-                                current_df_gen_capa['production_type_agg'] == k, 'power_capacity'] = v
+                                current_df_gen_capa[prod_type_agg_col] == k, 'power_capacity'] = v
 
                     if 'failure' in selec_agg_prod_types[country]:
                         failure_df = pd.DataFrame.from_dict({
-                            'production_type_agg': ['failure'],
+                            prod_type_agg_col: ['failure'],
                             'power_capacity': [uc_run_params.failure_power_capa],
                             'power_capacity_turbine': [0.0],
                             'power_capacity_pumping': [0.0],
@@ -220,26 +222,30 @@ class Dataset:
                     if country in power_capacities:
                         for k, v in power_capacities[country].items():
                             current_df_gen_capa.loc[
-                                current_df_gen_capa['production_type_agg'] == k, 'power_capacity'] = v
+                                current_df_gen_capa[prod_type_agg_col] == k, 'power_capacity'] = v
                     if DATATYPE_NAMES.installed_capa in datatypes_selec:
                         self.agg_gen_capa_data[country] = current_df_gen_capa
                     # get dict. with only power capacity values to get less verbose logs
                     power_capa_dict = create_dict_from_cols_in_df(df=current_df_gen_capa,
-                                                                  key_col='production_type_agg',
+                                                                  key_col=prod_type_agg_col,
                                                                   val_col='power_capacity')
                     logging.info(f'-> power capa. values, in MW: {power_capa_dict}')
                     logging.debug('#' * 100 + f'{current_df_gen_capa}' + '#' * 100)
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
+                # convert to float so that subtraction of CF can be done hereafter
+                current_np_net_demand = np.array(current_df_demand[value_col]).astype(np.float64)
+                # list of prod types with CF data
+                cf_agg_prod_types = [agg_prod_type for agg_prod_type in agg_prod_types_tb_read
+                                     if agg_prod_type in self.agg_prod_types_with_cf_data]
+                for agg_prod_type in cf_agg_prod_types:
+                    current_capa = (
+                        current_df_gen_capa.loc[current_df_gen_capa[prod_type_agg_col] == agg_prod_type,
+                        'power_capacity'].values)[0]
+                    current_cf_data = agg_cf_data_read[agg_cf_data_read[prod_type_agg_col] == agg_prod_type]
+                    current_np_net_demand -= current_capa * np.array(current_cf_data[value_col])
                 current_df_net_demand = current_df_demand
-                for agg_prod_type in agg_prod_types_tb_read:
-                    # if prod type with CF data
-                    if agg_prod_type in self.agg_prod_types_with_cf_data:
-                        current_capa = (
-                            current_df_gen_capa.loc[current_df_gen_capa['production_type_agg'] == agg_prod_type,
-                            'power_capacity'].values)[0]
-                        current_cf_data = agg_cf_data_read[agg_cf_data_read['production_type_agg'] == agg_prod_type]
-                        current_df_net_demand['value'] -= current_capa * current_cf_data['value']
+                current_df_net_demand[value_col] = current_np_net_demand
                 self.net_demand[country] = current_df_net_demand
 
         if DATATYPE_NAMES.interco_capa in datatypes_selec:
