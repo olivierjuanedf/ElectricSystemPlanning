@@ -7,7 +7,7 @@ from typing import Union, Dict, List, Tuple
 
 from common.constants.temporal import DAY_OF_WEEK
 from utils.basic_utils import lowest_common_multiple
-from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date
+from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
 
 
 @dataclass
@@ -27,12 +27,13 @@ class FigureStyle:
     grid_on: bool = True
     # all legend parameters
     print_legend: bool = True
-    legend_font_size: int = 20
+    legend_font_size: int = 15
     legend_loc: str = 'best'
     # xtick (labels)
     delta_xticks: int = None
     date_xtick_fmt: str = XtickDateFormat.in_letter
     add_day_exp_in_date_xtick: bool = False
+    rm_useless_zeros_in_date_xtick: bool = True
     date_xtick_fontsize: int = 12
     date_xtick_rotation: int = 45
 
@@ -60,11 +61,12 @@ def set_xtick_idx(min_date: datetime, max_date: datetime, delta_date: timedelta,
     delta_xticks_h = allowed_delta_date_xticks_h[i_delta_xticks]
     delta_xticks_h = lowest_common_multiple(a=delta_xticks_h, b=delta_date_h)
     n_dates = delta_tot_h // delta_date_h + 1
-    return np.arange(0, n_dates, delta_xticks_h)
+    idx_xticks = np.arange(0, n_dates, delta_xticks_h).astype(np.int64)
+    return list(idx_xticks)
 
 
-def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format: str,
-                          short_months: bool = True, add_day_exp: bool = False) -> List[str]:
+def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format: str, short_months: bool = True,
+                          add_day_exp: bool = False, rm_useless_zeros: bool = True) -> List[str]:
     """
     Set date xtick labels
     :param idx_xticks: idx of xtick labels that will be used in plot
@@ -72,6 +74,7 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format
     :param format: format to be used for xtick labels, cf. XtickDateFormat
     :param short_months: use short names for months (Jan. i.o. January, etc.), only for 'in_letter' format
     :param add_day_exp: add exponent on day nber, only for 'in_letter' format
+    :param rm_useless_zeros: remove useless zeros in dates nbers?
     """
     with_year_in_xticks = x_dates[-1].year > x_dates[0].year  # only used for format 'in_letter'
     new_date = None
@@ -101,6 +104,9 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format
                 if short_months and 'B' in current_date_fmt:
                     date_str = set_month_short_in_date(date=date_str)
 
+                if rm_useless_zeros:
+                    date_str = remove_useless_zero_in_date(date=date_str, date_sep=' ')
+
                 # add day exponent?
                 if add_day_exp and len(date_str) > 0:
                     date_str = add_day_exponent(date=date_str)
@@ -128,7 +134,8 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format
 
 
 def set_date_xtick_idx_and_labels(x_dates: List[datetime], min_delta_xticks_h: int = 1, n_max_xticks: int = 15,
-                                  xtick_date_fmt: str = None, add_day_exp: bool = False) -> (List[int], List[str]):
+                                  xtick_date_fmt: str = None, add_day_exp: bool = False,
+                                  rm_useless_zeros: bool = True) -> (List[int], List[str]):
     """
     Set xtick labels when x-axis is composed of dates
     :param x_dates: list of datetime of figure for which xticks must be set
@@ -136,14 +143,15 @@ def set_date_xtick_idx_and_labels(x_dates: List[datetime], min_delta_xticks_h: i
     :param n_max_xticks: max number of xtick labels
     :param xtick_date_fmt: in_letter -> Jan 1st; dow -> day of week
     :param add_day_exp: add day exponent (st for 1, nd for 2, etc.) if xtick_date_fmt is month_in_letter?
+    :param rm_useless_zeros: remove useless zeros in dates nbers (Jan. 1 i.o. Jan. 01)?
     """
     # set idx of xticks based on min delta xticks value and max nber of ticks
     idx_xticks = set_xtick_idx(min_date=x_dates[0], max_date=x_dates[-1], delta_date=x_dates[1] - x_dates[0],
                                min_delta_xticks_h=min_delta_xticks_h, n_max_xticks=n_max_xticks)
     if xtick_date_fmt is None:
         xtick_date_fmt = DEFAULT_DATE_XTICK_FMT
-    xtick_labels = set_date_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates,
-                                         format=xtick_date_fmt, add_day_exp=add_day_exp)
+    xtick_labels = set_date_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates, format=xtick_date_fmt,
+                                         add_day_exp=add_day_exp, rm_useless_zeros=rm_useless_zeros)
     return idx_xticks, xtick_labels
 
 
@@ -172,9 +180,11 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
         x_dates = x if isinstance(x, list) else list(x)
         idx_xticks, xtick_values = (
             set_date_xtick_idx_and_labels(x_dates=x_dates, xtick_date_fmt=fig_style.date_xtick_fmt,
-                                          add_day_exp=fig_style.add_day_exp_in_date_xtick)
+                                          add_day_exp=fig_style.add_day_exp_in_date_xtick,
+                                          rm_useless_zeros=fig_style.rm_useless_zeros_in_date_xtick)
         )
-        plt.xticks(ticks=idx_xticks, labels=xtick_values, rotation=fig_style.date_xtick_rotation,
+        ticks = [x_dates[i] for i in idx_xticks]
+        plt.xticks(ticks=ticks, labels=xtick_values, rotation=fig_style.date_xtick_rotation,
                    fontsize=fig_style.date_xtick_fontsize)
 
     # grid
