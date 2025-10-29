@@ -8,7 +8,7 @@ To get some insights on the data used in this code environment, from European Re
   - **data_type** (str): datatype to analyze/plot; its value must be in the list of available values given in file *input/long_term_uc/functional_available-values.json* (e.g., "demand", "res_capa-factors", "generation_capas", etc.); "net_demand" is also allowed
   - **country** (str or list of str): it must be in the list of values given in file *input/long_term_uc/elec-europe_eraa-available-values.json* (field "countries")
     N.B. If list, multiple curves will be obtained (on same graph) - one for each country; if csv is written data of the different countries will be concatenated
-  - **year** (int or list of int): idem (field "target_years")
+  - **year** (int or list of int): year to be considered for the optimization; its value must be in the list of values given in file input/long_term_uc/elec-europe_eraa-available-values.json (field “target year”) 
     N.B. Idem **country** in case of a list
   - **climatic_year** (int or list of int): the (past) year from which weather conditions will be "extracted" and applied to current year; it must be in list given in file *input/long_term_uc/elec-europe_eraa-available-values.json* (field "climatic_years")  
     N.B. Idem **country* and **year** in case of a list
