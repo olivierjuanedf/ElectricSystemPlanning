@@ -79,10 +79,9 @@ pypsa_model.add_loads(demand=eraa_dataset.demand, carrier_name=DummyFuelNames.lo
 pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
 logging.info(f'PyPSA network main properties: {pypsa_model.network}')
 # plot network
-from common.plot_params import PlotParams
+from utils.read import read_plot_params
+plot_params = read_plot_params()
 
-plot_params = PlotParams()
-plot_params.read_and_check()
 pypsa_model.plot_network()
 result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year,
                                       n_countries=len(uc_run_params.selected_countries),

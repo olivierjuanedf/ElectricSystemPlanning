@@ -1,3 +1,4 @@
+import logging
 import os
 from dataclasses import dataclass
 from typing import Dict, List, Union
@@ -8,7 +9,6 @@ from common.long_term_uc_io import INPUT_FUNC_PARAMS_SUBFOLDER
 
 @dataclass
 class PlotParams:
-    json_file: str = os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'plot_params.json')
     # first parameters to set up a choice of parameters for a given execution
     zone_palette_choice: str = None
     agg_prod_type_palette_choice: str = None
@@ -39,16 +39,17 @@ class PlotParams:
     per_zone_color: Dict[str, str] = None
     per_agg_prod_type_color: Dict[str, str] = None
 
-    def read_and_check(self):
-        json_plot_params = check_and_load_json_file(json_file=self.json_file, file_descr='JSON plot params')
-        # TODO[Q2OJ]: better way to 'unpack'?
-        self.zone_palette_choice = json_plot_params['zone_palette_choice']
-        self.agg_prod_type_palette_choice = json_plot_params['agg_prod_type_palette_choice']
-        self.zone_order = json_plot_params['zone_order']
-        self.agg_prod_type_order = json_plot_params['agg_prod_type_order']
-        self.zone_palettes_def = json_plot_params['zone_palettes_def']
-        self.agg_prod_type_palettes_def = json_plot_params['agg_prod_type_palettes_def']
-        # TODO: check TB coded
+    def process(self):
+        # convert str to int keys
+        for elt in [self.year_palettes_def, self.year_linestyles_def, self.climatic_year_palettes_def,
+                    self.climatic_year_linestyles_def, self.climatic_year_markers_def]:
+            if elt is not None:
+                elt = {name: {int(key): value for key, value in dict_with_str_keys.items()}
+                       for name, dict_with_str_keys in elt.items()}
+
         self.per_zone_color = self.zone_palettes_def[self.zone_palette_choice]
         self.per_agg_prod_type_color = self.agg_prod_type_palettes_def[self.agg_prod_type_palette_choice]
-    
+
+    def check(self):
+        # TODO: check TB coded
+        logging.warning('Not coded for now')

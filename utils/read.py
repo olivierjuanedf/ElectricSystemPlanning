@@ -5,7 +5,7 @@ import logging
 from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
     get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
-    get_json_data_analysis_params_file, get_json_data_analysis_plot_params_file
+    get_json_data_analysis_params_file, get_json_plot_params_file
 from common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
 from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
@@ -145,7 +145,7 @@ def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> Li
 
 
 def read_data_analysis_plot_params() -> FigureStyle:
-    json_data_analysis_plot_params_file = get_json_data_analysis_plot_params_file()
+    json_data_analysis_plot_params_file = get_json_plot_params_file()
     logging.info(f'Read and check data analysis plot parameters file: {json_data_analysis_plot_params_file}')
 
     json_data_analysis_plot_params = check_and_load_json_file(json_file=json_data_analysis_plot_params_file,
@@ -154,10 +154,14 @@ def read_data_analysis_plot_params() -> FigureStyle:
 
 
 def read_plot_params() -> PlotParams:
-    json_plot_params_file = None
+    json_plot_params_file = get_json_plot_params_file()
     logging.info(f'Read and check plot parameters file: {json_plot_params_file}')
 
     json_plot_params = check_and_load_json_file(json_file=json_plot_params_file, file_descr='JSON plot params')
+    # remove elt used only for FigureStyle of data analysis
+    del json_plot_params['fig_style_data-analysis']
+
     plot_params = PlotParams(**json_plot_params)
-    # TODO process
+    plot_params.process()
+    # TODO: add checker
     return plot_params

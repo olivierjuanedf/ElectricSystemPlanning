@@ -106,7 +106,7 @@ def get_json_data_analysis_params_file() -> str:
     return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, 'data-analysis_params_to-be-modif.json') 
 
 
-def get_json_data_analysis_plot_params_file() -> str:
+def get_json_plot_params_file() -> str:
     return os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'plot_params.json')
 
 
