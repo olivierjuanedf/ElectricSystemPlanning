@@ -80,7 +80,7 @@ pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interc
 logging.info(f'PyPSA network main properties: {pypsa_model.network}')
 # plot network
 from utils.read import read_plot_params
-plot_params = read_plot_params()
+per_dim_plot_params = read_plot_params()
 
 pypsa_model.plot_network()
 result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year,

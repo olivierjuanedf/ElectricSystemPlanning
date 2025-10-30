@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Dict
 import logging
 
 from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
@@ -12,7 +12,7 @@ from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonPar
 from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
 from common.uc_run_params import UCRunParams
 from include.dataset_analyzer import DataAnalysis
-from common.plot_params import PlotParams
+from common.plot_params import PlotParams, PLOT_DIMS
 from utils.dir_utils import check_file_existence
 from utils.plot import FigureStyle
 
@@ -153,7 +153,7 @@ def read_data_analysis_plot_params() -> FigureStyle:
     return FigureStyle(**json_data_analysis_plot_params['fig_style_data-analysis'])
 
 
-def read_plot_params() -> PlotParams:
+def read_plot_params() -> Dict[str, PlotParams]:
     json_plot_params_file = get_json_plot_params_file()
     logging.info(f'Read and check plot parameters file: {json_plot_params_file}')
 
@@ -161,7 +161,13 @@ def read_plot_params() -> PlotParams:
     # remove elt used only for FigureStyle of data analysis
     del json_plot_params['fig_style_data-analysis']
 
-    plot_params = PlotParams(**json_plot_params)
-    plot_params.process()
-    # TODO: add checker
-    return plot_params
+    per_dim_plot_params = {}
+    for plot_dim in PLOT_DIMS:
+        dict_params = json_plot_params[plot_dim]
+        dict_params['dimension'] = plot_dim
+        current_plot_params = PlotParams(**dict_params)
+        current_plot_params.process()
+        # TODO: add checker
+        per_dim_plot_params[plot_dim] = current_plot_params
+
+    return per_dim_plot_params

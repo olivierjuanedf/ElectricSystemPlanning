@@ -1,142 +1,151 @@
 {
-  "zone_palette_choice": "own",
-  "agg_prod_type_palette_choice": "own",
-  "year_palette_choice": "own",
-  "year_linestyle_choice": "own",
-  "climatic_year_palette_choice": "own",
-  "climatic_year_linestyle_choice": "own",
-  "climatic_year_marker_choice": "own",
-  "zone_palettes_def": {
-    "own": {
-      "ben": "brown",
-      "fra": "purple",
-      "ger": "gray",
-      "ibe": "yellow",
-      "ita": "green",
-      "pol": "black",
-      "sca": "blue"
-    }
-  },
-  "zone_order": [
-    "ben",
-    "fra",
-    "ger",
-    "ibe",
-    "ita",
-    "pol",
-    "sca"
-  ],
-  "agg_prod_type_order": [
-    "wind_onshore",
-    "wind_offshore",
-    "solar_pv",
-    "solar_thermal",
-    "others_fatal",
-    "hydro_pondage",
-    "hydro_run_of_river",
-    "hydro_pump_storage_closed_loop",
-    "hydro_pump_storage_open_loop",
-    "hydro_reservoir",
-    "nuclear",
-    "biofuel",
-    "coal",
-    "gas",
-    "oil",
-    "batteries",
-    "dsr",
-    "failure"
-  ],
-  "agg_prod_type_palettes_def": {
-    "own": {
-      "batteries": "pink",
-      "biofuel": "green",
-      "coal": "brown",
-      "dsr": "red",
-      "failure": "gold",
-      "gas": "grey",
-      "hydro_pondage": "blue",
-      "hydro_pump_storage_closed_loop": "blue",
-      "hydro_pump_storage_open_loop": "blue",
-      "hydro_reservoir": "blue",
-      "hydro_run_of_river": "blue",
-      "nuclear": "olive",
-      "oil": "black",
-      "others_fatal": "green",
-      "solar_pv": "yellow",
-      "solar_thermal": "orange",
-      "wind_offshore": "magenta",
-      "wind_onshore": "purple"
+  "agg_prod_type": {
+    "palette_choice": "own",
+    "marker_choice": "own",
+    "palettes_def": {
+      "own": {
+        "batteries": "pink",
+        "biofuel": "green",
+        "coal": "brown",
+        "dsr": "red",
+        "failure": "gold",
+        "gas": "grey",
+        "hydro_pondage": "blue",
+        "hydro_pump_storage_closed_loop": "blue",
+        "hydro_pump_storage_open_loop": "blue",
+        "hydro_reservoir": "blue",
+        "hydro_run_of_river": "blue",
+        "nuclear": "olive",
+        "oil": "black",
+        "others_fatal": "green",
+        "solar_pv": "yellow",
+        "solar_thermal": "orange",
+        "wind_offshore": "magenta",
+        "wind_onshore": "purple"
+      },
+      "eco2mix": {
+        "batteries": null,
+        "biofuel": "green",
+        "coal": null,
+        "dsr": null,
+        "gas": "red",
+        "hydro_pondage": "blue",
+        "hydro_pump_storage_closed_loop": "blue",
+        "hydro_pump_storage_open_loop": "blue",
+        "hydro_reservoir": "blue",
+        "hydro_run_of_river": "blue",
+        "nuclear": "yellow",
+        "oil": null,
+        "others_fatal": null,
+        "solar_pv": "orange",
+        "solar_thermal": "orange",
+        "wind_offshore": null,
+        "wind_onshore": null
+      }
     },
-    "eco2mix": {
-      "batteries": null,
-      "biofuel": "green",
-      "coal": null,
-      "dsr": null,
-      "gas": "red",
-      "hydro_pondage": "blue",
-      "hydro_pump_storage_closed_loop": "blue",
-      "hydro_pump_storage_open_loop": "blue",
-      "hydro_reservoir": "blue",
-      "hydro_run_of_river": "blue",
-      "nuclear": "yellow",
-      "oil": null,
-      "others_fatal": null,
-      "solar_pv": "orange",
-      "solar_thermal": "orange",
-      "wind_offshore": null,
-      "wind_onshore": null
+    "markers_def": {
+      "own": {
+        "solar_thermal": null,
+        "hydro_pump_storage_closed_loop": null,
+        "hydro_pump_storage_open_loop": null,
+        "hydro_reservoir": null,
+        "hydro_run_of_river": null
+      }
+    },
+    "order": [
+      "wind_onshore",
+      "wind_offshore",
+      "solar_pv",
+      "solar_thermal",
+      "others_fatal",
+      "hydro_pondage",
+      "hydro_run_of_river",
+      "hydro_pump_storage_closed_loop",
+      "hydro_pump_storage_open_loop",
+      "hydro_reservoir",
+      "nuclear",
+      "biofuel",
+      "coal",
+      "gas",
+      "oil",
+      "batteries",
+      "dsr",
+      "failure"
+    ]
+  },
+  "year": {
+    "palette_choice": "own",
+    "linestyle_choice": "own",
+    "palettes_def": {
+      "own": {
+        "2025": "blue",
+        "2033": "red"
+      }
+    },
+    "linestyles_def": {
+      "own": {
+        "2025": "-",
+        "2033": "-."
+      }
     }
   },
-  "agg_prod_type_markers_def": {
-    "eco2mix": {
-      "solar_thermal": null,
-      "hydro_pump_storage_closed_loop": null,
-      "hydro_pump_storage_open_loop": null,
-      "hydro_reservoir": null,
-      "hydro_run_of_river": null
+  "climatic_year": {
+    "palette_choice": "own",
+    "linestyle_choice": "own",
+    "marker_choice": "own",
+    "palettes_def": {
+      "own": {
+        "1982": "brown",
+        "1989": "purple",
+        "1996": "gray",
+        "2003": "yellow",
+        "2010": "green",
+        "2016": "blue"
+      }
+    },
+    "linestyles_def": {
+      "own": {
+        "1982": "-",
+        "1989": ":",
+        "1996": "--",
+        "2003": "-.",
+        "2010": "-",
+        "2016": ":"
+      }
+    },
+    "markers_def": {
+      "own": {
+        "1982": "o",
+        "1989": "^",
+        "1996": "1",
+        "2003": "8",
+        "2010": "s",
+        "2016": "p"
+      }
     }
   },
-  "year_palettes_def": {
-    "own": {
-      "2025": "blue",
-      "2033": "red"
-    }
-  },
-  "year_linestyles_def": {
-    "own": {
-      "2025": "-",
-      "2033": "-."
-    }
-  },
-  "climatic_year_palettes_def": {
-    "own": {
-      "1982": "brown",
-      "1989": "purple",
-      "1996": "gray",
-      "2003": "yellow",
-      "2010": "green",
-      "2016": "blue"
-    }
-  },
-  "climatic_year_linestyles_def": {
-    "own": {
-      "1982": "-",
-      "1989": ":",
-      "1996": "--",
-      "2003": "-.",
-      "2010": "-",
-      "2016": ":"
-    }
-  },
-  "climatic_year_markers_def": {
-    "own": {
-      "1982": "o",
-      "1989": "^",
-      "1996": "1",
-      "2003": "8",
-      "2010": "s",
-      "2016": "p"
-    }
+  "zone": {
+    "palette_choice": "own",
+    "palettes_def": {
+      "own": {
+        "ben": "brown",
+        "fra": "purple",
+        "ger": "gray",
+        "ibe": "yellow",
+        "ita": "green",
+        "pol": "black",
+        "sca": "blue"
+      }
+    },
+    "order": [
+      "ben",
+      "fra",
+      "ger",
+      "ibe",
+      "ita",
+      "pol",
+      "sca"
+    ]
   },
   "fig_style_data-analysis": {
     "date_xtick_fmt": "in_letter",

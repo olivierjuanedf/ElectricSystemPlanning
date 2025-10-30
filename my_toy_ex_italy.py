@@ -220,7 +220,7 @@ print(f'PyPSA network main properties: {pypsa_model.network}')
 # IV.6.2) And plot it. Surely better when having multiple buses (countries)!!
 # plot network
 from utils.read import read_plot_params
-plot_params = read_plot_params()
+per_dim_plot_params = read_plot_params()
 pypsa_model.plot_network()
 # IV.6.3) Print out list of generators
 print(pypsa_model.network.generators)

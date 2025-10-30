@@ -8,7 +8,8 @@ from common.long_term_uc_io import OUTPUT_FOLDER_LT
 from include.dataset import Dataset
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
-from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, read_data_analysis_plot_params
+from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
+    read_data_analysis_plot_params, read_plot_params
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
 data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
@@ -17,7 +18,8 @@ logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_input_data_a
                      log_level=usage_params.log_level)
 logging.info('START ERAA (input) data analysis')
 
-# set figure style for plots
+# set params and figure style for plots
+per_dim_plot_params = read_plot_params()
 fig_style = read_data_analysis_plot_params()
 print_non_default(obj=fig_style, obj_name='FigureStyle')
 
