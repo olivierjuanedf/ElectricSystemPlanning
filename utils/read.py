@@ -12,7 +12,7 @@ from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonPar
 from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
 from common.uc_run_params import UCRunParams
 from include.dataset_analyzer import DataAnalysis
-from include.plotter import PlotParams
+from common.plotter import PlotParams
 from utils.dir_utils import check_file_existence
 from utils.plot import FigureStyle
 

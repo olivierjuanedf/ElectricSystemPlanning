@@ -14,7 +14,7 @@ from common.fuel_sources import FuelSource, DummyFuelNames
 from common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
     get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file, \
     get_capacity_figure, get_figure_file_named
-from include.plotter import PlotParams
+from common.plotter import PlotParams
 from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
 from utils.df_utils import rename_df_columns
 from utils.pypsa_utils import get_network_obj_value

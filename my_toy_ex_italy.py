@@ -219,7 +219,7 @@ pypsa_model.add_loads(demand=eraa_dataset.demand, carrier_name=DummyFuelNames.lo
 print(f'PyPSA network main properties: {pypsa_model.network}')
 # IV.6.2) And plot it. Surely better when having multiple buses (countries)!!
 # plot network
-from include.plotter import PlotParams
+from common.plotter import PlotParams
 
 plot_params = PlotParams()
 plot_params.read_and_check()
