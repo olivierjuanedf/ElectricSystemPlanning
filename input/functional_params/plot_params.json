@@ -1,6 +1,11 @@
 {
   "zone_palette_choice": "own",
   "agg_prod_type_palette_choice": "own",
+  "year_palette_choice": "own",
+  "year_linestyle_choice": "own",
+  "climatic_year_palette_choice": "own",
+  "climatic_year_linestyle_choice": "own",
+  "climatic_year_marker_choice": "own",
   "zone_palettes_def": {
     "own": {
       "ben": "brown",
@@ -80,15 +85,57 @@
       "solar_thermal": "orange",
       "wind_offshore": null,
       "wind_onshore": null
-    },
-    "agg_prod_type_markers": {
-      "eco2mix": {
-        "solar_thermal": null,
-        "hydro_pump_storage_closed_loop": null,
-        "hydro_pump_storage_open_loop": null,
-        "hydro_reservoir": null,
-        "hydro_run_of_river": null
-      }
+    }
+  },
+  "agg_prod_type_markers_def": {
+    "eco2mix": {
+      "solar_thermal": null,
+      "hydro_pump_storage_closed_loop": null,
+      "hydro_pump_storage_open_loop": null,
+      "hydro_reservoir": null,
+      "hydro_run_of_river": null
+    }
+  },
+  "year_palettes_def": {
+    "own": {
+      "2025": "blue",
+      "2033": "red"
+    }
+  },
+  "year_linestyles_def": {
+    "own": {
+      "2025": "-",
+      "2033": "-."
+    }
+  },
+  "climatic_year_palettes_def": {
+    "own": {
+      "1982": "brown",
+      "1989": "purple",
+      "1996": "gray",
+      "2003": "yellow",
+      "2010": "green",
+      "2016": "blue"
+    }
+  },
+  "climatic_year_linestyles_def": {
+    "own": {
+      "1982": "-",
+      "1989": ":",
+      "1996": "--",
+      "2003": "-.",
+      "2010": "-",
+      "2016": ":"
+    }
+  },
+  "climatic_year_markers_def": {
+    "own": {
+      "1982": "o",
+      "1989": "^",
+      "1996": "1",
+      "2003": "8",
+      "2010": "s",
+      "2016": "p"
     }
   },
   "fig_style_data-analysis": {

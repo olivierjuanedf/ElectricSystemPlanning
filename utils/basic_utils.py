@@ -130,3 +130,14 @@ def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = Non
         logging.info(f'Non-default attrs used{obj_name_suffix}:{non_default_msg}')
     elif msg_if_all_defaults:
         logging.info('All default values used')
+
+
+def get_first_level_with_multiple_vals(tuple_list: List[tuple]) -> int:
+    n_levels = len(tuple_list[0])
+    i_level = 0
+    while i_level < n_levels:
+        current_values = set([elt[i_level] for elt in tuple_list])
+        if len(current_values) > 1:
+            return i_level
+        i_level += 1
+    return n_levels
