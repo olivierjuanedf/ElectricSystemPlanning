@@ -39,10 +39,10 @@ class Dataset:
         """
         Get ERAA data necessary for the selected countries
         :param uc_run_params: UC run parameters, from which main reading infos will be obtained
-        :param agg_prod_types_with_cf_data: aggreg. production types for which CF data must be read
         :param aggreg_prod_types_def: per-datatype definition of aggreg. to indiv. production types
         :param datatypes_selec: list of datatypes for which data must be read
-        :returns: {country: df with demand of this country}, {country: df with - per aggreg. prod type CF}, 
+        :param subdt_selec: list of sub-datatypes for which data must be read
+        :returns: {country: df with demand of this country}, {country: df with - per aggreg. prod type CF},
         {country: df with installed generation capas}, df with all interconnection capas (for considered 
         countries and year)
         """
@@ -183,7 +183,8 @@ class Dataset:
             if DATATYPE_NAMES.installed_capa in dts_tb_read:
                 # get installed generation capacity data
                 logging.info(
-                    'Get installed generation capacities (unique file per country and year, with all prod. types in it)')
+                    'Get installed generation capacities (unique file per country and year, '
+                    'with all prod. types in it)')
                 gen_capa_data_file = f'{gen_capas_folder}/{gen_capas_prefix}_{current_suffix}.csv'
                 if not os.path.exists(gen_capa_data_file):
                     logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
@@ -274,8 +275,10 @@ class Dataset:
                                   units_complem_params_per_agg_pt: Dict[str, Dict[str, str]]):
         """
         Get generation units data to create them hereafter
+        :param uc_run_params
         :param pypsa_unit_params_per_agg_pt: dict of per aggreg. prod type main Pypsa params
-        :param units_complem_params_per_agg_pt: # for each aggreg. prod type, a dict. {complem. param name: source - "from_json_tb_modif"/"from_eraa_data"}
+        :param units_complem_params_per_agg_pt: # for each aggreg. prod type, a dict. {complem. param name: source
+        - "from_json_tb_modif"/"from_eraa_data"}
         """
         countries = list(self.agg_gen_capa_data)
         prod_type_col = COLUMN_NAMES.production_type
@@ -340,9 +343,10 @@ class Dataset:
                 power_capacity_turbine = self.agg_gen_capa_data[country].loc[
                     self.agg_gen_capa_data[country]['production_type_agg'] == agg_pt, 'power_capacity_turbine'].iloc[0]
                 if energy_capacity > 0:
-                    power_capacity_pumping = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
-                                                                                     'production_type_agg'] == agg_pt, 'power_capacity_pumping'].iloc[
-                        0]
+                    power_capacity_pumping = (
+                        self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                                                                'production_type_agg'] == agg_pt,
+                        'power_capacity_pumping'].iloc)[0]
                     if power_capacity_turbine > 0:
                         p_nom = max(abs(power_capacity_turbine), abs(power_capacity_pumping))
                         p_min_pu = power_capacity_pumping / p_nom
@@ -352,12 +356,14 @@ class Dataset:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
                         max_hours = energy_capacity / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
-                    power_capacity_injection = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
-                                                                                       'production_type_agg'] == agg_pt, 'power_capacity_injection'].iloc[
-                        0]
-                    power_capacity_offtake = self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
-                                                                                     'production_type_agg'] == agg_pt, 'power_capacity_offtake'].iloc[
-                        0]
+                    power_capacity_injection = (
+                        self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                                                                'production_type_agg'] == agg_pt,
+                        'power_capacity_injection'].iloc)[0]
+                    power_capacity_offtake = (
+                        self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                                                                'production_type_agg'] == agg_pt,
+                        'power_capacity_offtake'].iloc)[0]
                     if power_capacity_injection > 0:
                         p_nom = max(abs(power_capacity_injection), abs(power_capacity_offtake))
                         p_min_pu = -power_capacity_offtake / p_nom
@@ -402,7 +408,8 @@ class Dataset:
                 missing_pypsa_params = list(pypsa_min_unit_params_set - params_with_init_val_set)
                 if len(missing_pypsa_params) > 0:
                     current_unit_name = elt_unit_data.name
-                    current_msg = f'country {country}, unit name {current_unit_name} and type {current_unit_type} -> {missing_pypsa_params}'
+                    current_msg = (f'country {country}, unit name {current_unit_name} and type {current_unit_type} '
+                                   f'-> {missing_pypsa_params}')
                     pypsa_params_errors_list.append(current_msg)
         if len(pypsa_params_errors_list) > 0:
             print_errors_list(error_name='on "minimal" PyPSA gen. units parameters; missing ones for',

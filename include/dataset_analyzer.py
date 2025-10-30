@@ -32,7 +32,7 @@ def set_period_for_analysis(period_start: str, period_end: str) -> (datetime, da
     if period_start is not None:
         period_start = robust_date_parser(my_date=period_start, raise_warning=True)
     if period_end is not None:
-        period_end = robust_date_parser(my_date=period_end)
+        period_end = robust_date_parser(my_date=period_end, raise_warning=True)
     # then set default values
     if period_start is None:
         period_start = datetime(year=1900, month=1, day=1)

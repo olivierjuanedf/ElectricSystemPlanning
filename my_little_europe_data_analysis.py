@@ -8,7 +8,6 @@ from common.long_term_uc_io import OUTPUT_FOLDER_LT
 from include.dataset import Dataset
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
-from utils.plot import FigureStyle
 from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, read_data_analysis_plot_params
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
