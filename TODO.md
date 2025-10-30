@@ -26,6 +26,8 @@ DA4) Sans start/end_date -> fonctionnel ? (avec année complète par défaut)
 DA5) Prévoir valeur par défaut climatic_year, si on veut faire le data crunch sans présenter ce concept...
 DA6) Fixer couleurs par (pays, ty, cy) dans l'absolu ou par graphe (si graphe pour un pays donné autoriser 
 autres couleurs que la sienne pour les courbes qui s'y trouvent) -> param à mettre dans plot_params.json pour fixer le mode
+DA7) Pouvoir forcer des capas EnR données pour le calcul/plot de la demande nette 
+(pour projeter invests EnR potentiellement diffs de ceux ERAA)
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
