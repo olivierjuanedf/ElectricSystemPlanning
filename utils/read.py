@@ -12,6 +12,7 @@ from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonPar
 from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
 from common.uc_run_params import UCRunParams
 from include.dataset_analyzer import DataAnalysis
+from include.plotter import PlotParams
 from utils.dir_utils import check_file_existence
 from utils.plot import FigureStyle
 
@@ -150,3 +151,13 @@ def read_data_analysis_plot_params() -> FigureStyle:
     json_data_analysis_plot_params = check_and_load_json_file(json_file=json_data_analysis_plot_params_file,
                                                               file_descr='JSON data analysis plot params')
     return FigureStyle(**json_data_analysis_plot_params['fig_style_data-analysis'])
+
+
+def read_plot_params() -> PlotParams:
+    json_plot_params_file = None
+    logging.info(f'Read and check plot parameters file: {json_plot_params_file}')
+
+    json_plot_params = check_and_load_json_file(json_file=json_plot_params_file, file_descr='JSON plot params')
+    plot_params = PlotParams(**json_plot_params)
+    # TODO process
+    return plot_params
