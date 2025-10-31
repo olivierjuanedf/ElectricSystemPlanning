@@ -1,13 +1,13 @@
-from datetime import datetime
 import logging
 from typing import List, Optional, Tuple, Union
 import numpy as np
+import math
+from dataclasses import fields, MISSING
 
-from common.constants.temporal import DAY_OF_WEEK
-from common.long_term_uc_io import DATE_FORMAT_PRINT
+CLIM_YEARS_SUFFIX = 'clim-years'
 
 
-def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True, 
+def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True,
                   ad_hoc_replacements: dict = None) -> Optional[str]:
     # sanitize only if str
     if not isinstance(raw_str, str):
@@ -46,14 +46,6 @@ def get_key_of_val(val, my_dict: dict, dict_name: str = None):
         logging.warning(f'Multiple corresponding keys found in{dict_name} dict. for value {val} '
                         f'-> only first one returned')
     return corresp_keys[0]
-
-
-def get_period_str(period_start: datetime, period_end: datetime):
-    dow_start = DAY_OF_WEEK[period_start.isoweekday()]
-    dow_end = DAY_OF_WEEK[period_end.isoweekday()]
-    period_start_str = f'{dow_start} {period_start.strftime(DATE_FORMAT_PRINT)}'
-    period_end_str = f'{dow_end} {period_end.strftime(DATE_FORMAT_PRINT)}'
-    return f'[{period_start_str}, {period_end_str}]'
 
 
 def is_str_bool(bool_str: Optional[str]) -> bool:
@@ -104,15 +96,37 @@ def get_intersection_of_lists(list1: list, list2: list) -> list:
     return list(set(list1) & set(list2))
 
 
-def set_years_suffix(years: List[int]) -> str:
-    if len(years) == 0:
+def set_years_suffix(years: List[int], is_climatic_year: bool = False) -> str:
+    n_years = len(years)
+    if n_years == 0:
         return ''
-    if len(years) == 1:
+    if n_years == 1:
         return f'{years[0]}'
-    if len(years) == 2:
+    if n_years == 2:
         min_date = f'{min(years)}'
         max_date = f'{max(years)}'
         if min_date[:2] == max_date[:2]:
             return f'{min_date}-{max_date[2:]}'
         else:
             return f'{min_date}-{max_date}'
+    suffix = CLIM_YEARS_SUFFIX if is_climatic_year else 'years'
+    return f'{n_years}-{suffix}'
+
+
+def lowest_common_multiple(a, b):
+    return abs(a * b) // math.gcd(a, b)
+
+
+def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = None):
+    non_default_msg = ''
+    sep = '\n- '
+    for f in fields(obj):
+        default = f.default if f.default is not MISSING else None
+        value = getattr(obj, f.name)
+        if value != default:
+            non_default_msg += f"{sep}{f.name} = {value}"
+    if len(non_default_msg) > 0:
+        obj_name_suffix = f' for object {obj_name}' if obj_name is not None else ''
+        logging.info(f'Non-default attrs used{obj_name_suffix}:{non_default_msg}')
+    elif msg_if_all_defaults:
+        logging.info('All default values used')

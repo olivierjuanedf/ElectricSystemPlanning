@@ -4,8 +4,8 @@ import logging
 
 from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
-        get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
-            get_json_data_analysis_params_file
+    get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
+    get_json_data_analysis_params_file, get_json_data_analysis_plot_params_file
 from common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
 from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
@@ -13,6 +13,7 @@ from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
 from common.uc_run_params import UCRunParams
 from include.dataset_analyzer import DataAnalysis
 from utils.dir_utils import check_file_existence
+from utils.plot import FigureStyle
 
 
 def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:
@@ -102,11 +103,11 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
             json_params_tb_modif[selected_pt_param_name][c] = v
         del countries_data[selected_pt_param_name]
 
-    uc_run_params = UCRunParams(**json_params_tb_modif, **countries_data, 
+    uc_run_params = UCRunParams(**json_params_tb_modif, **countries_data,
                                 updated_fuel_sources_params=json_fuel_sources_tb_modif)
     uc_run_params.process(available_countries=eraa_data_descr.available_countries)
     uc_run_params.set_is_stress_test(avail_cy_stress_test=eraa_data_descr.available_climatic_years_stress_test)
-    uc_run_params.coherence_check(eraa_data_descr=eraa_data_descr, 
+    uc_run_params.coherence_check(eraa_data_descr=eraa_data_descr,
                                   year=uc_run_params.selected_target_year)
 
     return usage_params, eraa_data_descr, uc_run_params
@@ -114,7 +115,8 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
 
 def read_and_check_pypsa_static_params() -> PypsaStaticParams:
     json_pypsa_static_params_file = get_json_pypsa_static_params_file()
-    logging.info(f'Read and check PyPSA static parameters file; the ones modified in file {json_pypsa_static_params_file}')
+    logging.info(
+        f'Read and check PyPSA static parameters file; the ones modified in file {json_pypsa_static_params_file}')
 
     json_pypsa_static_params = check_and_load_json_file(json_file=json_pypsa_static_params_file,
                                                         file_descr='JSON PyPSA static params')
@@ -139,3 +141,12 @@ def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> Li
         elt_analysis.process()
         elt_analysis.coherence_check(eraa_data_descr=eraa_data_descr)
     return data_analyses
+
+
+def read_data_analysis_plot_params() -> FigureStyle:
+    json_data_analysis_plot_params_file = get_json_data_analysis_plot_params_file()
+    logging.info(f'Read and check data analysis plot parameters file: {json_data_analysis_plot_params_file}')
+
+    json_data_analysis_plot_params = check_and_load_json_file(json_file=json_data_analysis_plot_params_file,
+                                                              file_descr='JSON data analysis plot params')
+    return FigureStyle(**json_data_analysis_plot_params['fig_style_data-analysis'])

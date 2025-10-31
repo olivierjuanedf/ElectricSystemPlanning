@@ -1,4 +1,15 @@
+import logging
 from datetime import datetime
+from typing import List, Optional
+
+from common.constants.temporal import DAY_OF_WEEK
+from common.long_term_uc_io import DATE_FORMAT_PRINT
+
+ALLOWED_DATE_FMTS = ['%Y/%m/%d', '%m/%d', '%Y-%m-%d', '%m-%d']
+DAY_EXP = {0: 'th', 1: 'st', 2: 'nd', 3: 'rd', 4: 'th', 5: 'th', 6: 'th', 7: 'th', 8: 'th', 9: 'th'}
+MONTHS_SHORT = {'January': 'Jan.', 'February': 'Feb.', 'March': 'March', 'April': 'April', 'May': 'May', 'June': 'June',
+                'July': 'July', 'August': 'Aug.', 'September': 'Sept.', 'October': 'Oct.', 'November': 'Nov.',
+                'December': 'Dec.'}
 
 
 def set_year_in_date(my_date: datetime, new_year: int) -> datetime:
@@ -20,10 +31,23 @@ def remove_useless_zero_in_date(date: str, date_sep: str = '/') -> str:
     return date
 
 
-def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: bool,
-                            min_str_fmt: bool = True, date_sep: str = '/', rm_useless_zeros: bool = True) -> str:
-    full_date_fmt = f'%Y{date_sep}%m{date_sep}%d'
-    date_wo_year_fmt = f'%m{date_sep}%d'
+def add_day_exponent(date: str) -> str:
+    date += DAY_EXP[int(date[-1])]
+    return date
+
+
+def set_month_short_in_date(date: str) -> str:
+    for month, month_short in MONTHS_SHORT.items():
+        if month in date:
+            date = date.replace(month, month_short)
+    return date
+
+
+def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: bool, min_str_fmt: bool = True,
+                            date_sep: str = '/', rm_useless_zeros: bool = True, in_letter: bool = False,
+                            short_months: bool = True, add_day_exp: bool = True) -> str:
+    full_date_fmt = f'%Y %B %d' if in_letter else f'%Y{date_sep}%m{date_sep}%d'
+    date_wo_year_fmt = f'%B %d' if in_letter else f'%m{date_sep}%d'
     date_with_only_day_fmt = '%d'
     sep_str = '-'
     if sep_str == date_sep:
@@ -55,4 +79,44 @@ def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: 
     if rm_useless_zeros:
         max_date_str = remove_useless_zero_in_date(date=max_date_str, date_sep=date_sep)
 
+    # use shortened names, day exponents for months
+    if in_letter:
+        if short_months:
+            min_date_str = set_month_short_in_date(date=min_date_str)
+            max_date_str = set_month_short_in_date(date=max_date_str)
+        if add_day_exp:
+            min_date_str = add_day_exponent(date=min_date_str)
+            max_date_str = add_day_exponent(date=max_date_str)
+
     return f'{min_date_str}{sep_str}{max_date_str}'
+
+
+def get_period_str(period_start: datetime, period_end: datetime) -> str:
+    dow_start = DAY_OF_WEEK[period_start.isoweekday()]
+    dow_end = DAY_OF_WEEK[period_end.isoweekday()]
+    period_start_str = f'{dow_start} {period_start.strftime(DATE_FORMAT_PRINT)}'
+    period_end_str = f'{dow_end} {period_end.strftime(DATE_FORMAT_PRINT)}'
+    return f'[{period_start_str}, {period_end_str}]'
+
+
+def robust_date_parser(my_date: str, allowed_formats: List[str] = None,
+                       raise_warning: bool = False) -> Optional[datetime]:
+    """
+    N.B. When no year defined in date format, the default year value set in datetime is 1900 -> coherently with the
+    usage of fictive 1900 calendar in this project!
+    """
+    if allowed_formats is None:
+        allowed_formats = ALLOWED_DATE_FMTS
+
+    timezone_str = '+00:00'
+    if timezone_str in my_date:
+        my_date = my_date.replace(timezone_str, '')
+    for date_format in allowed_formats:
+        try:
+            return datetime.strptime(my_date, date_format)
+        except ValueError:
+            pass
+    if raise_warning:
+        logging.warning(f'{my_date} cannot be cast as datetime with list of allowed formats {allowed_formats}'
+                        f' -> None returned')
+    return None

@@ -90,5 +90,10 @@
         "hydro_run_of_river": null
       }
     }
+  },
+  "fig_style_data-analysis": {
+    "date_xtick_fmt": "in_letter",
+    "add_day_exp_in_date_xtick": "true",
+    "date_xtick_rotation": 0
   }
 }

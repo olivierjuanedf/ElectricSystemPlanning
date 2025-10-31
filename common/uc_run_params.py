@@ -8,7 +8,8 @@ from common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
 from common.constants.uc_json_inputs import ALL_KEYWORD
 from common.error_msgs import uncoherent_param_stop
-from utils.basic_utils import get_period_str, are_lists_eq
+from utils.basic_utils import are_lists_eq
+from utils.dates import get_period_str
 from utils.eraa_utils import set_interco_to_tuples
 
 
@@ -189,3 +190,9 @@ class UCRunParams:
 
     def set_climatic_year(self, climatic_year: int):
         self.selected_climatic_year = climatic_year
+
+    def set_uc_period(self, start: Union[str, datetime] = None, end: Union[str, datetime] = None):
+        if start is not None:
+            self.uc_period_start = start
+        if end is not None:
+            self.uc_period_end = end
