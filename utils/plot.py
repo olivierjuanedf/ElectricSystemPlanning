@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -5,8 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Dict, List, Tuple
 
+from common.constants.datadims import DataDimensions
 from common.constants.temporal import DAY_OF_WEEK
-from utils.basic_utils import lowest_common_multiple
+from common.plot_params import PlotParams, PLOT_DIMS_ORDER
+from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
 
 
@@ -17,6 +20,12 @@ class XtickDateFormat:
     in_letter: str = 'in_letter'
 
 
+@dataclass
+class CurveStyles:
+    absolute: str = 'absolute'
+    relative: str = 'relative'
+
+
 DEFAULT_DATE_XTICK_FMT = XtickDateFormat.in_letter
 
 
@@ -25,6 +34,9 @@ class FigureStyle:
     size: Tuple[int, int] = (10, 6)
     marker: str = None
     grid_on: bool = True
+    # curve style def -> 'absolute' to set up (color, linestyle, marker) based on (zone, year, clim year) value
+    # whatever content of figure (other curves plotted); 'relative' to define it relatively
+    curve_style: str = CurveStyles.absolute
     # all legend parameters
     print_legend: bool = True
     legend_font_size: int = 15
@@ -153,6 +165,63 @@ def set_date_xtick_idx_and_labels(x_dates: List[datetime], min_delta_xticks_h: i
     xtick_labels = set_date_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates, format=xtick_date_fmt,
                                          add_day_exp=add_day_exp, rm_useless_zeros=rm_useless_zeros)
     return idx_xticks, xtick_labels
+
+
+@dataclass
+class CurveStyleAttrs:
+    color: str = 'blue'
+    linestyle: str = '-'
+    marker: str = None
+
+
+def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_plot_params: Dict[str, PlotParams],
+                          curve_style: str) -> Dict[Tuple[str, int, int], CurveStyleAttrs]:
+    """
+    returns {(zone, year, clim. year): (color, linestyle, marker)}
+    """
+    all_curve_styles = [CurveStyles.absolute, CurveStyles.relative]
+    if curve_style not in all_curve_styles:
+        logging.warning(f'Unknown curve style {curve_style} -> curve style attributes cannot be set')
+        return None
+    # color from zone, linestyle from year, marker from climatic year - applying a "hierarchy"
+    # TODO: merge cases
+    linestyle_level = None
+    marker_level = None
+    if curve_style == CurveStyles.absolute:
+        color_level = 0
+        linestyle_level = 1
+        marker_level = 2
+    elif curve_style == CurveStyles.relative:
+        # use only color to "distinguish" curves as unique one here
+        if len(plot_dims_tuples) == 1:
+            color_level = 0
+        else:  # more than one curve
+            # get level (in tuple) which will define the color
+            color_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples)
+            if color_level < 2:
+                linestyle_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples,
+                                                                     init_level=color_level,
+                                                                     return_none_if_not_found=True)
+            if linestyle_level is not None and linestyle_level < 2:
+                marker_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples,
+                                                                  init_level=linestyle_level,
+                                                                  return_none_if_not_found=True)
+
+    # get dicts {plot dim value: style attr value} to be used
+    per_case_color = per_dim_plot_params[PLOT_DIMS_ORDER[color_level]].per_case_color
+    if linestyle_level is not None:
+        per_case_linestyle = per_dim_plot_params[PLOT_DIMS_ORDER[linestyle_level]].per_case_linestyle
+    if marker_level is not None:
+        per_case_marker = per_dim_plot_params[PLOT_DIMS_ORDER[marker_level]].per_case_marker
+    per_case_curve_style_attrs = {}
+    for case_tuple in plot_dims_tuples:
+        style_attrs_dict = {'color': per_case_color[case_tuple[color_level]]}
+        if linestyle_level is not None:
+            style_attrs_dict['linestyle'] = per_case_linestyle[case_tuple[linestyle_level]]
+        if marker_level is not None:
+            style_attrs_dict['marker'] = per_case_marker[case_tuple[marker_level]]
+        per_case_curve_style_attrs[case_tuple] = CurveStyleAttrs(**style_attrs_dict)
+    return per_case_curve_style_attrs
 
 
 def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str, np.ndarray], Dict[str, list]],

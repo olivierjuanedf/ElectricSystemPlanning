@@ -96,7 +96,7 @@ def get_intersection_of_lists(list1: list, list2: list) -> list:
     return list(set(list1) & set(list2))
 
 
-def set_years_suffix(years: List[int], is_climatic_year: bool = False) -> str:
+def set_years_suffix(years: List[int], is_climatic_year: bool = False, sep: str = '-') -> str:
     n_years = len(years)
     if n_years == 0:
         return ''
@@ -106,11 +106,11 @@ def set_years_suffix(years: List[int], is_climatic_year: bool = False) -> str:
         min_date = f'{min(years)}'
         max_date = f'{max(years)}'
         if min_date[:2] == max_date[:2]:
-            return f'{min_date}-{max_date[2:]}'
+            return f'{min_date}{sep}{max_date[2:]}'
         else:
-            return f'{min_date}-{max_date}'
+            return f'{min_date}{sep}{max_date}'
     suffix = CLIM_YEARS_SUFFIX if is_climatic_year else 'years'
-    return f'{n_years}-{suffix}'
+    return f'{n_years}{sep}{suffix}'
 
 
 def lowest_common_multiple(a, b):
@@ -132,12 +132,17 @@ def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = Non
         logging.info('All default values used')
 
 
-def get_first_level_with_multiple_vals(tuple_list: List[tuple]) -> int:
+def get_first_level_with_multiple_vals(tuple_list: List[tuple], init_level: int = None,
+                                       return_none_if_not_found: bool = False) -> Optional[int]:
+    if init_level is None:
+        init_level = 0
     n_levels = len(tuple_list[0])
-    i_level = 0
+    i_level = init_level
     while i_level < n_levels:
         current_values = set([elt[i_level] for elt in tuple_list])
         if len(current_values) > 1:
             return i_level
         i_level += 1
+    if return_none_if_not_found:
+        return None
     return n_levels

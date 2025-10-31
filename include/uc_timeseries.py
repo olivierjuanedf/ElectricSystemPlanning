@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Optional
 import numpy as np
 import pandas as pd
 
@@ -12,20 +12,39 @@ from utils.df_utils import set_key_columns
 from utils.plot import simple_plot, set_temporal_period_title, FigureStyle
 
 
+NAME_SEP = '_'
+SUBNAME_SEP = '-'
+
+
 def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int], climatic_years: List[int]):
-    data_type_prefix = '-'.join(list(full_data_type))
+    data_type_prefix = SUBNAME_SEP.join(list(full_data_type))
     n_countries = len(countries)
     n_countries_max_in_suffix = 2
     n_countries_min_with_trigram = 2
     if n_countries_min_with_trigram <= n_countries <= n_countries_max_in_suffix:
         countries = [elt[:3] for elt in countries]
-    countries_suffix = '-'.join(countries) if n_countries <= n_countries_max_in_suffix else f'{n_countries}-countries'
-    years_suffix = set_years_suffix(years=years)
-    clim_years_suffix = set_years_suffix(years=climatic_years, is_climatic_year=True)
+    countries_suffix = SUBNAME_SEP.join(countries) if n_countries <= n_countries_max_in_suffix \
+        else f'{n_countries}{SUBNAME_SEP}countries'
+    years_suffix = set_years_suffix(years=years, sep=SUBNAME_SEP)
+    clim_years_suffix = set_years_suffix(years=climatic_years, sep=SUBNAME_SEP, is_climatic_year=True)
     if CLIM_YEARS_SUFFIX not in clim_years_suffix:
         clim_years_suffix = f'cy{clim_years_suffix}'
 
-    return f'{data_type_prefix}_{countries_suffix}_{years_suffix}_{clim_years_suffix}'
+    return f'{data_type_prefix}{NAME_SEP}{countries_suffix}{NAME_SEP}{years_suffix}{NAME_SEP}{clim_years_suffix}'
+
+
+def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
+    """
+    Currently for case of unique element per dim (year for ex.); otherwise None returned
+    """
+    name_split = name.split(NAME_SEP)
+    dims = []
+    for i in range(4):
+        if SUBNAME_SEP in name_split[i]:
+            return None
+        current_dim = int(name_split[i]) if name_split[i].isdigit() else name_split[i]
+        dims.append(current_dim)
+    return tuple(dims)
 
 
 def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int = None,
@@ -190,7 +209,11 @@ class UCTimeseries:
         if isinstance(y, dict):
             attrs_in_legend = self.set_attrs_in_plot_legend()
             y = {set_curve_label(attrs_in_legend, *key): vals for key, vals in y.items()}
-        with_curve_labels = isinstance(y, dict) and len(y) > 1
+        # set curve styles (color, linestyle, marker)
+        if isinstance(self.values, dict):
+            plot_dims_tuples = list(self.values)
+        else:  # unique curve plotted -> get plot dimensions from UC ts name
+            plot_dims_tuples = get_dims_from_uc_ts_name(name=self.name)[1:]
         simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(), xlabel=xlabel,
                     ylabel=self.set_plot_ylabel(), fig_style=fig_style)
 
@@ -220,6 +243,8 @@ class UCTimeseries:
             fig_style = FigureStyle()
             print_legend = isinstance(y, dict) and len(y) > 1
             fig_style.set_print_legend(value=print_legend)
+        # set curve styles (color, linestyle, marker)
+        bob = 1
         simple_plot(x=duration_curve, y=vals_desc_order, fig_file=fig_file,
                     title=f'{self.set_plot_title(dt_suffix="duration curve")}', xlabel=xlabel,
                     ylabel=self.set_plot_ylabel(), fig_style=fig_style)

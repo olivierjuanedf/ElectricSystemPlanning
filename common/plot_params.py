@@ -14,7 +14,7 @@ def to_int_keys_dict(dict_with_level_two_str_keys: Dict[str, Dict[str, str]]) ->
 
 
 OWN_PALETTE = 'own'
-PLOT_DIMS = [DataDimensions.agg_prod_type, DataDimensions.year, DataDimensions.climatic_year, DataDimensions.zone]
+PLOT_DIMS_ORDER = [DataDimensions.zone, DataDimensions.year, DataDimensions.climatic_year, DataDimensions.agg_prod_type]
 TYPE_PARAMS_DEF = Union[Dict[str, Dict[str, str]], Dict[str, Dict[int, str]]]
 TYPE_PER_CASE_PARAMS = Union[Dict[str, str], Dict[int, str]]
 
