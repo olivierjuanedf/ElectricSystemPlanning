@@ -234,18 +234,19 @@ class Dataset:
                     logging.debug('#' * 100 + f'{current_df_gen_capa}' + '#' * 100)
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
-                # convert to float so that subtraction of CF can be done hereafter
-                current_np_net_demand = np.array(current_df_demand[value_col]).astype(np.float64)
                 # list of prod types with CF data
                 cf_agg_prod_types = [agg_prod_type for agg_prod_type in agg_prod_types_tb_read
                                      if agg_prod_type in self.agg_prod_types_with_cf_data]
+                # TODO: directly in pd to avoid creation of np arrays?
+                # convert to float so that subtraction of CF can be done hereafter
+                current_np_net_demand = np.array(current_df_demand[value_col]).astype(np.float64)
                 for agg_prod_type in cf_agg_prod_types:
                     current_capa = (
                         current_df_gen_capa.loc[current_df_gen_capa[prod_type_agg_col] == agg_prod_type,
                         'power_capacity'].values)[0]
                     current_cf_data = agg_cf_data_read[agg_cf_data_read[prod_type_agg_col] == agg_prod_type]
                     current_np_net_demand -= current_capa * np.array(current_cf_data[value_col])
-                current_df_net_demand = current_df_demand
+                current_df_net_demand = deepcopy(current_df_demand)
                 current_df_net_demand[value_col] = current_np_net_demand
                 self.net_demand[country] = current_df_net_demand
 
