@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 
 from common.constants.data_analysis_types import COMMON_PLOT_YEAR
+from common.plot_params import PlotParams
 from utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
 from utils.dates import set_year_in_date, set_temporal_period_str
 from utils.df_utils import set_key_columns
-from utils.plot import simple_plot, set_temporal_period_title, FigureStyle
-
+from utils.plot import simple_plot, set_temporal_period_title, FigureStyle, set_curve_style_attrs
 
 NAME_SEP = '_'
 SUBNAME_SEP = '-'
@@ -199,7 +199,7 @@ class UCTimeseries:
             attrs_in_plot_legend.append('climatic_year')
         return attrs_in_plot_legend
 
-    def plot(self, output_dir: str, fig_style: FigureStyle = None):
+    def plot(self, output_dir: str, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None):
         name_label = self.name.capitalize()
         fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
         x = self.set_output_dates(is_plot=True)
@@ -210,12 +210,26 @@ class UCTimeseries:
             attrs_in_legend = self.set_attrs_in_plot_legend()
             y = {set_curve_label(attrs_in_legend, *key): vals for key, vals in y.items()}
         # set curve styles (color, linestyle, marker)
-        if isinstance(self.values, dict):
-            plot_dims_tuples = list(self.values)
-        else:  # unique curve plotted -> get plot dimensions from UC ts name
-            plot_dims_tuples = get_dims_from_uc_ts_name(name=self.name)[1:]
+        if fig_style is not None and per_dim_plot_params is not None:
+            if isinstance(self.values, dict):
+                plot_dims_tuples = list(self.values)
+            else:  # unique curve plotted -> get plot dimensions from UC ts name
+                plot_dims_tuples = get_dims_from_uc_ts_name(name=self.name)[1:]
+            curve_style_attrs = (
+                set_curve_style_attrs(plot_dims_tuples=plot_dims_tuples,
+                                      per_dim_plot_params=per_dim_plot_params,
+                                      curve_style=fig_style.curve_style)
+            )
+            # set same keys as the ones of y, i.e. labels
+            if isinstance(y, dict):
+                curve_style_attrs_vals = list(curve_style_attrs.values())
+                curve_style_attrs = {label_key: curve_style_attrs_vals[i] for i, label_key in enumerate(y)}
+            else:  # y is a list; i.e. unique curve -> unique style attr. object
+                curve_style_attrs = list(curve_style_attrs.values())[0]
+        else:
+            curve_style_attrs = None
         simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(), xlabel=xlabel,
-                    ylabel=self.set_plot_ylabel(), fig_style=fig_style)
+                    ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
 
     def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None):
         y = self.set_output_values(is_plot=True)

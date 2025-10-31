@@ -6,9 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Dict, List, Tuple
 
-from common.constants.datadims import DataDimensions
 from common.constants.temporal import DAY_OF_WEEK
-from common.plot_params import PlotParams, PLOT_DIMS_ORDER
+from common.plot_params import PlotParams, PLOT_DIMS_ORDER, N_LETTERS_ZONE
 from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
 
@@ -184,7 +183,6 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_
         logging.warning(f'Unknown curve style {curve_style} -> curve style attributes cannot be set')
         return None
     # color from zone, linestyle from year, marker from climatic year - applying a "hierarchy"
-    # TODO: merge cases
     linestyle_level = None
     marker_level = None
     if curve_style == CurveStyles.absolute:
@@ -215,17 +213,27 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_
         per_case_marker = per_dim_plot_params[PLOT_DIMS_ORDER[marker_level]].per_case_marker
     per_case_curve_style_attrs = {}
     for case_tuple in plot_dims_tuples:
-        style_attrs_dict = {'color': per_case_color[case_tuple[color_level]]}
+        key_for_color = case_tuple[color_level]
+        if color_level == 0:  # case of a zone
+            key_for_color = key_for_color[:N_LETTERS_ZONE]
+        style_attrs_dict = {'color': per_case_color[key_for_color]}
         if linestyle_level is not None:
-            style_attrs_dict['linestyle'] = per_case_linestyle[case_tuple[linestyle_level]]
+            key_for_linestyle = case_tuple[linestyle_level]
+            if linestyle_level == 0:  # case of a zone
+                key_for_linestyle = key_for_linestyle[:N_LETTERS_ZONE]
+            style_attrs_dict['linestyle'] = per_case_linestyle[key_for_linestyle]
         if marker_level is not None:
-            style_attrs_dict['marker'] = per_case_marker[case_tuple[marker_level]]
+            key_for_marker = case_tuple[marker_level]
+            if marker_level == 0:  # case of a zone
+                key_for_marker = key_for_marker[:N_LETTERS_ZONE]
+            style_attrs_dict['marker'] = per_case_marker[key_for_marker]
         per_case_curve_style_attrs[case_tuple] = CurveStyleAttrs(**style_attrs_dict)
     return per_case_curve_style_attrs
 
 
 def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str, np.ndarray], Dict[str, list]],
-                fig_file: str, title: str, xlabel: str, ylabel: str, fig_style: FigureStyle = None):
+                fig_file: str, title: str, xlabel: str, ylabel: str, fig_style: FigureStyle = None,
+                curve_style_attrs: Union[Dict[str, CurveStyleAttrs], CurveStyleAttrs] = None):
     if fig_style is None:
         fig_style = FigureStyle()
 
@@ -234,9 +242,11 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
     if isinstance(y, dict):
         for key_label, values in y.items():
             current_label = key_label if fig_style.print_legend else None
-            plt.plot(x, values, marker=fig_style.marker, label=current_label)
+            curve_style_attrs_dict = curve_style_attrs[key_label].__dict__ if curve_style_attrs is not None else {}
+            plt.plot(x, values, marker=fig_style.marker, label=current_label, **curve_style_attrs_dict)
     else:
-        plt.plot(x, y, marker=fig_style.marker)
+        curve_style_attrs_dict = curve_style_attrs.__dict__ if curve_style_attrs is not None else {}
+        plt.plot(x, y, marker=fig_style.marker, **curve_style_attrs_dict)
 
     # title and x/y labels
     plt.title(title)

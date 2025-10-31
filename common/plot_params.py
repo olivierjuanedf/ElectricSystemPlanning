@@ -17,6 +17,7 @@ OWN_PALETTE = 'own'
 PLOT_DIMS_ORDER = [DataDimensions.zone, DataDimensions.year, DataDimensions.climatic_year, DataDimensions.agg_prod_type]
 TYPE_PARAMS_DEF = Union[Dict[str, Dict[str, str]], Dict[str, Dict[int, str]]]
 TYPE_PER_CASE_PARAMS = Union[Dict[str, str], Dict[int, str]]
+N_LETTERS_ZONE = 3
 
 
 def set_per_case_dict(params_def: TYPE_PARAMS_DEF, param_choice: str,
