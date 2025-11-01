@@ -156,11 +156,11 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_
             color_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples)
             if color_level < 2:
                 linestyle_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples,
-                                                                     init_level=color_level,
+                                                                     init_level=color_level + 1,
                                                                      return_none_if_not_found=True)
             if linestyle_level is not None and linestyle_level < 2:
                 marker_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples,
-                                                                  init_level=linestyle_level,
+                                                                  init_level=linestyle_level + 1,
                                                                   return_none_if_not_found=True)
 
     # get dicts {plot dim value: style attr value} to be used
