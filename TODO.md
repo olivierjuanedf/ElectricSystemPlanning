@@ -25,6 +25,7 @@ on the product of data needs -> more than needed in general)
 DA4) Sans start/end_date -> fonctionnel ? (avec année complète par défaut)
 DA7) Pouvoir forcer des capas EnR données pour le calcul/plot de la demande nette 
 (pour projeter invests EnR potentiellement diffs de ceux ERAA)
+DA8) Rendre fonctionnel cas avec subdt
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
