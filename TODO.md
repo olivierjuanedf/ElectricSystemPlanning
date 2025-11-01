@@ -23,7 +23,6 @@ DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les é
 DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
 DA4) Sans start/end_date -> fonctionnel ? (avec année complète par défaut)
-DA5) Prévoir valeur par défaut climatic_year, si on veut faire le data crunch sans présenter ce concept...
 DA7) Pouvoir forcer des capas EnR données pour le calcul/plot de la demande nette 
 (pour projeter invests EnR potentiellement diffs de ceux ERAA)
 
