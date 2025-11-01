@@ -228,11 +228,6 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
                                                                      fig_style_marker=fig_style.marker)
         plt.plot(x, y, **curve_style_attrs_dict)
 
-    # title and x/y labels
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-
     # add xtick date labels
     first_x = x[0]
     if isinstance(first_x, datetime):
@@ -245,6 +240,15 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
         ticks = [x_dates[i] for i in idx_xticks]
         plt.xticks(ticks=ticks, labels=xtick_values, rotation=fig_style.date_xtick_rotation,
                    fontsize=fig_style.date_xtick_fontsize)
+        # set axis label (title) fontsize bigger than the one of labels
+        axis_label_fontsize = {'fontsize': fig_style.date_xtick_fontsize + 2}
+    else:
+        axis_label_fontsize = {}
+
+    # title and x/y labels
+    plt.title(title)
+    plt.xlabel(xlabel, **axis_label_fontsize)
+    plt.ylabel(ylabel, **axis_label_fontsize)
 
     # grid
     if fig_style.grid_on:
