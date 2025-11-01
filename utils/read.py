@@ -139,7 +139,7 @@ def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> Li
     # check types
     for elt_analysis in data_analyses:
         elt_analysis.check_types()
-        elt_analysis.process()
+        elt_analysis.process(eraa_data_descr=eraa_data_descr)
         elt_analysis.coherence_check(eraa_data_descr=eraa_data_descr)
     return data_analyses
 

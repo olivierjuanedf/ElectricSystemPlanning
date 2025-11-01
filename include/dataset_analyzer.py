@@ -15,6 +15,7 @@ from common.error_msgs import uncoherent_param_stop
 from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
 from common.plot_params import PlotParams
 from include.uc_timeseries import set_uc_ts_name, UCTimeseries
+from utils.basic_utils import random_draw_in_list
 from utils.dates import robust_date_parser, set_year_in_date, set_temporal_period_str
 from utils.plot import FigureStyle
 from utils.type_checker import CheckerNames, apply_params_type_check
@@ -26,6 +27,7 @@ RAW_TYPES_FOR_CHECK = {'analysis_type': CheckerNames.is_str, 'data_type': Checke
                        'data_subtype': CheckerNames.is_str, 'country': CheckerNames.is_str_or_list_of_str,
                        'year': CheckerNames.is_int_or_list_of_int, 'climatic_year': CheckerNames.is_int_or_list_of_int}
 N_CURVES_MAX = 6
+DEFAULT_CY = 'first'
 
 
 def set_period_for_analysis(period_start: str, period_end: str) -> (datetime, datetime):
@@ -83,6 +85,16 @@ def set_period_to_fixed_year(period_start: datetime, period_end: datetime, year:
     return period_start, period_end
 
 
+def get_default_climatic_year(available_climatic_years: List[int]) -> int:
+    if DEFAULT_CY == 'first':
+        default_cy = min(available_climatic_years)
+    elif DEFAULT_CY == 'last':
+        default_cy = max(available_climatic_years)
+    else:  # random draw
+        default_cy = random_draw_in_list(my_list=available_climatic_years)
+    return default_cy
+
+
 @dataclass
 class DataAnalysis:
     analysis_type: str
@@ -123,13 +135,18 @@ class DataAnalysis:
         apply_params_type_check(dict_for_check, types_for_check=RAW_TYPES_FOR_CHECK, 
                                 param_name='Data analysis params - to set the calc./plot to be done')
     
-    def process(self):
+    def process(self, eraa_data_descr: ERAADatasetDescr):
         # country, year, climatic year attrs all to List[.]
         if isinstance(self.countries, str):
             self.countries = [self.countries]
         if isinstance(self.years, int):
             self.years = [self.years]
-        if isinstance(self.climatic_years, int):
+        # set default climatic year for data analysis
+        if self.climatic_years is None:
+            default_cy = get_default_climatic_year(available_climatic_years=eraa_data_descr.available_climatic_years)
+            logging.info(f'Default climatic year {default_cy} used (as not defined in DataAnalysis JSON file)')
+            self.climatic_years = [default_cy]
+        elif isinstance(self.climatic_years, int):
             self.climatic_years = [self.climatic_years]
 
         self.period_start, self.period_end = (

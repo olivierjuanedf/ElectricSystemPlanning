@@ -146,3 +146,9 @@ def get_first_level_with_multiple_vals(tuple_list: List[tuple], init_level: int 
     if return_none_if_not_found:
         return None
     return n_levels
+
+
+def random_draw_in_list(my_list: list):
+    n_elts = len(my_list)
+    i_rand = np.random.randint(n_elts)
+    return my_list[i_rand]
