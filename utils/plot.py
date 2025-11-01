@@ -214,7 +214,7 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
         fig_style = FigureStyle()
 
     plt.figure(figsize=fig_style.size)
-    # TODO: merge all cases in a unique call de plt.plot
+    # TODO: merge all cases in a unique call of plt.plot
     if isinstance(y, dict):
         for key_label, values in y.items():
             current_label = key_label if fig_style.print_legend else None

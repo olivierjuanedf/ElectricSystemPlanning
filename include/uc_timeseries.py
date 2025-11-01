@@ -10,7 +10,7 @@ from common.plot_params import PlotParams
 from utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
 from utils.dates import set_year_in_date, set_temporal_period_str
 from utils.df_utils import set_key_columns
-from utils.plot import simple_plot, set_temporal_period_title, FigureStyle, set_curve_style_attrs
+from utils.plot import simple_plot, set_temporal_period_title, FigureStyle, set_curve_style_attrs, CurveStyleAttrs
 
 NAME_SEP = '_'
 SUBNAME_SEP = '-'
@@ -199,17 +199,18 @@ class UCTimeseries:
             attrs_in_plot_legend.append('climatic_year')
         return attrs_in_plot_legend
 
-    def plot(self, output_dir: str, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None):
-        name_label = self.name.capitalize()
-        fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
-        x = self.set_output_dates(is_plot=True)
-        y = self.set_output_values(is_plot=True)
-        xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
-        # replace (country, year, clim year) keys by labels to be used for plot
-        if isinstance(y, dict):
-            attrs_in_legend = self.set_attrs_in_plot_legend()
-            y = {set_curve_label(attrs_in_legend, *key): vals for key, vals in y.items()}
-        # set curve styles (color, linestyle, marker)
+    def set_curve_style_attrs(self, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None,
+                              curve_labels: List[str] = None) \
+            -> Optional[Union[CurveStyleAttrs, Dict[str, CurveStyleAttrs]]]:
+        """
+        Set curve styles attributes (color, linestyle, marker) for a plot
+        :param fig_style: FigureStyle object to define some style attrs for plot
+        :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
+        defined in plot_params.json file)
+        :param curve_labels: list of curve labels, or None if unique curve
+        :returns either an object CurveStyleAttrs (if unique curve on plot) or dict {curve label: CurveStyleAttrs}
+        (if multiple ones)
+        """
         if fig_style is not None and per_dim_plot_params is not None:
             if isinstance(self.values, dict):
                 plot_dims_tuples = list(self.values)
@@ -221,30 +222,62 @@ class UCTimeseries:
                                       curve_style=fig_style.curve_style)
             )
             # set same keys as the ones of y, i.e. labels
-            if isinstance(y, dict):
+            if curve_labels is not None:
                 curve_style_attrs_vals = list(curve_style_attrs.values())
-                curve_style_attrs = {label_key: curve_style_attrs_vals[i] for i, label_key in enumerate(y)}
+                curve_style_attrs = {label_key: curve_style_attrs_vals[i] for i, label_key in enumerate(curve_labels)}
             else:  # y is a list; i.e. unique curve -> unique style attr. object
                 curve_style_attrs = list(curve_style_attrs.values())[0]
         else:
             curve_style_attrs = None
+        return curve_style_attrs
+
+    def plot(self, output_dir: str, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None):
+        """
+        Plot (UC) timeseries
+        :param output_dir: in which figure will be saved
+        :param fig_style: FigureStyle object to define some style attrs for plot
+        :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
+        defined in plot_params.json file)
+        """
+        name_label = self.name.capitalize()
+        fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
+        x = self.set_output_dates(is_plot=True)
+        y = self.set_output_values(is_plot=True)
+        xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
+        # replace (country, year, clim year) keys by labels to be used for plot
+        if isinstance(y, dict):
+            attrs_in_legend = self.set_attrs_in_plot_legend()
+            y = {set_curve_label(attrs_in_legend, *key): vals for key, vals in y.items()}
+        # set curve styles (color, linestyle, marker)
+        curve_labels = list(y) if isinstance(y, dict) else None
+        curve_style_attrs = self.set_curve_style_attrs(fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,
+                                                       curve_labels=curve_labels)
         simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(), xlabel=xlabel,
                     ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
 
-    def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None):
+    def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None,
+                            per_dim_plot_params: Dict[str, PlotParams] = None):
+        """
+        Plot (UC) timeseries duration curve(s)
+        :param output_dir: in which figure will be saved
+        :param as_a_percentage: plot percentage values? (or in absolute values)
+        :param fig_style: FigureStyle object to define some style attrs for plot
+        :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
+        defined in plot_params.json file)
+        """
         y = self.set_output_values(is_plot=True)
         # sort values in descending order
         # per (country, year, climatic year) values
         if isinstance(y, dict):
-            vals_desc_order = {key: np.sort(vals)[::-1] for key, vals in y.items()}
+            y_desc_order = {key: np.sort(vals)[::-1] for key, vals in y.items()}
             first_key = list(y)[0]
-            n_vals = len(vals_desc_order[first_key])
+            n_vals = len(y_desc_order[first_key])
             attrs_in_legend = self.set_attrs_in_plot_legend()
-            vals_desc_order = {set_curve_label(attrs_in_legend, *key): vals
-                               for key, vals in vals_desc_order.items()}
+            y_desc_order = {set_curve_label(attrs_in_legend, *key): vals
+                               for key, vals in y_desc_order.items()}
         else:
-            vals_desc_order = np.sort(y)[::-1]
-            n_vals = len(vals_desc_order)
+            y_desc_order = np.sort(y)[::-1]
+            n_vals = len(y_desc_order)
         # this calculation is done assuming uniform time-slot duration
         duration_curve = np.arange(1, n_vals + 1)
         if as_a_percentage:
@@ -258,10 +291,12 @@ class UCTimeseries:
             print_legend = isinstance(y, dict) and len(y) > 1
             fig_style.set_print_legend(value=print_legend)
         # set curve styles (color, linestyle, marker)
-        bob = 1
-        simple_plot(x=duration_curve, y=vals_desc_order, fig_file=fig_file,
+        curve_labels = list(y_desc_order) if isinstance(y_desc_order, dict) else None
+        curve_style_attrs = self.set_curve_style_attrs(fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,
+                                                       curve_labels=curve_labels)
+        simple_plot(x=duration_curve, y=y_desc_order, fig_file=fig_file,
                     title=f'{self.set_plot_title(dt_suffix="duration curve")}', xlabel=xlabel,
-                    ylabel=self.set_plot_ylabel(), fig_style=fig_style)
+                    ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
     
     def plot_rolling_horizon_avg(self):
         bob = 1

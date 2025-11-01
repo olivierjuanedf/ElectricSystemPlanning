@@ -244,7 +244,8 @@ class DataAnalysis:
             uc_timeseries.plot(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style,
                                per_dim_plot_params=per_dim_plot_params)
         elif self.analysis_type == ANALYSIS_TYPES.plot_duration_curve:
-            uc_timeseries.plot_duration_curve(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style)
+            uc_timeseries.plot_duration_curve(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style,
+                                              per_dim_plot_params=per_dim_plot_params)
         elif self.analysis_type in [ANALYSIS_TYPES.extract, ANALYSIS_TYPES.extract_to_mat]:
             to_matrix = True if self.analysis_type == ANALYSIS_TYPES.extract_to_mat else False
             # TODO[debug]: to_matrix_format not an arg of this method..., complem_columns missing...
