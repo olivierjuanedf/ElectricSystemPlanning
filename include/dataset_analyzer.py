@@ -96,6 +96,23 @@ def get_default_climatic_year(available_climatic_years: List[int]) -> int:
 
 
 @dataclass
+class DataAnalExtraParams:
+    values: dict
+    label: str = None
+
+    def __repr__(self) -> str:
+        repr_str = f'{self.label}: ' if self.label is not None else ''
+        repr_str += self.values
+        return repr_str
+
+    def process(self, label: str = None):
+        if self.label is None:
+            if label is None:
+                label = 'Data analysis extra-params'
+            self.label = label
+
+
+@dataclass
 class DataAnalysis:
     analysis_type: str
     data_type: str
@@ -105,24 +122,32 @@ class DataAnalysis:
     data_subtype: str = None
     period_start: Union[str, datetime] = None  # in JSON str, then datetime after parsing data
     period_end: Union[str, datetime] = None  # idem
+    # Extra parameters to be used for data analysis, e.g. RES installed capacities - that can be used for
+    # net demand calculation
+    # in JSON dict or list of dicts, then list objects after parsing data
+    extra_params: Union[dict, List[dict], List[DataAnalExtraParams]] = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        sep_in_str = '\n- '
         repr_str = 'ERAA data analysis with params:'
-        repr_str += f'\n- of type {self.analysis_type}'
+        repr_str += f'{sep_in_str}of type {self.analysis_type}'
         if self.data_subtype is not None:
             data_type_suffix = f', and sub-datatype {self.data_subtype}'
         else:
             data_type_suffix = ''
-        repr_str += f'\n- for data type: {self.data_type}{data_type_suffix}'
-        repr_str += f'\n- countries: {self.countries}'
-        repr_str += f'\n- years: {self.years}'
-        repr_str += f'\n- climatic years: {self.climatic_years}'
+        repr_str += f'{sep_in_str}for data type: {self.data_type}{data_type_suffix}'
+        repr_str += f'{sep_in_str}countries: {self.countries}'
+        repr_str += f'{sep_in_str}years: {self.years}'
+        repr_str += f'{sep_in_str}climatic years: {self.climatic_years}'
         if self.period_start is not None and self.period_end is not None:
             temp_period_str = (
                 set_temporal_period_str(min_date=self.period_start, max_date=self.period_end,
                                         print_year=False, in_letter=True)
             )
-            repr_str += f'\n- period: {temp_period_str}'
+            repr_str += f'{sep_in_str}period: {temp_period_str}'
+        if self.extra_params is not None:
+            repr_str += f'{sep_in_str}extra-params: {str(self.extra_params)}'
+
         return repr_str
 
     def check_types(self):
@@ -152,6 +177,18 @@ class DataAnalysis:
         self.period_start, self.period_end = (
             set_period_for_analysis(period_start=self.period_start, period_end=self.period_end)
         )
+
+        if self.extra_params is not None:
+            if isinstance(self.extra_params, dict):
+                self.extra_params = [self.extra_params]
+            extra_params_obj = []
+            for i, elt in enumerate(self.extra_params):
+                params = DataAnalExtraParams(**elt)
+                if params.label is None:
+                    label = f'case {i}'
+                params.process(label=label)
+                extra_params_obj.append(params)
+            self.extra_params = extra_params_obj
 
     def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
         errors_list = []
