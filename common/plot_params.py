@@ -1,7 +1,7 @@
 import logging
 
 from dataclasses import dataclass
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Tuple
 
 from common.constants.datadims import DataDimensions
 
@@ -78,3 +78,46 @@ class PlotParams:
     def check(self):
         # TODO: check TB coded
         logging.warning('Not coded for now')
+
+
+@dataclass
+class XtickDateFormat:
+    dow: str = 'dow'  # day of week H:
+    # Year month in letter day H:, wo repeating (year, month, day) if idem to previous xtick
+    in_letter: str = 'in_letter'
+
+
+@dataclass
+class CurveStyles:
+    absolute: str = 'absolute'
+    relative: str = 'relative'
+
+
+DEFAULT_DATE_XTICK_FMT = XtickDateFormat.in_letter
+
+
+@dataclass
+class FigureStyle:
+    size: Tuple[int, int] = (10, 6)
+    marker: str = None
+    grid_on: bool = True
+    # curve style def -> 'absolute' to set up (color, linestyle, marker) based on (zone, year, clim year) value
+    # whatever content of figure (other curves plotted); 'relative' to define it relatively
+    curve_style: str = CurveStyles.absolute
+    # all legend parameters
+    print_legend: bool = True
+    legend_font_size: int = 15
+    legend_loc: str = 'best'
+    # xtick (labels)
+    delta_xticks: int = None
+    date_xtick_fmt: str = XtickDateFormat.in_letter
+    add_day_exp_in_date_xtick: bool = False
+    rm_useless_zeros_in_date_xtick: bool = True
+    date_xtick_fontsize: int = 12
+    date_xtick_rotation: int = 45
+
+    def set_print_legend(self, value: bool):
+        self.print_legend = value
+
+    def set_add_day_exp(self, value: bool):
+        self.add_day_exp_in_date_xtick = value

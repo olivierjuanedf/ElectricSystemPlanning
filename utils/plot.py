@@ -7,52 +7,10 @@ import numpy as np
 from typing import Union, Dict, List, Tuple
 
 from common.constants.temporal import DAY_OF_WEEK
-from common.plot_params import PlotParams, PLOT_DIMS_ORDER, N_LETTERS_ZONE
+from common.plot_params import PlotParams, PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, DEFAULT_DATE_XTICK_FMT, \
+    CurveStyles, FigureStyle
 from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
-
-
-@dataclass
-class XtickDateFormat:
-    dow: str = 'dow'  # day of week H:
-    # Year month in letter day H:, wo repeating (year, month, day) if idem to previous xtick
-    in_letter: str = 'in_letter'
-
-
-@dataclass
-class CurveStyles:
-    absolute: str = 'absolute'
-    relative: str = 'relative'
-
-
-DEFAULT_DATE_XTICK_FMT = XtickDateFormat.in_letter
-
-
-@dataclass
-class FigureStyle:
-    size: Tuple[int, int] = (10, 6)
-    marker: str = None
-    grid_on: bool = True
-    # curve style def -> 'absolute' to set up (color, linestyle, marker) based on (zone, year, clim year) value
-    # whatever content of figure (other curves plotted); 'relative' to define it relatively
-    curve_style: str = CurveStyles.absolute
-    # all legend parameters
-    print_legend: bool = True
-    legend_font_size: int = 15
-    legend_loc: str = 'best'
-    # xtick (labels)
-    delta_xticks: int = None
-    date_xtick_fmt: str = XtickDateFormat.in_letter
-    add_day_exp_in_date_xtick: bool = False
-    rm_useless_zeros_in_date_xtick: bool = True
-    date_xtick_fontsize: int = 12
-    date_xtick_rotation: int = 45
-
-    def set_print_legend(self, value: bool):
-        self.print_legend = value
-
-    def set_add_day_exp(self, value: bool):
-        self.add_day_exp_in_date_xtick = value
 
 
 def set_temporal_period_title(min_date: datetime, max_date: datetime) -> str:
@@ -231,6 +189,18 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_
     return per_case_curve_style_attrs
 
 
+def add_fig_style_marker_to_curve_attrs(curve_style_attrs: Dict[str, str],
+                                        fig_style_marker: str = None) -> Dict[str, str]:
+    marker_key = 'marker'
+    if fig_style_marker is not None:
+        if marker_key in curve_style_attrs:
+            logging.warning(f'FigureStyle marker {fig_style_marker} not accounted for, as attr. '
+                            f'already defined in CurveStyles object')
+        else:
+            curve_style_attrs[marker_key] = fig_style_marker
+    return curve_style_attrs
+
+
 def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str, np.ndarray], Dict[str, list]],
                 fig_file: str, title: str, xlabel: str, ylabel: str, fig_style: FigureStyle = None,
                 curve_style_attrs: Union[Dict[str, CurveStyleAttrs], CurveStyleAttrs] = None):
@@ -243,10 +213,14 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
         for key_label, values in y.items():
             current_label = key_label if fig_style.print_legend else None
             curve_style_attrs_dict = curve_style_attrs[key_label].__dict__ if curve_style_attrs is not None else {}
-            plt.plot(x, values, marker=fig_style.marker, label=current_label, **curve_style_attrs_dict)
+            curve_style_attrs_dict = add_fig_style_marker_to_curve_attrs(curve_style_attrs=curve_style_attrs_dict,
+                                                                         fig_style_marker=fig_style.marker)
+            plt.plot(x, values, label=current_label, **curve_style_attrs_dict)
     else:
         curve_style_attrs_dict = curve_style_attrs.__dict__ if curve_style_attrs is not None else {}
-        plt.plot(x, y, marker=fig_style.marker, **curve_style_attrs_dict)
+        curve_style_attrs_dict = add_fig_style_marker_to_curve_attrs(curve_style_attrs=curve_style_attrs_dict,
+                                                                     fig_style_marker=fig_style.marker)
+        plt.plot(x, y, **curve_style_attrs_dict)
 
     # title and x/y labels
     plt.title(title)

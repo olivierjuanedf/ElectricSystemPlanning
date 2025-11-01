@@ -150,6 +150,7 @@
   "fig_style_data-analysis": {
     "curve_style": "absolute",
     "date_xtick_fmt": "in_letter",
+    "date_xtick_fontsize": 10,
     "add_day_exp_in_date_xtick": "true",
     "date_xtick_rotation": 0
   }
