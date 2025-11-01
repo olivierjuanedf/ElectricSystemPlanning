@@ -18,6 +18,7 @@ PLOT_DIMS_ORDER = [DataDimensions.zone, DataDimensions.year, DataDimensions.clim
 TYPE_PARAMS_DEF = Union[Dict[str, Dict[str, str]], Dict[str, Dict[int, str]]]
 TYPE_PER_CASE_PARAMS = Union[Dict[str, str], Dict[int, str]]
 N_LETTERS_ZONE = 3
+N_MAX_CHARS_FLAT_LABEL = 8
 
 
 def set_per_case_dict(params_def: TYPE_PARAMS_DEF, param_choice: str,

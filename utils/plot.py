@@ -8,7 +8,7 @@ from typing import Union, Dict, List, Tuple
 
 from common.constants.temporal import DAY_OF_WEEK
 from common.plot_params import PlotParams, PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, DEFAULT_DATE_XTICK_FMT, \
-    CurveStyles, FigureStyle
+    CurveStyles, FigureStyle, N_MAX_CHARS_FLAT_LABEL
 from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
 
@@ -35,7 +35,8 @@ def set_xtick_idx(min_date: datetime, max_date: datetime, delta_date: timedelta,
 
 
 def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format: str, short_months: bool = True,
-                          add_day_exp: bool = False, rm_useless_zeros: bool = True) -> List[str]:
+                          add_day_exp: bool = False, rm_useless_zeros: bool = True,
+                          flatten_labels: bool = True) -> List[str]:
     """
     Set date xtick labels
     :param idx_xticks: idx of xtick labels that will be used in plot
@@ -44,6 +45,7 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format
     :param short_months: use short names for months (Jan. i.o. January, etc.), only for 'in_letter' format
     :param add_day_exp: add exponent on day nber, only for 'in_letter' format
     :param rm_useless_zeros: remove useless zeros in dates nbers?
+    :param flatten_labels: put labels on unique line if of length <= given value?
     """
     with_year_in_xticks = x_dates[-1].year > x_dates[0].year  # only used for format 'in_letter'
     new_date = None
@@ -99,6 +101,10 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format
         xtick_labels.append(current_label)
         # move on to next xtick label
         i += 1
+
+    if flatten_labels:
+        xtick_labels = [elt if len(elt) > N_MAX_CHARS_FLAT_LABEL else elt.replace('\n', ' ')
+                        for elt in xtick_labels]
     return xtick_labels
 
 
