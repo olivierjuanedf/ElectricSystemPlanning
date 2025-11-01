@@ -9,7 +9,7 @@ from typing import Union, Dict, List, Tuple
 from common.constants.temporal import DAY_OF_WEEK
 from common.plot_params import PlotParams, PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, DEFAULT_DATE_XTICK_FMT, \
     CurveStyles, FigureStyle, N_MAX_CHARS_FLAT_LABEL
-from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals
+from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals, endswith_in_list
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
 
 
@@ -34,9 +34,45 @@ def set_xtick_idx(min_date: datetime, max_date: datetime, delta_date: timedelta,
     return list(idx_xticks)
 
 
+def rm_all_zeros_hours(xtick_labels: List[str], re_linebreak: bool = False) -> List[str]:
+    zero_hours = ['0:', '00:']
+    if all([endswith_in_list(my_str=elt, end_elts=zero_hours) for elt in xtick_labels]):
+        new_labels = []
+        # set list of chars to be suppr.
+        chars_tb_suppr = zero_hours
+        # including the ones with linebreak
+        chars_tb_suppr.extend([f'\n{elt}' for elt in zero_hours])
+        for elt in xtick_labels:
+            new_elt = elt
+            for elt_tb_suppr in chars_tb_suppr:
+                if elt_tb_suppr in new_elt:
+                    new_elt = new_elt.replace(elt_tb_suppr, '')
+            new_labels.append(new_elt)
+        xtick_labels = new_labels
+
+        # apply linebreak between month and day given that no more hours in labels?
+        if re_linebreak and len(xtick_labels) > 10:
+            new_labels = []
+            for elt in xtick_labels:
+                elt_split = elt.split(' ')
+                n_elt_split = len(elt_split)
+                if n_elt_split == 1:
+                    new_labels.append(elt)
+                elif n_elt_split == 2:
+                    new_labels.append(elt.replace(' ', '\n'))
+                else:
+                    if n_elt_split > 3:
+                        logging.warning(f'Date label {elt} - without hours - contains more than 3 elts '
+                                        f'-> only 2 first used in cleaned version')
+                    new_labels.append(f'{elt_split[0]}\n{elt_split[1]} {elt_split[2]}')
+            xtick_labels = new_labels
+
+    return xtick_labels
+
+
 def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format: str, short_months: bool = True,
                           add_day_exp: bool = False, rm_useless_zeros: bool = True,
-                          flatten_labels: bool = True) -> List[str]:
+                          flatten_labels: bool = True, rm_all_zero_hours: bool = True) -> List[str]:
     """
     Set date xtick labels
     :param idx_xticks: idx of xtick labels that will be used in plot
@@ -102,9 +138,15 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format
         # move on to next xtick label
         i += 1
 
+    # "flatten" labels, i.e. put on a unique line the ones which are not too long
     if flatten_labels:
         xtick_labels = [elt if len(elt) > N_MAX_CHARS_FLAT_LABEL else elt.replace('\n', ' ')
                         for elt in xtick_labels]
+
+    # remove hours if all zeros on date labels
+    if rm_all_zero_hours:
+        xtick_labels = rm_all_zeros_hours(xtick_labels=xtick_labels)
+
     return xtick_labels
 
 

@@ -152,3 +152,10 @@ def random_draw_in_list(my_list: list):
     n_elts = len(my_list)
     i_rand = np.random.randint(n_elts)
     return my_list[i_rand]
+
+
+def endswith_in_list(my_str: str, end_elts: List[str]) -> bool:
+    for elt in end_elts:
+        if my_str.endswith(elt):
+            return True
+    return False
