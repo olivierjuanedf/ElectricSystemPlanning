@@ -263,8 +263,9 @@ class Dataset:
                 current_df_net_demand[value_col] = current_np_net_demand
                 self.net_demand[country] = current_df_net_demand
                 if len(pts_with_capa_from_arg) > 0:
+                    used_capas_from_arg = {pt: capas_aggreg_pt_with_cf[pt] for pt in pts_with_capa_from_arg}
                     logging.info(f'For net demand calculation, the following prod types have capa values used '
-                                 f'from arg: {pts_with_capa_from_arg}')
+                                 f'from arg, in MW: {used_capas_from_arg}')
 
         if DATATYPE_NAMES.interco_capa in datatypes_selec:
             # read interconnection capas file
