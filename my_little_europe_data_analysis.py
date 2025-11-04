@@ -12,6 +12,7 @@ from utils.dates import get_period_str
 from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
     read_data_analysis_plot_params, read_plot_params
 
+# TODO: set plot attr to last value if dim value is None (eg extra-args)
 # TODO: check case with unique curve -> plot_dims obtained from UC ts name (def get_dims_from_uc_ts_name)
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.data_analysis)
 data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
