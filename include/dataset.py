@@ -51,6 +51,10 @@ class Dataset:
         # default is to read all data
         if datatypes_selec is None:
             datatypes_selec = list(DATATYPE_NAMES.__dict__.values())
+        # and not to apply capa. values fixed in arg
+        if capas_aggreg_pt_with_cf is None:
+            capas_aggreg_pt_with_cf = {}
+
         # set shorter names for simplicity
         countries = uc_run_params.selected_countries
         year = uc_run_params.selected_target_year

@@ -74,6 +74,21 @@ def set_date_col(first_date: Union[int, datetime]) -> str:
     return 'time_slot' if isinstance(first_date, int) else 'date'
 
 
+def set_y_with_label_as_key(y: Dict[tuple, Union[np.ndarray, list]], extra_params_labels: Dict[int, str],
+                            attrs_in_legend: List[str]) -> Dict[tuple, Union[np.ndarray, list]]:
+    """
+    Set y-values from dict {case as tuple: values} to {label: values}
+    """
+    y_with_label = {}
+    for key, vals in y.items():
+        current_key = list(key)
+        # replace last element of (tuple) key - the extra arg idx - by its label
+        if current_key[-1] is not None:
+            current_key[-1] = extra_params_labels[current_key[-1]]
+        y_with_label[set_curve_label(attrs_in_legend, *current_key)] = vals
+    return y_with_label
+
+
 @dataclass
 class UCTimeseries:
     name: str = None
@@ -172,7 +187,7 @@ class UCTimeseries:
         if self.unit is not None:
             ylabel += f' ({self.unit.upper()})'
         return ylabel
-    
+
     def set_plot_title(self, dt_suffix: str = None) -> str:
         plot_title = '-'.join(list(self.data_type)).capitalize()
         if dt_suffix is not None:
@@ -255,14 +270,7 @@ class UCTimeseries:
         # replace (country, year, clim year, possibly extra-args label) keys by labels to be used for plot
         if isinstance(y, dict):
             attrs_in_legend = self.set_attrs_in_plot_legend()
-            y_with_label = {}
-            for key, vals in y.items():
-                current_key = list(key)
-                # replace last element of (tuple) key - the extra arg idx - by its label
-                if current_key[-1] is not None:
-                    current_key[-1] = extra_params_labels[current_key[-1]]
-                y_with_label[set_curve_label(attrs_in_legend, *current_key)] = vals
-            y = y_with_label
+            y = set_y_with_label_as_key(y=y, extra_params_labels=extra_params_labels, attrs_in_legend=attrs_in_legend)
         # set curve styles (color, linestyle, marker)
         curve_labels = list(y) if isinstance(y, dict) else None
         curve_style_attrs = self.set_curve_style_attrs(fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,
@@ -289,7 +297,7 @@ class UCTimeseries:
             n_vals = len(y_desc_order[first_key])
             attrs_in_legend = self.set_attrs_in_plot_legend()
             y_desc_order = {set_curve_label(attrs_in_legend, *key): vals
-                               for key, vals in y_desc_order.items()}
+                            for key, vals in y_desc_order.items()}
         else:
             y_desc_order = np.sort(y)[::-1]
             n_vals = len(y_desc_order)
@@ -312,12 +320,12 @@ class UCTimeseries:
         simple_plot(x=duration_curve, y=y_desc_order, fig_file=fig_file,
                     title=f'{self.set_plot_title(dt_suffix="duration curve")}', xlabel=xlabel,
                     ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
-    
+
     def plot_rolling_horizon_avg(self):
         bob = 1
-        
 
-def list_of_uc_timeseries_to_df(uc_timeseries: List[UCTimeseries]) -> pd.DataFrame:        
+
+def list_of_uc_timeseries_to_df(uc_timeseries: List[UCTimeseries]) -> pd.DataFrame:
     uc_ts_dict = {uc_ts.name: uc_ts.values for uc_ts in uc_timeseries}
     # add dates, if available
     if uc_timeseries[0].dates is not None:

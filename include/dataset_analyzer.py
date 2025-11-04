@@ -271,6 +271,9 @@ class DataAnalysis:
         else:
             return self.data_type, self.data_subtype
 
+    def get_extra_args_idx_to_label_corresp(self) -> Dict[int, str]:
+        return {elt.index: elt.label for elt in self.extra_params if elt is not None}
+
     def apply_analysis(self, per_case_data: Dict[Tuple[str, int, int], pd.DataFrame], fig_style: FigureStyle = None,
                        per_dim_plot_params: Dict[str, PlotParams] = None, extra_params_labels: Dict[int, str] = None):
         """
@@ -279,6 +282,7 @@ class DataAnalysis:
         or unique dataframe if unique case considered
         :param fig_style: FigureStyle params, in case a plot be applied
         :param per_dim_plot_params: {plot dimension eg 'zone': parameters to be used for plot color/linestyle/marker}
+        :param extra_params_labels: {idx: label} corresp. for extra-parameters (no corresp. for None extra-params)
         """
         current_full_dt = self.get_full_datatype()
         date_col = 'date'
