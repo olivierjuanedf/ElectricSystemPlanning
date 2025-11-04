@@ -209,11 +209,14 @@ class DataAnalysis:
                 self.extra_params = [self.extra_params]
             extra_params_obj = []
             for i, elt in enumerate(self.extra_params):
-                index = i + 1
-                elt['index'] = index
-                params = DataAnalExtraParams(**elt)
-                params.process()
-                extra_params_obj.append(params)
+                if elt is not None:
+                    index = i + 1
+                    elt['index'] = index
+                    params = DataAnalExtraParams(**elt)
+                    params.process()
+                    extra_params_obj.append(params)
+                else:
+                    extra_params_obj.append(None)
             self.extra_params = extra_params_obj
         else:
             self.extra_params = [None]
