@@ -269,7 +269,7 @@ class DataAnalysis:
             return self.data_type, self.data_subtype
 
     def apply_analysis(self, per_case_data: Dict[Tuple[str, int, int], pd.DataFrame], fig_style: FigureStyle = None,
-                       per_dim_plot_params: Dict[str, PlotParams] = None):
+                       per_dim_plot_params: Dict[str, PlotParams] = None, extra_params_labels: Dict[int, str] = None):
         """
         Apply 'analysis', either saving data to csv, or plotting it
         :param per_case_data: per tuple (country, year, climatic year) data in a dict. {tuple: df},
@@ -309,7 +309,7 @@ class DataAnalysis:
             logging.warning(f'No data obtained for type {self.data_type} -> analysis (plot/save to .csv) not done')
         elif self.analysis_type == ANALYSIS_TYPES.plot:
             uc_timeseries.plot(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style,
-                               per_dim_plot_params=per_dim_plot_params)
+                               per_dim_plot_params=per_dim_plot_params, extra_params_labels=extra_params_labels)
         elif self.analysis_type == ANALYSIS_TYPES.plot_duration_curve:
             uc_timeseries.plot_duration_curve(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style,
                                               per_dim_plot_params=per_dim_plot_params)

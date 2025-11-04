@@ -52,7 +52,7 @@ def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
 
 
 def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int = None,
-                    climatic_year: int = None) -> str:
+                    climatic_year: int = None, extra_args_label: str = None) -> str:
     sep = ', '
     label = ''
     if 'country' in attrs_in_legend and country is not None:
@@ -65,6 +65,8 @@ def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int =
             if len(label) > 0:
                 label += sep
             label += f'{label_name}={label_val}'
+    if 'extra_args' in attrs_in_legend:
+        label += extra_args_label if extra_args_label is not None else 'no extra-args'
     return label
 
 
@@ -188,19 +190,19 @@ class UCTimeseries:
         return plot_title
 
     def set_attrs_in_plot_legend(self) -> List[str]:
+        """
+        Set attributes to be part of plot legend, the ones for which at least two different values have been used in
+        data selection
+        """
         if not isinstance(self.values, dict):
             return []
         all_tuples_in_vals = list(self.values)
-        all_countries = set([elt[0] for elt in all_tuples_in_vals])
-        all_years = set([elt[1] for elt in all_tuples_in_vals])
-        all_clim_years = set([elt[2] for elt in all_tuples_in_vals])
+        pot_attrs_for_plot_legend = {'country': 0, 'year': 1, 'climatic_year': 2, 'extra_args': 3}
         attrs_in_plot_legend = []
-        if len(all_countries) > 1:
-            attrs_in_plot_legend.append('country')
-        if len(all_years) > 1:
-            attrs_in_plot_legend.append('year')
-        if len(all_clim_years) > 1:
-            attrs_in_plot_legend.append('climatic_year')
+        for attr_name, attr_idx in pot_attrs_for_plot_legend.items():
+            all_vals = set([elt[attr_idx] for elt in all_tuples_in_vals])
+            if len(all_vals) > 1:
+                attrs_in_plot_legend.append(attr_name)
         return attrs_in_plot_legend
 
     def set_curve_style_attrs(self, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None,
@@ -235,23 +237,32 @@ class UCTimeseries:
             curve_style_attrs = None
         return curve_style_attrs
 
-    def plot(self, output_dir: str, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None):
+    def plot(self, output_dir: str, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None,
+             extra_params_labels: Dict[int, str] = None):
         """
         Plot (UC) timeseries
         :param output_dir: in which figure will be saved
         :param fig_style: FigureStyle object to define some style attrs for plot
         :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
         defined in plot_params.json file)
+        :param extra_params_labels: corresp. between extra. parameters index and labels
         """
         name_label = self.name.capitalize()
         fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
         x = self.set_output_dates(is_plot=True)
         y = self.set_output_values(is_plot=True)
         xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
-        # replace (country, year, clim year) keys by labels to be used for plot
+        # replace (country, year, clim year, possibly extra-args label) keys by labels to be used for plot
         if isinstance(y, dict):
             attrs_in_legend = self.set_attrs_in_plot_legend()
-            y = {set_curve_label(attrs_in_legend, *key): vals for key, vals in y.items()}
+            y_with_label = {}
+            for key, vals in y.items():
+                current_key = list(key)
+                # replace last element of (tuple) key - the extra arg idx - by its label
+                if current_key[-1] is not None:
+                    current_key[-1] = extra_params_labels[current_key[-1]]
+                y_with_label[set_curve_label(attrs_in_legend, *current_key)] = vals
+            y = y_with_label
         # set curve styles (color, linestyle, marker)
         curve_labels = list(y) if isinstance(y, dict) else None
         curve_style_attrs = self.set_curve_style_attrs(fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,

@@ -83,7 +83,9 @@ for elt_analysis in data_analyses:
         else:
             for country in current_countries:
                 current_df[(country, year, clim_year, extra_params_idx)] = None
-    elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style, per_dim_plot_params=per_dim_plot_params)
+    extra_params_labels = None
+    elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style,
+                                per_dim_plot_params=per_dim_plot_params, extra_params_labels=None)
 
 logging.info('THE END of ERAA (input) data analysis!')
 stop_logger()
