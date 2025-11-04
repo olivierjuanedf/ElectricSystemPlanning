@@ -280,7 +280,8 @@ class UCTimeseries:
                     ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
 
     def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None,
-                            per_dim_plot_params: Dict[str, PlotParams] = None):
+                            per_dim_plot_params: Dict[str, PlotParams] = None,
+                            extra_params_labels: Dict[int, str] = None):
         """
         Plot (UC) timeseries duration curve(s)
         :param output_dir: in which figure will be saved
@@ -288,6 +289,7 @@ class UCTimeseries:
         :param fig_style: FigureStyle object to define some style attrs for plot
         :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
         defined in plot_params.json file)
+        :param extra_params_labels: corresp. between extra. parameters index and labels
         """
         y = self.set_output_values(is_plot=True)
         # sort values in descending order
@@ -297,8 +299,8 @@ class UCTimeseries:
             first_key = list(y)[0]
             n_vals = len(y_desc_order[first_key])
             attrs_in_legend = self.set_attrs_in_plot_legend()
-            y_desc_order = {set_curve_label(attrs_in_legend, *key): vals
-                            for key, vals in y_desc_order.items()}
+            y_desc_order = set_y_with_label_as_key(y=y_desc_order, extra_params_labels=extra_params_labels,
+                                                   attrs_in_legend=attrs_in_legend)
         else:
             y_desc_order = np.sort(y)[::-1]
             n_vals = len(y_desc_order)

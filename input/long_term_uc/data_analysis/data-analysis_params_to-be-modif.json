@@ -1,7 +1,7 @@
 {
   "data_analysis_list": [
     {
-      "analysis_type": "plot",
+      "analysis_type": "plot_duration_curve",
       "data_type": "net_demand",
       "countries": "france",
       "years": 2025,
