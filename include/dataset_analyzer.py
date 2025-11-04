@@ -105,6 +105,11 @@ def stop_if_coherence_check_error(obj_checked, errors_list: List[str]):
 
 
 @dataclass
+class ExtraParamNames:
+    capas_aggreg_pt_with_cf: str= 'capas_aggreg_pt_with_cf'
+
+
+@dataclass
 class DataAnalExtraParams:
     values: dict
     index: int = 1
@@ -122,7 +127,7 @@ class DataAnalExtraParams:
     def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
         errors_list = []
         # check that aggreg. prod. types are in allowed list
-        fixed_cf_capas_key = 'aggreg_pt_with_cf_capas'
+        fixed_cf_capas_key = ExtraParamNames.capas_aggreg_pt_with_cf
         if fixed_cf_capas_key in self.values:
             cf_capas_keys = list(self.values[fixed_cf_capas_key])
             unknown_cf_capas = [elt for elt in cf_capas_keys if elt not in eraa_data_descr.available_aggreg_prod_types]

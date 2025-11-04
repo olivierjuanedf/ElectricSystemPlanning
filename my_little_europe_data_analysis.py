@@ -57,7 +57,7 @@ for elt_analysis in data_analyses:
         if current_extra_params is None:
             extra_params_vals = {}
         else:
-            extra_params_vals = current_extra_params.values()
+            extra_params_vals = current_extra_params.values
         eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
                                         datatypes_selec=[elt_analysis.data_type], subdt_selec=subdt_selec,

@@ -12,7 +12,7 @@
         {
           "label": "res_capa1",
           "values": {
-            "aggreg_pt_with_cf_capas": {
+            "capas_aggreg_pt_with_cf": {
               "wind_onshore": 100,
               "solar_pv": 200
             }

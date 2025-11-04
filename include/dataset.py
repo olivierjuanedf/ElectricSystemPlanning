@@ -36,14 +36,14 @@ class Dataset:
 
     def get_countries_data(self, uc_run_params: UCRunParams, aggreg_prod_types_def: Dict[str, Dict[str, List[str]]],
                            datatypes_selec: List[str] = None, subdt_selec: List[str] = None,
-                           aggreg_pt_with_cf_capas: Dict[str, int] = None):
+                           capas_aggreg_pt_with_cf: Dict[str, int] = None):
         """
         Get ERAA data necessary for the selected countries
         :param uc_run_params: UC run parameters, from which main reading infos will be obtained
         :param aggreg_prod_types_def: per-datatype definition of aggreg. to indiv. production types
         :param datatypes_selec: list of datatypes for which data must be read
         :param subdt_selec: list of sub-datatypes for which data must be read
-        :param aggreg_pt_with_cf_capas: capacities of prod types with CF data to be used for prod. values calculation
+        :param capas_aggreg_pt_with_cf: capacities of prod types with CF data to be used for prod. values calculation
         :returns: {country: df with demand of this country}, {country: df with - per aggreg. prod type CF},
         {country: df with installed generation capas}, df with all interconnection capas (for considered 
         countries and year)
@@ -187,6 +187,11 @@ class Dataset:
                 logging.info(
                     'Get installed generation capacities (unique file per country and year, '
                     'with all prod. types in it)')
+                # fixed capas for agg. prod types with CF data not accounted for here
+                if capas_aggreg_pt_with_cf is not None:
+                    logging.warning(f'Capas for following agg. prod types (with CF data) will not be accounted for '
+                                    f'to get installed capas data: {capas_aggreg_pt_with_cf} (arg only used '
+                                    f'for net demand calculation)')
                 gen_capa_data_file = f'{gen_capas_folder}/{gen_capas_prefix}_{current_suffix}.csv'
                 if not os.path.exists(gen_capa_data_file):
                     logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
@@ -236,6 +241,7 @@ class Dataset:
                     logging.debug('#' * 100 + f'{current_df_gen_capa}' + '#' * 100)
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
+                pts_with_capa_from_arg = []
                 # list of prod types with CF data
                 cf_agg_prod_types = [agg_prod_type for agg_prod_type in agg_prod_types_tb_read
                                      if agg_prod_type in self.agg_prod_types_with_cf_data]
@@ -243,14 +249,22 @@ class Dataset:
                 # convert to float so that subtraction of CF can be done hereafter
                 current_np_net_demand = np.array(current_df_demand[value_col]).astype(np.float64)
                 for agg_prod_type in cf_agg_prod_types:
-                    current_capa = (
-                        current_df_gen_capa.loc[current_df_gen_capa[prod_type_agg_col] == agg_prod_type,
-                        'power_capacity'].values)[0]
+                    # get current capa either from fixed data provided as arg of this function
+                    if agg_prod_type in capas_aggreg_pt_with_cf:
+                        current_capa = capas_aggreg_pt_with_cf[agg_prod_type]
+                        pts_with_capa_from_arg.append(agg_prod_type)
+                    else:  # or from (ERAA) dataset data
+                        current_capa = (
+                            current_df_gen_capa.loc[current_df_gen_capa[prod_type_agg_col] == agg_prod_type,
+                            'power_capacity'].values)[0]
                     current_cf_data = agg_cf_data_read[agg_cf_data_read[prod_type_agg_col] == agg_prod_type]
                     current_np_net_demand -= current_capa * np.array(current_cf_data[value_col])
                 current_df_net_demand = deepcopy(current_df_demand)
                 current_df_net_demand[value_col] = current_np_net_demand
                 self.net_demand[country] = current_df_net_demand
+                if len(pts_with_capa_from_arg) > 0:
+                    logging.info(f'For net demand calculation, the following prod types have capa values used '
+                                 f'from arg: {pts_with_capa_from_arg}')
 
         if DATATYPE_NAMES.interco_capa in datatypes_selec:
             # read interconnection capas file
