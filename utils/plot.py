@@ -6,8 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Dict, List, Tuple
 
+from common.constants.datadims import DataDimensions
 from common.constants.temporal import DAY_OF_WEEK
-from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, DEFAULT_DATE_XTICK_FMT, \
+from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, \
+    DEFAULT_DATE_XTICK_FMT, \
     CurveStyles, FigureStyle, N_MAX_CHARS_FLAT_LABEL
 from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals, endswith_in_list
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
@@ -179,6 +181,24 @@ class CurveStyleAttrs:
     marker: str = None
 
 
+def set_specific_keys_to_get_style_attr(key: Union[str, int], attr_level: int, zone_level: int,
+                                        extra_args_level: int, per_case_attrs_vals: Dict[int, str] = None) \
+        -> Union[str, int]:
+    if attr_level == zone_level:  # case of a zone
+        return key[:N_LETTERS_ZONE]
+
+    # None extra args is possible
+    if attr_level == extra_args_level and key is None:
+        # take max. value of extra-args idx in plot params (min chance to have conflict with other extra-args cases)
+        key = max(list(per_case_attrs_vals))
+        logging.info(f'None key to set style attr. - based on extra args replaced by '
+                     f'max extra-args idx {key}')
+        return key
+
+    # otherwise directly return key wo modif
+    return key
+
+
 def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], plot_dims_order: List[str],
                           per_dim_plot_params: Dict[str, PlotParams], curve_style: str) \
         -> Dict[Tuple[str, int, int], CurveStyleAttrs]:
@@ -215,27 +235,28 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], plot_dim
                                                                   return_none_if_not_found=True)
 
     # get dicts {plot dim value: style attr value} to be used
-    per_case_color = per_dim_plot_params[plot_dims_order[color_level]].per_case_color
+    zone_level = plot_dims_order.index(DataDimensions.zone)
+    extra_args_level = plot_dims_order.index(DataDimensions.extra_args)
+    per_attr_corresp = {('color', color_level): per_dim_plot_params[plot_dims_order[color_level]].per_case_color}
     if linestyle_level is not None:
-        per_case_linestyle = per_dim_plot_params[plot_dims_order[linestyle_level]].per_case_linestyle
+        per_attr_corresp[('linestyle', linestyle_level)] = (
+            per_dim_plot_params[plot_dims_order[linestyle_level]].per_case_linestyle)
     if marker_level is not None:
-        per_case_marker = per_dim_plot_params[plot_dims_order[marker_level]].per_case_marker
+        per_attr_corresp[('marker', marker_level)] = per_dim_plot_params[plot_dims_order[marker_level]].per_case_marker
+
+    # set style attrs values for each of the cases - def. by tuples
     per_case_curve_style_attrs = {}
     for case_tuple in plot_dims_tuples:
-        key_for_color = case_tuple[color_level]
-        if color_level == 0:  # case of a zone
-            key_for_color = key_for_color[:N_LETTERS_ZONE]
-        style_attrs_dict = {'color': per_case_color[key_for_color]}
-        if linestyle_level is not None:
-            key_for_linestyle = case_tuple[linestyle_level]
-            if linestyle_level == 0:  # case of a zone
-                key_for_linestyle = key_for_linestyle[:N_LETTERS_ZONE]
-            style_attrs_dict['linestyle'] = per_case_linestyle[key_for_linestyle]
-        if marker_level is not None:
-            key_for_marker = case_tuple[marker_level]
-            if marker_level == 0:  # case of a zone
-                key_for_marker = key_for_marker[:N_LETTERS_ZONE]
-            style_attrs_dict['marker'] = per_case_marker[key_for_marker]
+        style_attrs_dict = {}
+        for name_and_level, corresp_dict in per_attr_corresp.items():
+            attr_name = name_and_level[0]
+            level = name_and_level[1]
+            if level is not None:
+                key_for_attr = (
+                    set_specific_keys_to_get_style_attr(key=case_tuple[level], attr_level=level,
+                                                        zone_level=zone_level, extra_args_level=extra_args_level,
+                                                        per_case_attrs_vals=corresp_dict))
+                style_attrs_dict[attr_name] = corresp_dict[key_for_attr]
         per_case_curve_style_attrs[case_tuple] = CurveStyleAttrs(**style_attrs_dict)
     return per_case_curve_style_attrs
 
