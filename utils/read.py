@@ -12,7 +12,7 @@ from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonPar
 from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
 from common.uc_run_params import UCRunParams
 from include.dataset_analyzer import DataAnalysis
-from common.plot_params import PlotParams, PLOT_DIMS_ORDER
+from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER
 from utils.dir_utils import check_file_existence
 from utils.plot import FigureStyle
 
@@ -196,7 +196,7 @@ def read_plot_params() -> Dict[str, PlotParams]:
     del json_plot_params['fig_style_data-analysis']
 
     per_dim_plot_params = {}
-    for plot_dim in PLOT_DIMS_ORDER:
+    for plot_dim in DEFAULT_PLOT_DIMS_ORDER:
         dict_params = json_plot_params[plot_dim]
         dict_params['dimension'] = plot_dim
         current_plot_params = PlotParams(**dict_params)

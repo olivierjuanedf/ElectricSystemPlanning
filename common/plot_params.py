@@ -14,8 +14,8 @@ def to_int_keys_dict(dict_with_level_two_str_keys: Dict[str, Dict[str, str]]) ->
 
 
 OWN_PALETTE = 'own'
-PLOT_DIMS_ORDER = [DataDimensions.zone, DataDimensions.year, DataDimensions.climatic_year, DataDimensions.agg_prod_type,
-                   DataDimensions.extra_args]
+DEFAULT_PLOT_DIMS_ORDER = [DataDimensions.zone, DataDimensions.agg_prod_type, DataDimensions.year,
+                           DataDimensions.climatic_year, DataDimensions.extra_args]
 TYPE_PARAMS_DEF = Union[Dict[str, Dict[str, str]], Dict[str, Dict[int, str]]]
 TYPE_PER_CASE_PARAMS = Union[Dict[str, str], Dict[int, str]]
 N_LETTERS_ZONE = 3
@@ -106,6 +106,7 @@ class FigureStyle:
     # curve style def -> 'absolute' to set up (color, linestyle, marker) based on (zone, year, clim year) value
     # whatever content of figure (other curves plotted); 'relative' to define it relatively
     curve_style: str = CurveStyles.absolute
+    plot_dims_order: List[str] = None
     # all legend parameters
     print_legend: bool = True
     legend_font_size: int = 15
@@ -117,6 +118,16 @@ class FigureStyle:
     rm_useless_zeros_in_date_xtick: bool = True
     date_xtick_fontsize: int = 12
     date_xtick_rotation: int = 45
+
+    def process(self):
+        if self.plot_dims_order is None:
+            self.plot_dims_order = DEFAULT_PLOT_DIMS_ORDER
+        else:
+            unknown_plot_dims = [elt for elt in self.plot_dims_order if elt not in DEFAULT_PLOT_DIMS_ORDER]
+            if len(unknown_plot_dims) > 0:
+                logging.warning(f'Unknown plot dimensions {unknown_plot_dims} '
+                                f'-> default order {DEFAULT_PLOT_DIMS_ORDER} will be used instead')
+                self.plot_dims_order = DEFAULT_PLOT_DIMS_ORDER
 
     def set_print_legend(self, value: bool):
         self.print_legend = value

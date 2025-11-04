@@ -311,6 +311,7 @@ class UCTimeseries:
         fig_file = os.path.join(output_dir, f'{self.name.lower()}_duration_curve.png')
         if fig_style is None:
             fig_style = FigureStyle()
+            fig_style.process()
             print_legend = isinstance(y, dict) and len(y) > 1
             fig_style.set_print_legend(value=print_legend)
         # set curve styles (color, linestyle, marker)

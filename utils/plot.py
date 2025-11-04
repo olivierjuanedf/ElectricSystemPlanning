@@ -7,7 +7,7 @@ import numpy as np
 from typing import Union, Dict, List, Tuple
 
 from common.constants.temporal import DAY_OF_WEEK
-from common.plot_params import PlotParams, PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, DEFAULT_DATE_XTICK_FMT, \
+from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, DEFAULT_DATE_XTICK_FMT, \
     CurveStyles, FigureStyle, N_MAX_CHARS_FLAT_LABEL
 from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals, endswith_in_list
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
@@ -200,23 +200,25 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_
         if len(plot_dims_tuples) == 1:
             color_level = 0
         else:  # more than one curve
+            # number of levels, ie nber of elements in the tuples
+            n_levels = len(plot_dims_tuples[0])
             # get level (in tuple) which will define the color
             color_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples)
-            if color_level < 2:
+            if color_level < n_levels - 1:
                 linestyle_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples,
                                                                      init_level=color_level + 1,
                                                                      return_none_if_not_found=True)
-            if linestyle_level is not None and linestyle_level < 2:
+            if linestyle_level is not None and linestyle_level < n_levels - 1:
                 marker_level = get_first_level_with_multiple_vals(tuple_list=plot_dims_tuples,
                                                                   init_level=linestyle_level + 1,
                                                                   return_none_if_not_found=True)
 
     # get dicts {plot dim value: style attr value} to be used
-    per_case_color = per_dim_plot_params[PLOT_DIMS_ORDER[color_level]].per_case_color
+    per_case_color = per_dim_plot_params[DEFAULT_PLOT_DIMS_ORDER[color_level]].per_case_color
     if linestyle_level is not None:
-        per_case_linestyle = per_dim_plot_params[PLOT_DIMS_ORDER[linestyle_level]].per_case_linestyle
+        per_case_linestyle = per_dim_plot_params[DEFAULT_PLOT_DIMS_ORDER[linestyle_level]].per_case_linestyle
     if marker_level is not None:
-        per_case_marker = per_dim_plot_params[PLOT_DIMS_ORDER[marker_level]].per_case_marker
+        per_case_marker = per_dim_plot_params[DEFAULT_PLOT_DIMS_ORDER[marker_level]].per_case_marker
     per_case_curve_style_attrs = {}
     for case_tuple in plot_dims_tuples:
         key_for_color = case_tuple[color_level]
@@ -254,6 +256,7 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
                 curve_style_attrs: Union[Dict[str, CurveStyleAttrs], CurveStyleAttrs] = None):
     if fig_style is None:
         fig_style = FigureStyle()
+        fig_style.process()
 
     plt.figure(figsize=fig_style.size)
     # TODO: merge all cases in a unique call of plt.plot

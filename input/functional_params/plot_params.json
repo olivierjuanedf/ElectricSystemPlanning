@@ -189,6 +189,12 @@
     "date_xtick_fontsize": 10,
     "add_day_exp_in_date_xtick": "true",
     "date_xtick_rotation": 0,
-    "legend_font_size": 11
+    "legend_font_size": 11,
+    "plot_dims_order": [
+      "zone",
+      "year",
+      "climatic_year",
+      "extra_args"
+    ]
   }
 }
