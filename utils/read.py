@@ -9,7 +9,7 @@ from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_pa
 from common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
 from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
-from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES
+from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES, EnvPhaseNames
 from common.uc_run_params import UCRunParams
 from include.dataset_analyzer import DataAnalysis
 from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER
@@ -178,13 +178,13 @@ def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> Li
     return data_analyses
 
 
-def read_data_analysis_plot_params() -> FigureStyle:
-    json_data_analysis_plot_params_file = get_json_plot_params_file()
-    logging.info(f'Read and check data analysis plot parameters file: {json_data_analysis_plot_params_file}')
+def read_given_phase_plot_params(phase_name: str) -> FigureStyle:
+    json_plot_params_file = get_json_plot_params_file()
+    logging.info(f'Read and check {phase_name} plot parameters file: {json_plot_params_file}')
 
-    json_data_analysis_plot_params = check_and_load_json_file(json_file=json_data_analysis_plot_params_file,
-                                                              file_descr='JSON data analysis plot params')
-    return FigureStyle(**json_data_analysis_plot_params['fig_style_data-analysis'])
+    json_data_analysis_plot_params = check_and_load_json_file(json_file=json_plot_params_file,
+                                                              file_descr=f'JSON {phase_name} plot params')
+    return FigureStyle(**json_data_analysis_plot_params[f'fig_style_{phase_name}'])
 
 
 def read_plot_params() -> Dict[str, PlotParams]:

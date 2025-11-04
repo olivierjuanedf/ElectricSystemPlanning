@@ -4,6 +4,8 @@ First very simple toy Unit Commitment model of Italy zone - alone -> with PyPSA 
 """
 import warnings
 
+from utils.basic_utils import print_non_default
+
 # deactivate some annoying and useless warnings in pypsa/pandas
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
@@ -12,6 +14,10 @@ warnings.simplefilter(action="ignore", category=DeprecationWarning)
 
 # use global constant names of different prod. types to be sure of extracting data wo any pb  
 from common.constants.prod_types import ProdTypeNames
+
+# name of current "phase" (of the course), the one associated to this script: a 1-zone Unit Commitment model
+from common.constants.usage_params_json import EnvPhaseNames
+phase_name = EnvPhaseNames.monozone_toy_uc_model
 
 AGG_PROD_TYPES_DEF = {
     'batteries': [ProdTypeNames.batteries],
@@ -74,7 +80,7 @@ uc_run_params = UCRunParams(selected_countries=selected_countries, selected_targ
 # initialize dataset object
 from common.constants.extract_eraa_data import ERAADatasetDescr
 from include.dataset import Dataset
-from utils.read import check_and_load_json_file
+from utils.read import check_and_load_json_file, read_given_phase_plot_params
 from common.long_term_uc_io import get_json_fixed_params_file
 
 json_fixed_params_file = get_json_fixed_params_file()
@@ -221,6 +227,9 @@ print(f'PyPSA network main properties: {pypsa_model.network}')
 # plot network
 from utils.read import read_plot_params
 per_dim_plot_params = read_plot_params()
+fig_style = read_given_phase_plot_params(phase_name=phase_name)
+print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
+
 pypsa_model.plot_network()
 # IV.6.3) Print out list of generators
 print(pypsa_model.network.generators)

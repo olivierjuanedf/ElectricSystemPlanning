@@ -10,10 +10,13 @@ from include.dataset import Dataset
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
 from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
-    read_data_analysis_plot_params, read_plot_params
+    read_given_phase_plot_params, read_plot_params
 
 # TODO: check case with unique curve -> plot_dims obtained from UC ts name (def get_dims_from_uc_ts_name)
-usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.data_analysis)
+
+phase_name = EnvPhaseNames.data_analysis
+
+usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=phase_name)
 data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
 
 logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_input_data_analysis',
@@ -22,8 +25,8 @@ logging.info('START ERAA (input) data analysis')
 
 # set params and figure style for plots
 per_dim_plot_params = read_plot_params()
-fig_style = read_data_analysis_plot_params()
-print_non_default(obj=fig_style, obj_name='FigureStyle')
+fig_style = read_given_phase_plot_params(phase_name=phase_name)
+print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
 
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:

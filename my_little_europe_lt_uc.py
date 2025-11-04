@@ -4,6 +4,7 @@ Read JSON parametrization files... and check coherence of them
 import warnings
 
 from common.constants.usage_params_json import EnvPhaseNames
+from utils.basic_utils import print_non_default
 
 # deactivate some annoying and useless warnings in pypsa/pandas
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -18,7 +19,11 @@ from include.dataset_builder import PypsaModel
 from utils.dates import get_period_str
 from include.dataset import Dataset
 from common.constants.optimisation import OPTIM_RESOL_STATUS
-from utils.read import read_and_check_uc_run_params, read_and_check_pypsa_static_params
+from utils.read import read_and_check_uc_run_params, read_and_check_pypsa_static_params, read_given_phase_plot_params
+
+# name of current "phase" (of the course), the one associated to this script: a multi-zone (Eur.) Unit Commitment model
+from common.constants.usage_params_json import EnvPhaseNames
+phase_name = EnvPhaseNames.xzones_uc_model
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.xzones_uc_model)
 
@@ -83,6 +88,8 @@ logging.info(f'PyPSA network main properties: {pypsa_model.network}')
 # plot network
 from utils.read import read_plot_params
 per_dim_plot_params = read_plot_params()
+fig_style = read_given_phase_plot_params(phase_name=phase_name)
+print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
 
 pypsa_model.plot_network()
 result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year,
