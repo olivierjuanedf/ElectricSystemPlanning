@@ -239,6 +239,7 @@ class UCTimeseries:
                 plot_dims_tuples = get_dims_from_uc_ts_name(name=self.name)[1:]
             curve_style_attrs = (
                 set_curve_style_attrs(plot_dims_tuples=plot_dims_tuples,
+                                      plot_dims_order=fig_style.plot_dims_order,
                                       per_dim_plot_params=per_dim_plot_params,
                                       curve_style=fig_style.curve_style)
             )

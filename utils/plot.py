@@ -179,8 +179,9 @@ class CurveStyleAttrs:
     marker: str = None
 
 
-def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_plot_params: Dict[str, PlotParams],
-                          curve_style: str) -> Dict[Tuple[str, int, int], CurveStyleAttrs]:
+def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], plot_dims_order: List[str],
+                          per_dim_plot_params: Dict[str, PlotParams], curve_style: str) \
+        -> Dict[Tuple[str, int, int], CurveStyleAttrs]:
     """
     returns {(zone, year, clim. year): (color, linestyle, marker)}
     """
@@ -214,11 +215,11 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], per_dim_
                                                                   return_none_if_not_found=True)
 
     # get dicts {plot dim value: style attr value} to be used
-    per_case_color = per_dim_plot_params[DEFAULT_PLOT_DIMS_ORDER[color_level]].per_case_color
+    per_case_color = per_dim_plot_params[plot_dims_order[color_level]].per_case_color
     if linestyle_level is not None:
-        per_case_linestyle = per_dim_plot_params[DEFAULT_PLOT_DIMS_ORDER[linestyle_level]].per_case_linestyle
+        per_case_linestyle = per_dim_plot_params[plot_dims_order[linestyle_level]].per_case_linestyle
     if marker_level is not None:
-        per_case_marker = per_dim_plot_params[DEFAULT_PLOT_DIMS_ORDER[marker_level]].per_case_marker
+        per_case_marker = per_dim_plot_params[plot_dims_order[marker_level]].per_case_marker
     per_case_curve_style_attrs = {}
     for case_tuple in plot_dims_tuples:
         key_for_color = case_tuple[color_level]
