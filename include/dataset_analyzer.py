@@ -280,27 +280,33 @@ class DataAnalysis:
         current_full_dt = self.get_full_datatype()
         date_col = 'date'
         value_col = 'value'
-        uc_ts_name = set_uc_ts_name(full_data_type=current_full_dt, countries=self.countries,
-                                    years=self.years, climatic_years=self.climatic_years)
+        n_extra_params = len(self.extra_params) if self.extra_params is not None else None
+        uc_ts_name = set_uc_ts_name(full_data_type=current_full_dt, countries=self.countries, years=self.years,
+                                    climatic_years=self.climatic_years, n_extra_params=n_extra_params)
         # loop over (country, year, clim_year) of this analysis
         dates = {}
         values = {}
-        for country, year, clim_year in product(self.countries, self.years, self.climatic_years):
+        for country, year, clim_year, current_extra_params in (
+                product(self.countries, self.years, self.climatic_years, self.extra_params)):
             try:
-                current_dates = list(per_case_data[(country, year, clim_year)][date_col])
+                extra_params_idx = current_extra_params.index if current_extra_params is not None else None
+                current_dates = list(per_case_data[(country, year, clim_year, extra_params_idx)][date_col])
             except:
-                logging.error(f'No dates obtained from data {self.data_type}, for (country, year, clim. year) '
-                              f'= ({country}, {year}, {clim_year}) -> not integrated in this data analysis')
+                logging.error(f'No dates obtained from data {self.data_type}, for (country, year, clim. year, '
+                              f'extra-params idx) = ({country}, {year}, {clim_year}, {extra_params_idx}) '
+                              f'-> not integrated in this data analysis')
                 continue
             # if data available continue analysis (and plot)
-            dates[(country, year, clim_year)] = [elt_date.replace(year=year) for elt_date in current_dates]
-            values[(country, year, clim_year)] = np.array(per_case_data[(country, year, clim_year)][value_col])
+            dates[(country, year, clim_year, extra_params_idx)] = \
+                [elt_date.replace(year=year) for elt_date in current_dates]
+            values[(country, year, clim_year, extra_params_idx)] = (
+                np.array(per_case_data[(country, year, clim_year, extra_params_idx)][value_col]))
 
         uc_timeseries = UCTimeseries(name=uc_ts_name, data_type=current_full_dt, dates=dates,
                                      values=values, unit=UNITS_PER_DT[self.data_type])
         # And apply calc./plot... and other operations
         if len(values) == 0:
-            logging.warning(f'No data obtained for type {self.data_type} -> analysis not done')
+            logging.warning(f'No data obtained for type {self.data_type} -> analysis (plot/save to .csv) not done')
         elif self.analysis_type == ANALYSIS_TYPES.plot:
             uc_timeseries.plot(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style,
                                per_dim_plot_params=per_dim_plot_params)

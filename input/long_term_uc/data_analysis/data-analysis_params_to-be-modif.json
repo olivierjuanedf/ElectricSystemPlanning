@@ -17,6 +17,15 @@
               "solar_pv": 200
             }
           }
+        },
+        {
+          "label": "res_capa2",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
+              "wind_onshore": 200,
+              "solar_pv": 500
+            }
+          }
         }
       ]
     }

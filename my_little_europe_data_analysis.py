@@ -57,8 +57,11 @@ for elt_analysis in data_analyses:
             subdt_selec = None
         if current_extra_params is None:
             extra_params_vals = {}
+            extra_params_idx = None
         else:
             extra_params_vals = current_extra_params.values
+            extra_params_idx = current_extra_params.index
+        # get data to be analyzed/plotted hereafter - using extra-parameters if provided
         eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
                                         datatypes_selec=[elt_analysis.data_type], subdt_selec=subdt_selec,
@@ -68,18 +71,18 @@ for elt_analysis in data_analyses:
             # loop over country to extract per-country data from dataset.
             # N.B. year and climatic_year have been uniquely set up when init. the Dataset object
             for country in current_countries:
-                current_df[(country, year, clim_year)] = eraa_dataset.demand[country]
+                current_df[(country, year, clim_year, extra_params_idx)] = eraa_dataset.demand[country]
         elif elt_analysis.data_type == DATATYPE_NAMES.capa_factor:
             # idem
             for country in current_countries:
-                current_df[(country, year, clim_year)] = eraa_dataset.agg_cf_data[country]
+                current_df[(country, year, clim_year, extra_params_idx)] = eraa_dataset.agg_cf_data[country]
         elif elt_analysis.data_type == DATATYPE_NAMES.net_demand:
             # idem
             for country in current_countries:
-                current_df[(country, year, clim_year)] = eraa_dataset.net_demand[country]
+                current_df[(country, year, clim_year, extra_params_idx)] = eraa_dataset.net_demand[country]
         else:
             for country in current_countries:
-                current_df[(country, year, clim_year)] = None
+                current_df[(country, year, clim_year, extra_params_idx)] = None
     elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style, per_dim_plot_params=per_dim_plot_params)
 
 logging.info('THE END of ERAA (input) data analysis!')

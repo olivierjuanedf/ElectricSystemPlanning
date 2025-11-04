@@ -16,7 +16,8 @@ NAME_SEP = '_'
 SUBNAME_SEP = '-'
 
 
-def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int], climatic_years: List[int]):
+def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int], climatic_years: List[int],
+                   n_extra_params: int = None):
     data_type_prefix = SUBNAME_SEP.join(list(full_data_type))
     n_countries = len(countries)
     n_countries_max_in_suffix = 2
@@ -24,13 +25,16 @@ def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int]
     if n_countries_min_with_trigram <= n_countries <= n_countries_max_in_suffix:
         countries = [elt[:3] for elt in countries]
     countries_suffix = SUBNAME_SEP.join(countries) if n_countries <= n_countries_max_in_suffix \
-        else f'{n_countries}{SUBNAME_SEP}countries'
+        else SUBNAME_SEP.join([str(n_countries), 'countries'])
     years_suffix = set_years_suffix(years=years, sep=SUBNAME_SEP)
     clim_years_suffix = set_years_suffix(years=climatic_years, sep=SUBNAME_SEP, is_climatic_year=True)
     if CLIM_YEARS_SUFFIX not in clim_years_suffix:
         clim_years_suffix = f'cy{clim_years_suffix}'
-
-    return f'{data_type_prefix}{NAME_SEP}{countries_suffix}{NAME_SEP}{years_suffix}{NAME_SEP}{clim_years_suffix}'
+    if n_extra_params is not None:
+        extra_params_suffix = SUBNAME_SEP.join([str(n_extra_params), 'extraparams'])
+    else:
+        extra_params_suffix = ''
+    return NAME_SEP.join([data_type_prefix, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix])
 
 
 def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
