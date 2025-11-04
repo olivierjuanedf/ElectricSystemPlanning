@@ -54,11 +54,13 @@ def is_str_bool(bool_str: Optional[str]) -> bool:
     return bool_str.lower() in ['true', 'false']
 
 
-def cast_str_bool(bool_str: str) -> Union[str, bool]:
-    if is_str_bool(bool_str=bool_str):
-        return bool(bool_str)
-    else:
-        return bool_str
+def cast_str_to_bool(bool_str: str) -> Optional[bool]:
+    bool_str = bool_str.lower()
+    if bool_str == 'true':
+        return True
+    if bool_str == 'false':
+        return False
+    return None
 
 
 def are_lists_eq(list_of_lists: List[list]) -> bool:

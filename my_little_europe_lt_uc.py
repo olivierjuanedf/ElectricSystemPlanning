@@ -3,6 +3,8 @@ Read JSON parametrization files... and check coherence of them
 """
 import warnings
 
+from common.constants.usage_params_json import EnvPhaseNames
+
 # deactivate some annoying and useless warnings in pypsa/pandas
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=UserWarning)
@@ -18,7 +20,7 @@ from include.dataset import Dataset
 from common.constants.optimisation import OPTIM_RESOL_STATUS
 from utils.read import read_and_check_uc_run_params, read_and_check_pypsa_static_params
 
-usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
+usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.xzones_uc_model)
 
 logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_lt_uc_pb.log',
                      log_level=usage_params.log_level)

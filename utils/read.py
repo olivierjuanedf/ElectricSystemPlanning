@@ -28,7 +28,55 @@ def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:
     return json_data
 
 
-def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, UCRunParams]:
+def apply_per_country_json_file_params(countries_data: dict, available_countries: List[str],
+                                       mode_name: str, team_name: str) -> dict:
+    for file in get_json_params_modif_country_files():
+        json_country = check_and_load_json_file(
+            json_file=file,
+            file_descr='JSON country capacities'
+        )
+        country = json_country[CountryJsonParamNames.team]
+        # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
+        if mode_name == 'solo' and team_name != country:
+            continue
+        if country not in available_countries:
+            logging.error(f'Incorrect country found in file {file}: {country} is not available in dataset')
+            exit(1)
+        for k, _ in countries_data.items():
+            # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
+            if mode_name == 'solo':
+                for c, _ in json_country[k].items():
+                    logging.info(f'Updating {k} for country {c} from file {file}')
+                    countries_data[k][c] = json_country[k][c]
+            else:
+                logging.info(f'Updating {k} for {country} from file {file}')
+                countries_data[k][country] = json_country[k][country]
+                for c, _ in json_country[k].items():
+                    if c != country:
+                        logging.warning(f'Ignoring {k} for {country} from file {file}')
+    return countries_data
+
+
+def update_country_json_params(countries_data: dict, json_params_tb_modif: dict) -> (dict, dict):
+    selected_pt_param_name = CountryJsonParamNames.selected_prod_types
+    if len(countries_data[selected_pt_param_name]) > 0:
+        for c, v in countries_data[selected_pt_param_name].items():
+            logging.info(f'Selected production type overwritten (not all the ones from ERAA) for {c}')
+            json_params_tb_modif[selected_pt_param_name][c] = v
+    # suppress pt selection key in countries data dict, not to have multiple values for same attr.
+    # when creating UCRunParams object hereafter
+    del countries_data[selected_pt_param_name]
+    return countries_data, json_params_tb_modif
+
+
+def read_and_check_uc_run_params(phase_name: str) \
+        -> tuple[UsageParameters, ERAADatasetDescr, UCRunParams]:
+    """
+    Read and check parameters for UC run - based on different JSON files (with only part of them that can be modified
+    by the users/students in this environment)
+    :param phase_name: name of the phase for which this function is run (data analysis, 1-zone UC toy model, X-zones
+    Eur. UC model)
+    """
     # set JSON filenames
     json_usage_params_file = get_json_usage_params_file()
     json_fixed_params_file = get_json_fixed_params_file()
@@ -60,7 +108,10 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
     # check that modifications in JSON in which it is allowed are allowed/coherent
     logging.info('... and check that modifications done are coherent with available ERAA data')
     usage_params = UsageParameters(**json_usage_params_data)
+    usage_params.process()
 
+    # ERAA data description object - incl. in particular the set of available values for countries,
+    # (climatic) years, etc.
     eraa_data_descr = ERAADatasetDescr(**json_params_fixed)
     eraa_data_descr.check_types()
     eraa_data_descr.process()
@@ -70,40 +121,23 @@ def read_and_check_uc_run_params() -> tuple[UsageParameters, ERAADatasetDescr, U
         CountryJsonParamNames.capacities_tb_overwritten: {},
         selected_pt_param_name: {}
     }
-    for file in get_json_params_modif_country_files():
-        json_country = check_and_load_json_file(
-            json_file=file,
-            file_descr='JSON country capacities'
+    # apply data selection - based on the different JSON files to be modified, and the chosen mode (solo/team)
+    apply_per_country_params = usage_params.apply_per_country_json_file_params[phase_name]
+    if apply_per_country_params:
+        countries_data = (
+            apply_per_country_json_file_params(countries_data=countries_data,
+                                               available_countries=eraa_data_descr.available_countries,
+                                               mode_name=usage_params.mode, team_name=usage_params.team)
         )
-        country = json_country[CountryJsonParamNames.team]
-        # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
-        if usage_params.mode == 'solo' and usage_params.team != country:
-            continue
-        if country not in eraa_data_descr.available_countries:
-            logging.error(f'Incorrect country found in file {file}: {country} is not available in dataset')
-            exit(1)
-        for k, _ in countries_data.items():
-            # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
-            if usage_params.mode == 'solo':
-                for c, _ in json_country[k].items():
-                    logging.info(f'Updating {k} for country {c} from file {file}')
-                    countries_data[k][c] = json_country[k][c]
-            else:
-                logging.info(f'Updating {k} for {country} from file {file}')
-                countries_data[k][country] = json_country[k][country]
-                for c, _ in json_country[k].items():
-                    if c != country:
-                        logging.warning(f'Ignoring {k} for {country} from file {file}')
 
     # init. selected prod. types, with 'all' value for all selected countries 
     json_params_tb_modif[selected_pt_param_name] = \
         {c: [ALL_KEYWORD] for c in json_params_tb_modif[EuropeJsonParamNames.selected_countries]}
-    if len(countries_data[selected_pt_param_name]) > 0:
-        for c, v in countries_data[selected_pt_param_name].items():
-            logging.info(f'Selected production type overwritten (not all the ones from ERAA) for {c}')
-            json_params_tb_modif[selected_pt_param_name][c] = v
-        del countries_data[selected_pt_param_name]
+    countries_data, json_params_tb_modif = (
+        update_country_json_params(countries_data=countries_data, json_params_tb_modif=json_params_tb_modif)
+    )
 
+    # init. UC run params object
     uc_run_params = UCRunParams(**json_params_tb_modif, **countries_data,
                                 updated_fuel_sources_params=json_fuel_sources_tb_modif)
     uc_run_params.process(available_countries=eraa_data_descr.available_countries)

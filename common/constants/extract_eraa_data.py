@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union, Optional, Literal
 
-from utils.basic_utils import is_str_bool
+from common.constants.usage_params_json import EnvPhaseNames
+from utils.basic_utils import is_str_bool, cast_str_to_bool
 from utils.eraa_utils import set_interco_to_tuples
 from utils.type_checker import apply_params_type_check
 
@@ -46,6 +47,9 @@ RAW_TYPES_FOR_CHECK = {'eraa_dataset_descr':
 @dataclass
 class UsageParameters:
     adding_interco_capas: bool = False
+    # apply per country JSON file data selection/overwriting params?
+    # N.B. {str: str} in JSON file; {str: bool} after parsing
+    apply_per_country_json_file_params: Union[Dict[str, str], Dict[str, bool]] = None
     overwriting_eraa_interco_capa_vals: bool = False 
     manually_adding_demand: bool = False
     manually_adding_generators: bool = False
@@ -56,6 +60,16 @@ class UsageParameters:
     apply_cf_techno_breakthrough: bool = False
     res_cf_stress_test_folder: str = None
     res_cf_stress_test_cy: int = None
+
+    def process(self):
+        if self.apply_per_country_json_file_params is None:
+            self.apply_per_country_json_file_params = {EnvPhaseNames.data_analysis: False,
+                                                       EnvPhaseNames.monozone_toy_uc_model: True,
+                                                       EnvPhaseNames.xzones_uc_model: True}
+        else:  # from str (in JSON file) to bool
+            self.apply_per_country_json_file_params = \
+                {phase_name: cast_str_to_bool(bool_str=val)
+                 for phase_name, val in self.apply_per_country_json_file_params.items()}
 
     def check_types(self):
         """

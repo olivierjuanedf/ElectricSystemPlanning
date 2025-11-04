@@ -3,6 +3,7 @@ from itertools import product
 import logging
 
 from common.constants.datatypes import DATATYPE_NAMES
+from common.constants.usage_params_json import EnvPhaseNames
 from common.logger import init_logger, stop_logger
 from common.long_term_uc_io import OUTPUT_FOLDER_LT
 from include.dataset import Dataset
@@ -11,7 +12,7 @@ from utils.dates import get_period_str
 from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
     read_data_analysis_plot_params, read_plot_params
 
-usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params()
+usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.data_analysis)
 data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
 
 logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_input_data_analysis',
