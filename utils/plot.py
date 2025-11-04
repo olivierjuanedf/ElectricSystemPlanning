@@ -323,6 +323,9 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
     # legend
     if isinstance(y, dict) and fig_style.print_legend:
         plt.legend(loc=fig_style.legend_loc, fontsize=fig_style.legend_font_size)
+    # tight x limits?
+    if fig_style.tight_x:
+        plt.xlim(min(x), max(x))
 
     # save and close figure
     plt.savefig(fig_file)

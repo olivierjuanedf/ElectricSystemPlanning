@@ -9,22 +9,24 @@
       "period_start": "1900/1/15",
       "period_end": "1900/1/29",
       "extra_params": [
+        null,
         {
-          "label": "res_capa1",
+          "label": "res_low",
           "values": {
             "capas_aggreg_pt_with_cf": {
-              "wind_onshore": 100,
-              "solar_pv": 200
+              "wind_onshore": 10000,
+              "wind_offshore": 500,
+              "solar_pv": 10000
             }
           }
         },
-        null,
         {
-          "label": "res_capa2",
+          "label": "res_high",
           "values": {
             "capas_aggreg_pt_with_cf": {
-              "wind_onshore": 200,
-              "solar_pv": 500
+              "wind_onshore": 40000,
+              "wind_offshore": 10000,
+              "solar_pv": 40000
             }
           }
         }

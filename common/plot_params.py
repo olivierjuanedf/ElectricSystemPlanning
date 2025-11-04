@@ -103,6 +103,7 @@ class FigureStyle:
     size: Tuple[int, int] = (10, 6)
     marker: str = None
     grid_on: bool = True
+    tight_x: bool = True
     # curve style def -> 'absolute' to set up (color, linestyle, marker) based on (zone, year, clim year) value
     # whatever content of figure (other curves plotted); 'relative' to define it relatively
     curve_style: str = CurveStyles.absolute
