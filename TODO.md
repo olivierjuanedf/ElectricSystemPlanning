@@ -36,6 +36,7 @@ TE5) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec d
 TE7) Ne pas mentionner diff clé PV entre les données de capa et de CF -> embrouille...
 TE8) Donner un ex. d'ajout d'un stock/batterie dans le cas italien/ou pointeur sur Internet
 TE9) Voir sens suffixe du lp généré -> rendre les choses explicites
+TE10) Prévoir sous-dossier de sortie dédié pour stocker figs et data ? (ita par ex)
 
 MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
 MAS1) Doc doc/... pour clarifier les choses et permettre utilisation autonome
