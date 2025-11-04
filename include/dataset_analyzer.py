@@ -95,6 +95,15 @@ def get_default_climatic_year(available_climatic_years: List[int]) -> int:
     return default_cy
 
 
+def stop_if_coherence_check_error(obj_checked, errors_list: List[str]):
+    # stop if any error
+    if len(errors_list) > 0:
+        uncoherent_param_stop(param_errors=errors_list)
+    else:
+        logging.info('Input data analysis PARAMETERS ARE COHERENT!')
+        logging.info(f'ANALYSIS CAN START with parameters: {str(obj_checked)}')
+
+
 @dataclass
 class DataAnalExtraParams:
     values: dict
@@ -109,6 +118,19 @@ class DataAnalExtraParams:
     def process(self):
         if self.label is None:
             self.label = f'case {self.index}'
+
+    def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
+        errors_list = []
+        # check that aggreg. prod. types are in allowed list
+        fixed_cf_capas_key = 'aggreg_pt_with_cf_capas'
+        if fixed_cf_capas_key in self.values:
+            cf_capas_keys = list(self.values[fixed_cf_capas_key])
+            unknown_cf_capas = [elt for elt in cf_capas_keys if elt not in eraa_data_descr.available_aggreg_prod_types]
+            if len(unknown_cf_capas) > 0:
+                errors_list.append(f'Unknown aggreg. prod. type with capa. factor data: {unknown_cf_capas}')
+
+        # stop if any error
+        stop_if_coherence_check_error(obj_checked=self, errors_list=errors_list)
 
 
 @dataclass
@@ -188,6 +210,8 @@ class DataAnalysis:
                 params.process()
                 extra_params_obj.append(params)
             self.extra_params = extra_params_obj
+        else:
+            self.extra_params = [None]
 
     def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
         errors_list = []
@@ -231,11 +255,7 @@ class DataAnalysis:
         )
 
         # stop if any error
-        if len(errors_list) > 0:
-            uncoherent_param_stop(param_errors=errors_list)
-        else:
-            logging.info('Input data analysis PARAMETERS ARE COHERENT!')
-            logging.info(f'ANALYSIS CAN START with parameters: {str(self)}')
+        stop_if_coherence_check_error(obj_checked=self, errors_list=errors_list)
 
     def get_full_datatype(self) -> tuple:
         if self.data_subtype is None:

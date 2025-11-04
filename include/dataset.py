@@ -35,13 +35,15 @@ class Dataset:
     generation_units_data: Dict[str, List[GenerationUnitData]] = None
 
     def get_countries_data(self, uc_run_params: UCRunParams, aggreg_prod_types_def: Dict[str, Dict[str, List[str]]],
-                           datatypes_selec: List[str] = None, subdt_selec: List[str] = None):
+                           datatypes_selec: List[str] = None, subdt_selec: List[str] = None,
+                           aggreg_pt_with_cf_capas: Dict[str, int] = None):
         """
         Get ERAA data necessary for the selected countries
         :param uc_run_params: UC run parameters, from which main reading infos will be obtained
         :param aggreg_prod_types_def: per-datatype definition of aggreg. to indiv. production types
         :param datatypes_selec: list of datatypes for which data must be read
         :param subdt_selec: list of sub-datatypes for which data must be read
+        :param aggreg_pt_with_cf_capas: capacities of prod types with CF data to be used for prod. values calculation
         :returns: {country: df with demand of this country}, {country: df with - per aggreg. prod type CF},
         {country: df with installed generation capas}, df with all interconnection capas (for considered 
         countries and year)

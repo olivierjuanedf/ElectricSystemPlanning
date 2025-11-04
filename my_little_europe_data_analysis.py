@@ -35,7 +35,8 @@ for elt_analysis in data_analyses:
     # currently loop over year, climatic_year; given that UC run params made for a unique (year, climatic year) couple
     # init. dict. to save data for each (country, year, clim_year) tuple
     current_df = {}
-    for year, clim_year in product(elt_analysis.years, elt_analysis.climatic_years):
+    for year, clim_year, current_extra_params in (
+            product(elt_analysis.years, elt_analysis.climatic_years, elt_analysis.extra_params)):
         uc_run_params.set_target_year(year=year)
         uc_run_params.set_climatic_year(climatic_year=clim_year)
         # Attention check at each time if stress test based on the set year
@@ -53,9 +54,14 @@ for elt_analysis in data_analyses:
             subdt_selec = [elt_analysis.data_subtype]
         else:
             subdt_selec = None
+        if current_extra_params is None:
+            extra_params_vals = {}
+        else:
+            extra_params_vals = current_extra_params.values()
         eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
-                                        datatypes_selec=[elt_analysis.data_type], subdt_selec=subdt_selec)
+                                        datatypes_selec=[elt_analysis.data_type], subdt_selec=subdt_selec,
+                                        **extra_params_vals)
         # create Unit Commitment Timeseries object from data read
         if elt_analysis.data_type == DATATYPE_NAMES.demand:
             # loop over country to extract per-country data from dataset.

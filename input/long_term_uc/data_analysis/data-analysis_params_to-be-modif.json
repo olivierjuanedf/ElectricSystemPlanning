@@ -11,7 +11,12 @@
       "extra_params": [
         {
           "label": "res_capa1",
-          "values": {}
+          "values": {
+            "aggreg_pt_with_cf_capas": {
+              "wind_onshore": 100,
+              "solar_pv": 200
+            }
+          }
         }
       ]
     }
