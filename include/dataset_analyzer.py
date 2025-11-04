@@ -98,18 +98,17 @@ def get_default_climatic_year(available_climatic_years: List[int]) -> int:
 @dataclass
 class DataAnalExtraParams:
     values: dict
+    index: int = 1
     label: str = None
 
     def __repr__(self) -> str:
         repr_str = f'{self.label}: ' if self.label is not None else ''
-        repr_str += self.values
+        repr_str += str(self.values)
         return repr_str
 
-    def process(self, label: str = None):
+    def process(self):
         if self.label is None:
-            if label is None:
-                label = 'Data analysis extra-params'
-            self.label = label
+            self.label = f'case {self.index}'
 
 
 @dataclass
@@ -183,10 +182,10 @@ class DataAnalysis:
                 self.extra_params = [self.extra_params]
             extra_params_obj = []
             for i, elt in enumerate(self.extra_params):
+                index = i + 1
+                elt['index'] = index
                 params = DataAnalExtraParams(**elt)
-                if params.label is None:
-                    label = f'case {i}'
-                params.process(label=label)
+                params.process()
                 extra_params_obj.append(params)
             self.extra_params = extra_params_obj
 
