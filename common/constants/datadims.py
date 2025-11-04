@@ -7,3 +7,4 @@ class DataDimensions:
     year: str = 'year'
     climatic_year: str = 'climatic_year'
     zone: str = 'zone'
+    extra_args: str = 'extra_args'

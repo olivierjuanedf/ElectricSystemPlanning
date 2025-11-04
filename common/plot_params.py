@@ -14,7 +14,8 @@ def to_int_keys_dict(dict_with_level_two_str_keys: Dict[str, Dict[str, str]]) ->
 
 
 OWN_PALETTE = 'own'
-PLOT_DIMS_ORDER = [DataDimensions.zone, DataDimensions.year, DataDimensions.climatic_year, DataDimensions.agg_prod_type]
+PLOT_DIMS_ORDER = [DataDimensions.zone, DataDimensions.year, DataDimensions.climatic_year, DataDimensions.agg_prod_type,
+                   DataDimensions.extra_args]
 TYPE_PARAMS_DEF = Union[Dict[str, Dict[str, str]], Dict[str, Dict[int, str]]]
 TYPE_PER_CASE_PARAMS = Union[Dict[str, str], Dict[int, str]]
 N_LETTERS_ZONE = 3
@@ -57,7 +58,7 @@ class PlotParams:
 
     def process(self):
         # convert str to int keys
-        num_plot_dims = [DataDimensions.year, DataDimensions.climatic_year]
+        num_plot_dims = [DataDimensions.year, DataDimensions.climatic_year, DataDimensions.extra_args]
         if self.dimension in num_plot_dims:
             self.palettes_def = to_int_keys_dict(dict_with_level_two_str_keys=self.palettes_def)
             self.linestyles_def = to_int_keys_dict(dict_with_level_two_str_keys=self.linestyles_def)

@@ -147,6 +147,42 @@
       "sca"
     ]
   },
+  "extra_args": {
+    "palette_choice": "own",
+    "linestyle_choice": "own",
+    "marker_choice": "own",
+    "palettes_def": {
+      "own": {
+        "1": "brown",
+        "2": "purple",
+        "3": "gray",
+        "4": "yellow",
+        "5": "green",
+        "6": "black",
+        "7": "blue"
+      }
+    },
+    "linestyles_def": {
+      "own": {
+        "1": "-",
+        "2": ":",
+        "3": "--",
+        "4": "-.",
+        "5": "-",
+        "6": ":"
+      }
+    },
+    "markers_def": {
+      "own": {
+        "1": "o",
+        "2": "^",
+        "3": "1",
+        "4": "8",
+        "5": "s",
+        "6": "p"
+      }
+    }
+  },
   "fig_style_data-analysis": {
     "curve_style": "relative",
     "date_xtick_fmt": "in_letter",
