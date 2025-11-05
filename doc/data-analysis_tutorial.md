@@ -14,8 +14,14 @@ To get some insights on the data used in this code environment, from European Re
     N.B. If list of climatic years: if plots are displayed, multiple curves will be obtained (one for each climatic year - on the same graph); if csv is written, data of the different climatic years will be concatenated.
   - **period_start** (str, with date format yyyy/mm/dd): start date of the period to be considered
   - **period_end** (idem): idem, end date
+  - **extra_params** (dict or list of dict): to specify extra-parameters that can be used to analyse data, e.g. fixed capacities for RES sources for net demand calculation.
+    This dictionary has the following fields:
+    - (optional) **label**: name of the case associated to this extra-params choice, that will be used for plot/csv saving
+    - **values**: a dictionary with {param name: param value}. Only available param is currently **capas_aggreg_pt_with_cf**, for which 
+    the following values can be used for ex. {"wind_onshore": 10000, "wind_offshore": 500, "solar_pv": 10000} to set capacity values of Wind on-/off-shore and Solar PV
+    to 10GW, 500MW and 10GW respectively.
 
-N.B. If list are provided for countries and years (and possibly climatic years also): if plots are displayed, a curve will be obtained for each case in the product of requested lists; if csv is written, concatenation will be done over the product of cases.
+N.B. If list are provided for countries, years, climatic years, and extra-params: if plots are displayed, a curve will be obtained for each case in the product of requested lists; if csv is written, concatenation will be done over the product of cases.
 For plots a maximal number of 6 cases is allowed, so that obtained graph be readable.
 
 **Run script *my_little_europe_data_analysis.py***
