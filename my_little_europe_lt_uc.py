@@ -23,9 +23,9 @@ from utils.read import read_and_check_uc_run_params, read_and_check_pypsa_static
 
 # name of current "phase" (of the course), the one associated to this script: a multi-zone (Eur.) Unit Commitment model
 from common.constants.usage_params_json import EnvPhaseNames
-phase_name = EnvPhaseNames.xzones_uc_model
+phase_name = EnvPhaseNames.multizones_uc_model
 
-usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.xzones_uc_model)
+usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model)
 
 logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_lt_uc_pb.log',
                      log_level=usage_params.log_level)

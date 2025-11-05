@@ -6,7 +6,7 @@ from dataclasses import dataclass
 class EnvPhaseNames:
     data_analysis: str = 'data_analysis'
     monozone_toy_uc_model: str = 'monozone_toy_uc_model'
-    xzones_uc_model: str = 'xzones_uc_model'
+    multizones_uc_model: str = 'multizones_uc_model'
 
 
 @dataclass

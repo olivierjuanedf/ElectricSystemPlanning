@@ -193,7 +193,7 @@ def read_plot_params() -> Dict[str, PlotParams]:
 
     json_plot_params = check_and_load_json_file(json_file=json_plot_params_file, file_descr='JSON plot params')
     # remove elt used only for FigureStyle of data analysis
-    for phase_name in [EnvPhaseNames.data_analysis, EnvPhaseNames.monozone_toy_uc_model, EnvPhaseNames.xzones_uc_model]:
+    for phase_name in [EnvPhaseNames.data_analysis, EnvPhaseNames.monozone_toy_uc_model, EnvPhaseNames.multizones_uc_model]:
         current_key = f'fig_style_{phase_name}'
         if current_key in json_plot_params:
             del json_plot_params[current_key]

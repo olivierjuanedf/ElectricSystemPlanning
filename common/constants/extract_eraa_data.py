@@ -65,7 +65,7 @@ class UsageParameters:
         if self.apply_per_country_json_file_params is None:
             self.apply_per_country_json_file_params = {EnvPhaseNames.data_analysis: False,
                                                        EnvPhaseNames.monozone_toy_uc_model: True,
-                                                       EnvPhaseNames.xzones_uc_model: True}
+                                                       EnvPhaseNames.multizones_uc_model: True}
         else:  # from str (in JSON file) to bool
             self.apply_per_country_json_file_params = \
                 {phase_name: cast_str_to_bool(bool_str=val)
