@@ -106,7 +106,7 @@ def stop_if_coherence_check_error(obj_checked, errors_list: List[str]):
 
 @dataclass
 class ExtraParamNames:
-    capas_aggreg_pt_with_cf: str= 'capas_aggreg_pt_with_cf'
+    capas_aggreg_pt_with_cf: str = 'capas_aggreg_pt_with_cf'
 
 
 @dataclass
@@ -126,6 +126,13 @@ class DataAnalExtraParams:
 
     def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
         errors_list = []
+        # check that names of extra-params values are coherent
+        all_extra_param_names = set([ExtraParamNames.capas_aggreg_pt_with_cf])
+        current_param_names = set(self.values)
+        unknown_param_names = list(current_param_names - all_extra_param_names)
+        if len(unknown_param_names) > 0:
+            errors_list.append(f'Unknown extra-param names (keys of value dict.): {unknown_param_names}')
+
         # check that aggreg. prod. types are in allowed list
         fixed_cf_capas_key = ExtraParamNames.capas_aggreg_pt_with_cf
         if fixed_cf_capas_key in self.values:
