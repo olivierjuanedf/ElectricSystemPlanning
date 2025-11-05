@@ -268,7 +268,10 @@ if result[1] == pypsa_opt_resol_status:
     pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year)
     # IV.8.2) Plot 'stack' of optimized production profiles -> key graph to interpret UC solution -> will be 
     # saved in file output/long_term_uc/figures/prod_italy_{year}_{period start, under format %Y-%m-%d}.png
-    pypsa_model.plot_opt_prod_var(plot_params=plot_params, country=unique_country,
+    from common.constants.datadims import DataDimensions
+    # get plot parameters associated to aggreg. production types
+    plot_params_agg_pt = per_dim_plot_params[DataDimensions.agg_prod_type]
+    pypsa_model.plot_opt_prod_var(plot_params_agg_pt=plot_params_agg_pt, country=unique_country,
                                   year=uc_run_params.selected_target_year,
                                   climatic_year=uc_run_params.selected_climatic_year,
                                   start_horizon=uc_run_params.uc_period_start)
@@ -278,8 +281,9 @@ if result[1] == pypsa_opt_resol_status:
                                     start_horizon=uc_run_params.uc_period_start)
     # IV.8.3) Finally, 'marginal prices' -> QUESTION: meaning? 
     # -> saved in file output/long_term_uc/figures/prices_italy_{year}_{period start, under format %Y-%m-%d}.png
-    # QUESTION: how can you interpret the very constant value plotted? 
-    pypsa_model.plot_marginal_price(plot_params=plot_params, year=uc_run_params.selected_target_year,
+    # QUESTION: how can you interpret the very constant value plotted?
+    plot_params_zone = per_dim_plot_params[DataDimensions.zone]
+    pypsa_model.plot_marginal_price(plot_params_zone=plot_params_zone, year=uc_run_params.selected_target_year,
                                     climatic_year=uc_run_params.selected_climatic_year,
                                     start_horizon=uc_run_params.uc_period_start)
 

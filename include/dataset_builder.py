@@ -371,7 +371,7 @@ class PypsaModel:
         plt.savefig(get_capacity_figure(country=country, year=year))
         plt.close()
 
-    def plot_opt_prod_var(self, plot_params: PlotParams, country: str, year: int,
+    def plot_opt_prod_var(self, plot_params_agg_pt: PlotParams, country: str, year: int,
                           climatic_year: int, start_horizon: datetime):
         """ 
         Plot 'stack' of optimized production profiles
@@ -384,10 +384,8 @@ class PypsaModel:
         # suppress trigram from prod unit names to simplify legend in figures
         new_prod_cols = {col: col[4:] for col in country_prod_cols}
         current_prod_var_opt = rename_df_columns(df=current_prod_var_opt, old_to_new_cols=new_prod_cols)
-        current_prod_var_opt = set_col_order_for_plot(df=current_prod_var_opt,
-                                                      cols_ordered=plot_params.agg_prod_type_order)
-        current_prod_var_opt.div(1e3).plot.area(subplots=False, ylabel='GW',
-                                                color=plot_params.per_agg_prod_type_color)
+        current_prod_var_opt = set_col_order_for_plot(df=current_prod_var_opt, cols_ordered=plot_params_agg_pt.order)
+        current_prod_var_opt.div(1e3).plot.area(subplots=False, ylabel='GW', color=plot_params_agg_pt.per_case_color)
         plt.tight_layout()
         plt.savefig(get_prod_figure(country=country, year=year,
                                     climatic_year=climatic_year, start_horizon=start_horizon))
@@ -402,11 +400,9 @@ class PypsaModel:
                     )
         plt.close()
 
-    def plot_marginal_price(self, plot_params: PlotParams, year: int, climatic_year: int, start_horizon: datetime):
-        sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual_var_opt,
-                                                       cols_ordered=plot_params.zone_order)
-        sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh',
-                                        color=plot_params.per_zone_color)
+    def plot_marginal_price(self, plot_params_zone: PlotParams, year: int, climatic_year: int, start_horizon: datetime):
+        sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual_var_opt, cols_ordered=plot_params_zone.order)
+        sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh', color=plot_params_zone.per_case_color)
         plt.tight_layout()
         plt.savefig(get_price_figure(country='europe', year=year, climatic_year=climatic_year,
                                      start_horizon=start_horizon)
