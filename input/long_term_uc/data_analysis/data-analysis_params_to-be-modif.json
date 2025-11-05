@@ -8,29 +8,16 @@
       "climatic_years": 1985,
       "period_start": "1900/1/15",
       "period_end": "1900/1/29",
-      "extra_params": [
-        null,
-        {
-          "label": "res_low",
-          "values": {
-            "capas_aggreg_pt_with_cf": {
-              "wind_onshore": 10000,
-              "wind_offshore": 500,
-              "solar_pv": 10000
-            }
-          }
-        },
-        {
-          "label": "res_high",
-          "values": {
-            "capas_aggreg_pt_with_cf": {
-              "wind_onshore": 40000,
-              "wind_offshore": 10000,
-              "solar_pv": 40000
-            }
+      "extra_params": {
+        "label": "res_low",
+        "values": {
+          "capas_aggreg_pt_with_cf": {
+            "wind_onshore": 10000,
+            "wind_offshore": 500,
+            "solar_pv": 10000
           }
         }
-      ]
+      }
     }
   ]
 }

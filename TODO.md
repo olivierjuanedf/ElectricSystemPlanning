@@ -19,13 +19,10 @@ DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
-DA2) L'enrichir... pour la séance de data crunch ? Ou bien laisser faire les étudiants sur Excel ?
+DA1) Rendre fonctionnel cas avec subdt
 DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
-DA4) Sans start/end_date -> fonctionnel ? (avec année complète par défaut)
-DA7) Pouvoir forcer des capas EnR données pour le calcul/plot de la demande nette 
-(pour projeter invests EnR potentiellement diffs de ceux ERAA)
-DA8) Rendre fonctionnel cas avec subdt
+-> LATER
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE1) voir "XXX" (notamment les coding tricks)
@@ -51,7 +48,7 @@ MAS6) Reformat/simplify JSON params file (in input/long_term_uc/)
 PLOTS
 P1) Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
 P2) Add plot functions to get demand/cf/capas values for the selected values of params (and selected period) -> useful for 1st stage of data analysis (better with some graphs easy tb obtained)
-P3) Set up per country colors so that all groups will obtain directly comparable graphs
+P3) Check case with unique curve -> plot_dims obtained from UC ts name (call of def get_dims_from_uc_ts_name)
 
 OTHERS
 O1) Doc b.a.-ba utilisation codespace en dehors du repot ?

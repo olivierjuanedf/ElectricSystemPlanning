@@ -34,7 +34,10 @@ def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int]
         extra_params_suffix = SUBNAME_SEP.join([str(n_extra_params), 'extraparams'])
     else:
         extra_params_suffix = ''
-    return NAME_SEP.join([data_type_prefix, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix])
+    # remove empty str
+    suffix_lst = [data_type_prefix, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix]
+    suffix_lst = [elt for elt in suffix_lst if len(elt) > 0]
+    return NAME_SEP.join(suffix_lst)
 
 
 def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
