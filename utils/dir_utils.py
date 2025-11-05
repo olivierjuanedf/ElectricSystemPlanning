@@ -1,4 +1,6 @@
+import logging
 import os
+from pathlib import Path
 
 
 def check_file_existence(file: str, file_descr: str = None):
@@ -12,3 +14,10 @@ def check_file_existence(file: str, file_descr: str = None):
         msg_prefix = 'File' if file_descr is None else f'{file_descr} file'
         raise Exception(f'{msg_prefix} {file} does not exist -> STOP')
 
+
+def make_dir(full_path: str, with_warning: bool = False):
+    if os.path.exists(full_path):
+        if with_warning:
+            logging.warning(f'Directory {full_path} already exists -> not created again')
+    else:
+        Path(full_path).mkdir(parents=True)

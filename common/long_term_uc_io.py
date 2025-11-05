@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List
 
+from common.constants.countries import set_country_trigram
+from utils.dir_utils import make_dir
+
 
 @dataclass
 class DtSubfolders:
@@ -53,7 +56,7 @@ DATE_FORMAT_PRINT = '%Y/%m/%d'
 DT_FILE_PREFIX = DtFilePrefix()
 DT_SUBFOLDERS = DtSubfolders()
 FILES_FORMAT = FilesFormat()
-GEN_CAPA_SUBDT_COLS = ['power_capacity', 'power_capacity_turbine', 'power_capacity_pumping', 
+GEN_CAPA_SUBDT_COLS = ['power_capacity', 'power_capacity_turbine', 'power_capacity_pumping',
                        'power_capacity_injection', 'power_capacity_offtake', 'energy_capacity']
 INPUT_ERAA_FOLDER = f'{DATA_FOLDER}/ERAA_2023-2'
 INPUT_FOLDER = 'input'
@@ -66,8 +69,8 @@ INTERCO_STR_SEP = '2'
 INPUT_CY_STRESS_TEST_SUBFOLDER = 'cy_stress-test'
 OUTPUT_FOLDER = 'output'
 OUTPUT_FOLDER_LT = f'{OUTPUT_FOLDER}/long_term_uc'
-OUTPUT_DATA_FOLDER = f'{OUTPUT_FOLDER_LT}/data'
-OUTPUT_FIG_FOLDER = f'{OUTPUT_FOLDER_LT}/figures'
+OUTPUT_SUBFOLDER_DATA = 'data'
+OUTPUT_SUBFOLDER_FIG = 'figures'
 OUTPUT_DATA_ANALYSIS_FOLDER = f'{OUTPUT_FOLDER}/data_analysis'
 
 
@@ -99,11 +102,11 @@ def get_json_params_modif_country_files() -> List[str]:
 
 
 def get_json_pypsa_static_params_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'pypsa_static_params.json') 
+    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'pypsa_static_params.json')
 
 
 def get_json_data_analysis_params_file() -> str:
-    return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, 'data-analysis_params_to-be-modif.json') 
+    return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, 'data-analysis_params_to-be-modif.json')
 
 
 def get_json_plot_params_file() -> str:
@@ -114,8 +117,13 @@ def get_json_fuel_sources_file() -> str:
     return os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'params.json')
 
 
-def get_network_figure() -> str:
-    return f'{OUTPUT_FIG_FOLDER}/network.png'
+def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True) -> str:
+    output_folder = set_full_lt_uc_output_folder(folder_type='figures', country=country,
+                                                 toy_model_output=toy_model_output)
+    if create_subdir:
+        make_dir(full_path=output_folder)
+
+    return f'{output_folder}/network.png'
 
 
 def get_output_file_suffix(country: str, year: int, climatic_year: int = None, start_horizon: datetime = None) -> str:
@@ -124,39 +132,67 @@ def get_output_file_suffix(country: str, year: int, climatic_year: int = None, s
     return f'{country}_{year}{cy_suffix}{date_suffix}'
 
 
-def get_output_file_named(name: str, extension:str, output_dir:str, country: str, year: int, climatic_year: int, start_horizon: datetime = None) -> str:
+def get_output_file_named(name: str, extension: str, output_dir: str, country: str, year: int, climatic_year: int,
+                          start_horizon: datetime = None) -> str:
     file_suffix = get_output_file_suffix(country=country, year=year, climatic_year=climatic_year,
                                          start_horizon=start_horizon)
     return f'{output_dir}/{name}_{file_suffix}.{extension}'
 
 
-def get_figure_file_named(name: str, country: str, year: int, climatic_year: int = None, start_horizon: datetime = None) -> str:
-    return get_output_file_named(name, 'png', OUTPUT_FIG_FOLDER, country, year, climatic_year, start_horizon)
+def get_figure_file_named(name: str, country: str, year: int, climatic_year: int = None,
+                          start_horizon: datetime = None, toy_model_output: bool = False) -> str:
+    output_folder = set_full_lt_uc_output_folder(folder_type='figures', country=country,
+                                                 toy_model_output=toy_model_output)
+    return get_output_file_named(name=name, extension='png', output_dir=output_folder, country=country, year=year,
+                                 climatic_year=climatic_year, start_horizon=start_horizon)
 
 
-def get_capacity_figure(country: str, year: int) -> str:
-    return get_figure_file_named('capa', country, year)
+@dataclass
+class OutputFolderNames:
+    data: str = 'data'
+    figures: str = 'figures'
 
 
-def get_prod_figure(country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
-    return get_figure_file_named('prod', country, year, climatic_year, start_horizon)
+@dataclass
+class FigNamesPrefix:
+    capacity: str = 'capa'
+    production: str = 'prod'
+    prices: str = 'prices'
 
 
-def get_price_figure(country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
-    return get_figure_file_named('prices', country, year, climatic_year, start_horizon)
+def get_output_figure(fig_name: str, country: str, year: int, climatic_year: int = None, start_horizon: datetime = None,
+                      toy_model_output: bool = False, create_subdir: bool = True) -> str:
+    output_fig_filepath = get_figure_file_named(name=fig_name, country=country, year=year, climatic_year=climatic_year,
+                                                start_horizon=start_horizon, toy_model_output=toy_model_output)
+    if create_subdir:
+        subdir = os.path.split(output_fig_filepath)[0]
+        make_dir(full_path=subdir)
+    return output_fig_filepath
 
 
-def get_csv_file_named(name:str, country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
-    return get_output_file_named(name, 'csv', OUTPUT_DATA_FOLDER, country, year, climatic_year, start_horizon)
+def set_full_lt_uc_output_folder(folder_type: str, country: str = None, toy_model_output: bool = False) -> str:
+    subfolder = f'monozone_{set_country_trigram(country=country)}' if toy_model_output else 'multizones_eur'
+    subfolder_2 = OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG
+    return f'{OUTPUT_FOLDER_LT}/{subfolder}/{subfolder_2}'
 
 
-def get_opt_power_file(country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
-    return get_csv_file_named('opt_power', country, year, climatic_year, start_horizon)
+def get_csv_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime,
+                       toy_model_output: bool = False) -> str:
+    output_folder = set_full_lt_uc_output_folder(folder_type='data', country=country, toy_model_output=toy_model_output)
+    return get_output_file_named(name, 'csv', output_folder, country, year, climatic_year, start_horizon)
 
 
-def get_storage_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
-    return get_csv_file_named('storage_opt_decisions', country, year, climatic_year, start_horizon)
+def get_opt_power_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
+                       toy_model_output: bool = False) -> str:
+    return get_csv_file_named('opt_power', country, year, climatic_year, start_horizon, toy_model_output)
 
 
-def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_horizon: datetime) -> str:
-    return get_csv_file_named('marginal_prices', country, year, climatic_year, start_horizon)
+def get_storage_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
+                             toy_model_output: bool = False) -> str:
+    return get_csv_file_named('storage_opt_decisions', country, year, climatic_year, start_horizon,
+                              toy_model_output)
+
+
+def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
+                             toy_model_output: bool = False) -> str:
+    return get_csv_file_named('marginal_prices', country, year, climatic_year, start_horizon, toy_model_output)

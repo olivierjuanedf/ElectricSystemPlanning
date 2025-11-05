@@ -230,7 +230,7 @@ per_dim_plot_params = read_plot_params()
 fig_style = read_given_phase_plot_params(phase_name=phase_name)
 print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
 
-pypsa_model.plot_network()
+pypsa_model.plot_network(toy_model_output=True, country=country)
 # IV.6.3) Print out list of generators
 print(pypsa_model.network.generators)
 
@@ -274,33 +274,36 @@ if result[1] == pypsa_opt_resol_status:
     pypsa_model.plot_opt_prod_var(plot_params_agg_pt=plot_params_agg_pt, country=unique_country,
                                   year=uc_run_params.selected_target_year,
                                   climatic_year=uc_run_params.selected_climatic_year,
-                                  start_horizon=uc_run_params.uc_period_start)
+                                  start_horizon=uc_run_params.uc_period_start,
+                                  toy_model_output=True)
     # IV.8.2bis) Specific prod. profile: the one of fictive failure asset
     pypsa_model.plot_failure_at_opt(country=unique_country, year=uc_run_params.selected_target_year,
                                     climatic_year=uc_run_params.selected_climatic_year,
-                                    start_horizon=uc_run_params.uc_period_start)
+                                    start_horizon=uc_run_params.uc_period_start,
+                                    toy_model_output=True)
     # IV.8.3) Finally, 'marginal prices' -> QUESTION: meaning? 
     # -> saved in file output/long_term_uc/figures/prices_italy_{year}_{period start, under format %Y-%m-%d}.png
     # QUESTION: how can you interpret the very constant value plotted?
     plot_params_zone = per_dim_plot_params[DataDimensions.zone]
     pypsa_model.plot_marginal_price(plot_params_zone=plot_params_zone, year=uc_run_params.selected_target_year,
                                     climatic_year=uc_run_params.selected_climatic_year,
-                                    start_horizon=uc_run_params.uc_period_start)
+                                    start_horizon=uc_run_params.uc_period_start, toy_model_output=True)
 
     # IV.9) Save optimal decisions to output csv files
     print('Save optimal dispatch decisions to .csv file')
     # save optimal prod. decision to an output file
     pypsa_model.save_opt_decisions_to_csv(year=uc_run_params.selected_target_year,
                                           climatic_year=uc_run_params.selected_climatic_year,
-                                          start_horizon=uc_run_params.uc_period_start)
+                                          start_horizon=uc_run_params.uc_period_start, toy_model_output=True)
 
     # save marginal prices to an output file
     pypsa_model.save_marginal_prices_to_csv(year=uc_run_params.selected_target_year,
                                             climatic_year=uc_run_params.selected_climatic_year,
-                                            start_horizon=uc_run_params.uc_period_start)
+                                            start_horizon=uc_run_params.uc_period_start, toy_model_output=True)
 else:
     print(f'Optimisation resolution status is not {pypsa_opt_resol_status} '
           f'-> output data (resp. figures) cannot be saved (resp. plotted), excepting installed capas one')
-    pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year)
+    pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year,
+                                     toy_model_output=True)
 
 print(f'THE END of ERAA-PyPSA long-term UC toy model of country {unique_country} simulation!')

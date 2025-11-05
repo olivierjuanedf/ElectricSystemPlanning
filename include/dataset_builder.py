@@ -8,15 +8,17 @@ from dataclasses import dataclass
 import pypsa
 import matplotlib.pyplot as plt
 
+from common.constants.countries import set_country_trigram
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from common.error_msgs import print_errors_list
 from common.fuel_sources import FuelSource, DummyFuelNames
 from common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
-    get_opt_power_file, get_price_figure, get_prod_figure, get_storage_opt_dec_file, \
-    get_capacity_figure, get_figure_file_named
+    get_opt_power_file, get_storage_opt_dec_file, \
+    get_figure_file_named, FigNamesPrefix, get_output_figure
 from common.plot_params import PlotParams
 from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
 from utils.df_utils import rename_df_columns
+from utils.dir_utils import make_dir
 from utils.pypsa_utils import get_network_obj_value
 
 
@@ -48,10 +50,6 @@ def get_val_of_agg_pt_in_df(df_data: pd.DataFrame, prod_type_agg_col: str,
 
 
 UNIT_NAME_SEP = '_'
-
-
-def set_country_trigram(country: str) -> str:
-    return f'{country[:3].lower()}'
 
 
 def get_prod_type_from_unit_name(prod_unit_name: str) -> str:
@@ -324,9 +322,9 @@ class PypsaModel:
     def get_bus_names(self) -> List[str]:
         return list(set(self.network.buses.index))
 
-    def plot_network(self):
+    def plot_network(self, toy_model_output: bool = False, country: str = None):
         self.network.plot(title=f'{self.name.capitalize()} network', color_geomap=True, jitter=0.3)
-        plt.savefig(get_network_figure())
+        plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country))
         plt.close()
 
     def optimize_network(self, year: int, n_countries: int, period_start: datetime,
@@ -359,7 +357,7 @@ class PypsaModel:
             f'Optimisation resolution status is {pypsa_resol_status} with objective value (cost) = {objective_value:.2f} -> output data (resp. figures) can be generated')
         return objective_value
 
-    def plot_installed_capas(self, country: str, year: int):
+    def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False):
         country_trigram = set_country_trigram(country=country)
         # N.B. p_nom_opt is the optimized capacity (that can be also a variable in PyPSA but here...
         # not optimized - only UC problem -> values plotted correspond to the ones that can be found in input data)
@@ -368,11 +366,12 @@ class PypsaModel:
                                                                                                figsize=(8, 3))
         # [Coding trick] Matplotlib can directly adapt size of figure to fit with values plotted
         plt.tight_layout()
-        plt.savefig(get_capacity_figure(country=country, year=year))
+        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.capacity, country=country, year=year,
+                                      toy_model_output=toy_model_output))
         plt.close()
 
     def plot_opt_prod_var(self, plot_params_agg_pt: PlotParams, country: str, year: int,
-                          climatic_year: int, start_horizon: datetime):
+                          climatic_year: int, start_horizon: datetime, toy_model_output: bool = False):
         """ 
         Plot 'stack' of optimized production profiles
         """
@@ -387,36 +386,40 @@ class PypsaModel:
         current_prod_var_opt = set_col_order_for_plot(df=current_prod_var_opt, cols_ordered=plot_params_agg_pt.order)
         current_prod_var_opt.div(1e3).plot.area(subplots=False, ylabel='GW', color=plot_params_agg_pt.per_case_color)
         plt.tight_layout()
-        plt.savefig(get_prod_figure(country=country, year=year,
-                                    climatic_year=climatic_year, start_horizon=start_horizon))
+        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.production, country=country, year=year,
+                                      climatic_year=climatic_year, start_horizon=start_horizon,
+                                      toy_model_output=toy_model_output))
         plt.close()
 
-    def plot_failure_at_opt(self, country: str, year: int, climatic_year: int, start_horizon: datetime):
+    def plot_failure_at_opt(self, country: str, year: int, climatic_year: int, start_horizon: datetime,
+                            toy_model_output: bool = False):
         failure_unit_name = set_gen_unit_name(country=country, agg_prod_type='failure')
         self.network.generators_t.p.div(1e3)[failure_unit_name].plot.line(subplots=False, ylabel='GW')
         plt.tight_layout()
         plt.savefig(get_figure_file_named('failure', country=country, year=year, climatic_year=climatic_year,
-                                          start_horizon=start_horizon)
+                                          start_horizon=start_horizon, toy_model_output=toy_model_output)
                     )
         plt.close()
 
-    def plot_marginal_price(self, plot_params_zone: PlotParams, year: int, climatic_year: int, start_horizon: datetime):
+    def plot_marginal_price(self, plot_params_zone: PlotParams, year: int, climatic_year: int, start_horizon: datetime,
+                            toy_model_output: bool = False):
         sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual_var_opt, cols_ordered=plot_params_zone.order)
         sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh', color=plot_params_zone.per_case_color)
         plt.tight_layout()
-        plt.savefig(get_price_figure(country='europe', year=year, climatic_year=climatic_year,
-                                     start_horizon=start_horizon)
+        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.prices, country='europe', year=year,
+                                      climatic_year=climatic_year, start_horizon=start_horizon,
+                                      toy_model_output=toy_model_output)
                     )
         plt.close()
 
     def save_opt_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
-                                  rename_snapshot_col: bool = True):
+                                  rename_snapshot_col: bool = True, toy_model_output: bool = False):
         # TODO: check if unique country and in this case (i) suppress country prefix in asset names; 
         # (ii) rename file with country suffix instead of europe one
         country = 'europe'
         # opt prod decisions for all but Storage assets
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
-                                            start_horizon=start_horizon)
+                                            start_horizon=start_horizon, toy_model_output=toy_model_output)
         logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv file {opt_p_csv_file}')
         df_prod_opt = self.prod_var_opt
         if rename_snapshot_col:
@@ -425,7 +428,7 @@ class PypsaModel:
         # then storage assets decisions
         storage_opt_dec_csv_file = \
             get_storage_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
-                                     start_horizon=start_horizon)
+                                     start_horizon=start_horizon, toy_model_output=toy_model_output)
         logging.info(f'Save Storage optimal decisions to csv file {storage_opt_dec_csv_file}')
         # join the 3 Storage result dfs
         df_prod_opt = self.storage_prod_var_opt
@@ -441,11 +444,12 @@ class PypsaModel:
         df_storage_all_decs.to_csv(storage_opt_dec_csv_file)
 
     def save_marginal_prices_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
-                                    rename_snapshot_col: bool = True):
+                                    rename_snapshot_col: bool = True, toy_model_output: bool = False):
         logging.info('Save marginal prices decisions to .csv file')
         marginal_prices_csv_file = get_marginal_prices_file(country='europe', year=year,
                                                             climatic_year=climatic_year,
-                                                            start_horizon=start_horizon)
+                                                            start_horizon=start_horizon,
+                                                            toy_model_output=toy_model_output)
         df_sde_dual_var_opt = self.sde_dual_var_opt
         if rename_snapshot_col:
             df_sde_dual_var_opt.index.name = OUTPUT_DATE_COL
@@ -547,10 +551,10 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 
 
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
-                  n_countries: int = None, add_random_suffix: bool = False):
+                  n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False):
     logging.info('Save lp model')
     import pypsa.optimization as opt
-    from common.long_term_uc_io import OUTPUT_DATA_FOLDER
+    from common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
     m = opt.create_model(network)
 
@@ -574,7 +578,11 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
 
     period_start_file = set_period_start_file(year=year, period_start=period_start)
     file_suffix = f'{prefix}_{period_start_file}{random_suffix}'
-    m.to_file(Path(f'{OUTPUT_DATA_FOLDER}/model_{file_suffix}.lp'))
+    country_output_folder = countries[0] if countries is not None else None
+    output_folder_data = set_full_lt_uc_output_folder(folder_type=OutputFolderNames.data, country=country_output_folder,
+                                                      toy_model_output=toy_model_output)
+    make_dir(full_path=output_folder_data)
+    m.to_file(Path(f'{output_folder_data}/model_{file_suffix}.lp'))
 
 
 def get_stationary_batt_opt_dec(network: pypsa.Network, countries: List[str]):
