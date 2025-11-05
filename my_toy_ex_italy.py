@@ -268,8 +268,8 @@ if result[1] == pypsa_opt_resol_status:
     pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year)
     # IV.8.2) Plot 'stack' of optimized production profiles -> key graph to interpret UC solution -> will be 
     # saved in file output/long_term_uc/figures/prod_italy_{year}_{period start, under format %Y-%m-%d}.png
-    from common.constants.datadims import DataDimensions
     # get plot parameters associated to aggreg. production types
+    from common.constants.datadims import DataDimensions
     plot_params_agg_pt = per_dim_plot_params[DataDimensions.agg_prod_type]
     pypsa_model.plot_opt_prod_var(plot_params_agg_pt=plot_params_agg_pt, country=unique_country,
                                   year=uc_run_params.selected_target_year,

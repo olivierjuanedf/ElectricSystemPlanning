@@ -104,14 +104,19 @@ if result[1] == pypsa_opt_resol_status:
     pypsa_model.get_prod_var_opt()
     pypsa_model.get_storage_vars_opt()
     pypsa_model.get_sde_dual_var_opt()
+    # get plot parameters associated to aggreg. production types
+    from common.constants.datadims import DataDimensions
+    plot_params_agg_pt = per_dim_plot_params[DataDimensions.agg_prod_type]
+    plot_params_zone = per_dim_plot_params[DataDimensions.zone]
+
     # plot - per country - opt prod profiles 'stacked'
     for country in uc_run_params.selected_countries:
-        pypsa_model.plot_opt_prod_var(plot_params_agg_pt=plot_params, country=country,
+        pypsa_model.plot_opt_prod_var(plot_params_agg_pt=plot_params_agg_pt, country=country,
                                       year=uc_run_params.selected_target_year,
                                       climatic_year=uc_run_params.selected_climatic_year,
                                       start_horizon=uc_run_params.uc_period_start)
     # plot 'marginal price' figure
-    pypsa_model.plot_marginal_price(plot_params_zone=plot_params, year=uc_run_params.selected_target_year,
+    pypsa_model.plot_marginal_price(plot_params_zone=plot_params_zone, year=uc_run_params.selected_target_year,
                                     climatic_year=uc_run_params.selected_climatic_year,
                                     start_horizon=uc_run_params.uc_period_start)
 

@@ -209,5 +209,18 @@
       "year",
       "climatic_year"
     ]
+  },
+  "fig_style_multizones_uc_model": {
+    "curve_style": "relative",
+    "date_xtick_fmt": "in_letter",
+    "date_xtick_fontsize": 10,
+    "add_day_exp_in_date_xtick": "true",
+    "date_xtick_rotation": 0,
+    "legend_font_size": 11,
+    "plot_dims_order": [
+      "zone",
+      "year",
+      "climatic_year"
+    ]
   }
 }
