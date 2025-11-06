@@ -6,7 +6,7 @@
 
 # Tutorial - Long-Term Unit Commitment (UC) part
 
-## Running a 1-country (European) UC model by... only playing with 2 JSON files...
+## Running a N-countries (European) UC model by... only playing with 2 JSON files...
 
 With the provided code environment you will be able to **run a Unit Commitment model by simply modifying the values in the 2 following files**:
 1) *input/long_term_uc/elec-europe_params_to-be-modif.json* -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
@@ -22,7 +22,7 @@ N.B. (i) The only remaining bug that has been observed in this environment is wh
 
 ## ... And directly getting output results for an extended analysis
 
-**Obtained data (resp. plotted figures) results** are given in *output/long_term_uc/data* (resp. *output/long_term_uc/figures*) folders.
+**Obtained data (resp. plotted figures) results** are given in *output/long_term_uc/multizones_eur/data* (resp. *output/long_term_uc/multizones_eur/figures*) folders.
 
 In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
 * (*data/* subfolder) **optimal production of all generators** considered in Europe, in a .csv file. N.B. The suffix of this file is indicating the year, climatic year ("cy") and the date of UC start period
@@ -45,21 +45,9 @@ In detail, and **except if the resolution of PyPSA optimization model was not su
 
 **Preliminary remarks**: (i) JSON files used to store dict-like infos. (ii) Must start "directly" with "{" and end with "}". (iii) "null" is used for None in these JSON files. (iv) '.' (single quotes) not allowed in JSON files; use "." instead. (v) Tuples (.) not allowed; use rather lists [.]. 
 
-The ones in folder *input\long_term_uc*; **file by file description**:
-- **[NOT TO BE MODIFIED during this practical class]** *elec-europe_eraa-available-values.json*: containing values available in the ERAA extract provided in folder *data/*: 
-    - "climatic_years": **past historical years weather conditions** that are 'projected' on ERAA "target year" (*list of int* values)
-    - "countries": your seven **(meta-)countries**, the only ones for which ERAA data are made available in this code environment (*list of str*)
-    - "aggreg_prod_types": **per country and year aggregated production types** (two-level dictionary in format {country name: {(target) year: list of aggregated production types available in the extract of ERAA data}}). N.B. As "aggregated production types" are only used here to simplify the considered model (diminishing its size), availability of such a type means that at least one of the corresponding - more detailed - ERAA production types is available in data
-    - "target_years": list of **years available** here - 2025 or 2033 here, identically to the toy example (*list of int*)
-    - "intercos": list of **interconnection with available data** (*list of str*, with str under format {origin country}2{destination country}). N.B. Obtained by simple aggregation of ERAA data when multiple sub-zones are present in our (meta-)countries
-      
-- **[NOT TO BE MODIFIED]** *elec-europe_params_fixed.json*: containing parameters... 
-    - "aggreg_prod_types_def": **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise
-    - "available_climatic_years", "available countries", "available_target_years" (or simply years; "target year" is the used terminology in ERAA): **available values for the dimensions of provided extract of ERAA data**
-    - "gps_coordinates": the ones of the capitals excepting meta-countries with coordinates of Rotterdam for "benelux", Madrid for "iberian-peninsula", and Stockholm for "scandinavia". N.B. Only for plotting - very schematic - representation of the "network" associated to your UC model
-    - "eraa_edition": edition of ERAA data used - 2023.2 (one/two ERAA editions per year from 2021)
+The ones in folder *input/long_term_uc*; **file by file description** - starting with the two only ones to be modified:
 
-- *elec-europe_params_to-be-modif.json*: containing parameters... 
+- *elec-europe_params_to-be-modif.json*:  
     - "selected_climatic_year": to **choose climatic year" considered for UC model (unique deterministic scenario, *int* value)
     - "selected_countries": to **choose countries** that you would like to be part of your European- copper-plate - long-term UC model (*list of string*; that must be in the set of considered countries for this class). N.B. Except if values are overwritten based on *{country}.json* files described hereafter, all production types available in ERAA data will be considered built for the countries in this list
     - "selected_target_year": to choose the ERAA (target) **year** to be simulated (*int*, either 2025 or 2033)
@@ -70,7 +58,27 @@ The ones in folder *input\long_term_uc*; **file by file description**:
     -  "failure_penalty": **failure asset variable cost**, or more standardly "penalty" (*non-negative float*). N.B. Typically set to a "very big" value, so that this asset be used as a last recourse - i.e. after having used all other production units at maximal power available
     -  "interco_capas_tb_overwritten": **values for the interconnection capacities**; to be used to overwrite - or complete - ERAA data (*dictionary with str keys and on-negative float values*, with keys under format {origin country}2{destination country}). Ex:  {"france2poland": 10, "france2scandinavia": 0, "italy2iberian-peninsula": 0} will set interconnection capacity from France to Poland to 10GW (very fictive!) and from France to both Scandinavia et Iberian-Peninsula to 0GW. Note that regarding the France to Scandinavia link this value will be useless as there is no ERAA data associated to this link; in turn our code already used 0GW as the value. 
 
-- *input/long_term_uc/countries/{country}.json*: containing parameters
+- *countries/{country}.json*: 
     - "team": **name of your team**, i.e. name of the country you are "responsible for" (*str*, that Must be in the set {"benelux", "germany", "iberian-peninsula", "poland", "scandinavia"} - use lower letters)
     - "selected_prod_types": list of **production types - using aggregate classes** defined in *input/long_term_uc/elec-europe_eraa_available-values.json* file/field "aggreg_prod_types" (*dictionary* {country name: list of aggreg. production types to be selected for run}). Ex: {"france": ["nuclear", "failure"], "germany": ["coal", "wind_onshore", "wind_offshore"]} will lead to a run with only nuclear and failure (resp. coal and wind on-/off-shore) units in France (resp. Germany) 
     - "capacities_tb_overwritten": **aggreg. production units for which you want to update the capacities - versus the ones in ERAA data**, and for the considered (target) year (*dictionary* {country: aggreg. prod. type: updated capacity}). Ex: {"france": {"nuclear": 100000, "failure": 100000} will update French nuclear (aggreg.) capacity to 100GW and set a big failure asset of the same capacity. In this exemple, capacities for Germany will be taken as given in ERAA data. 
+
+- **[NOT TO BE MODIFIED during this practical class]** *elec-europe_eraa-available-values.json*: containing values available in the ERAA extract provided in folder *data/*: 
+    - "climatic_years": **past historical years weather conditions** that are 'projected' on ERAA "target year" (*list of int* values)
+    - "countries": your seven **(meta-)countries**, the only ones for which ERAA data are made available in this code environment (*list of str*)
+    - "aggreg_prod_types": **per country and year aggregated production types** (two-level dictionary in format {country name: {(target) year: list of aggregated production types available in the extract of ERAA data}}). N.B. As "aggregated production types" are only used here to simplify the considered model (diminishing its size), availability of such a type means that at least one of the corresponding - more detailed - ERAA production types is available in data
+    - "target_years": list of **years available** here - 2025 or 2033 here, identically to the toy example (*list of int*)
+    - "intercos": list of **interconnection with available data** (*list of str*, with str under format {origin country}2{destination country}). N.B. Obtained by simple aggregation of ERAA data when multiple sub-zones are present in our (meta-)countries
+      
+- **[NOT TO BE MODIFIED]** *elec-europe_params_fixed.json*: 
+    - "aggreg_prod_types_def": **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise
+    - "available_climatic_years", "available countries", "available_target_years" (or simply years; "target year" is the used terminology in ERAA): **available values for the dimensions of provided extract of ERAA data**
+    - "gps_coordinates": the ones of the capitals excepting meta-countries with coordinates of Rotterdam for "benelux", Madrid for "iberian-peninsula", and Stockholm for "scandinavia". N.B. Only for plotting - very schematic - representation of the "network" associated to your UC model
+    - "eraa_edition": edition of ERAA data used - 2023.2 (one/two ERAA editions per year from 2021)
+
+- **[NOT TO BE MODIFIED]** *functional_available-values.json*:  
+    - "datatypes": list of **type of data names**. Used only for the data crunch session; based on script *my_little_europe_data_analysis.py* - see associated doc
+  
+- **[NOT TO BE MODIFIED]** *pypsa_static_params.json*:  
+    - "min_unit_params_per_agg_pt": list of minimal parameters to be provided when creating different types of generators in PyPSA
+    - "generator_params_default_vals": default values applied when creating PyPSA generators
