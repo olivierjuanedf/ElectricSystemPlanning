@@ -8,13 +8,11 @@ M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les i
 M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
 M7) Tester avec des dates start/end sans hh:mm
 M8) Sortir/tracer les émissions CO2
-M10) Dossier de sortie toy model différent de celui Eur model
 M11) Version de Python ok?
 M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
 -> needs Python >= 3.10...
 M13) Vérif cohérence FuelNames avec ProdTypeNames -> utilité des 2 ?
 M14) Virer les gitignore qui traînent...
-M15) log files in their respective folders
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
@@ -33,8 +31,6 @@ TE4) doc/toy-model_tutorial.md to be completed/improved + commentaires dans le c
 TE5) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec des exs complémentaires au cas italien (hydrau, batteries)
 TE7) Ne pas mentionner diff clé PV entre les données de capa et de CF -> embrouille...
 TE8) Donner un ex. d'ajout d'un stock/batterie dans le cas italien/ou pointeur sur Internet
-TE9) Voir sens suffixe du lp généré -> rendre les choses explicites
-TE10) Prévoir sous-dossier de sortie dédié pour stocker figs et data ? (ita par ex)
 
 MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
 MAS1) Doc doc/... pour clarifier les choses et permettre utilisation autonome
@@ -45,6 +41,7 @@ MAS4) Add possibility to set Stock (additional to ERAA data) in JSON tb modif in
 MAS5) Add possibility to provide additional fatal demand -> for iterations between UC and imperfect disaggreg of an aggregate DSR flex (EV for ex) modeled as a Stock for ex! (cf. OMCEP course)
 MAS6) Reformat/simplify JSON params file (in input/long_term_uc/)
 * elec-europe_params_to-be-modif.json -> suppress "selec" prefix implicit for some params?
+MAS7) Automatically generate some graphs when launching the runner
 
 PLOTS
 P1) Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
