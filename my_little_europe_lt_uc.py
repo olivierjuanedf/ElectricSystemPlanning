@@ -14,7 +14,7 @@ import logging
 from common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, DummyFuelNames
 fuel_sources = set_fuel_sources_from_json()
 from common.logger import init_logger, stop_logger
-from common.long_term_uc_io import OUTPUT_FOLDER_LT
+from common.long_term_uc_io import OUTPUT_FOLDER_LT, set_full_lt_uc_output_folder
 from include.dataset_builder import PypsaModel
 from utils.dates import get_period_str
 from include.dataset import Dataset
@@ -27,7 +27,8 @@ phase_name = EnvPhaseNames.multizones_uc_model
 
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model)
 
-logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_lt_uc_pb.log',
+output_folder = set_full_lt_uc_output_folder()
+logger = init_logger(logger_dir=output_folder, logger_name='eraa_lt_uc_pb.log',
                      log_level=usage_params.log_level)
 
 logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation')

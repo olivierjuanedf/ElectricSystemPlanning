@@ -5,7 +5,7 @@ import logging
 from common.constants.datatypes import DATATYPE_NAMES
 from common.constants.usage_params_json import EnvPhaseNames
 from common.logger import init_logger, stop_logger
-from common.long_term_uc_io import OUTPUT_FOLDER_LT
+from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
 from include.dataset import Dataset
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
@@ -17,7 +17,7 @@ phase_name = EnvPhaseNames.data_analysis
 usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=phase_name)
 data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
 
-logger = init_logger(logger_dir=OUTPUT_FOLDER_LT, logger_name='eraa_input_data_analysis',
+logger = init_logger(logger_dir=OUTPUT_DATA_ANALYSIS_FOLDER, logger_name='eraa_input_data_analysis.log',
                      log_level=usage_params.log_level)
 logging.info('START ERAA (input) data analysis')
 

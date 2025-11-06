@@ -238,16 +238,13 @@ print(pypsa_model.network.generators)
 # IV.7.1) Solve and print result. N.B. Default solver used is highs, that is 'sufficient' for a
 # 1-zone model as the one solved here
 n_countries = len(uc_run_params.selected_countries)
-result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year, n_countries=n_countries,
-                                      period_start=uc_run_params.uc_period_start)
-# IV.7.2) [Optional] For those who want to get a standard .lp file containing 
-# the equations associated to the solved problem
-# -> will be saved in output folder output/long_term_uc/data
+# Here lp model is saved before solving it
+# N.B. .lp files is a standard format containing the equations associated to the solved optim. problem
+# -> will be saved in output folder output/long_term_uc/monozone_{country trigram}/data
 # you can observe if you find the equations corresponding to the UC problem modeled
-from include.dataset_builder import save_lp_model
-
-save_lp_model(network=pypsa_model.network, year=uc_run_params.selected_target_year,
-              countries=[country_trigram], period_start=uc_run_params.uc_period_start)
+result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year, n_countries=n_countries,
+                                      period_start=uc_run_params.uc_period_start, save_lp_file=True,
+                                      toy_model_output=True, countries=[country])
 print(result)  # Note 2nd component of result, the resolution status (optimal?)
 
 # get objective value, and associated optimal decisions / dual variables
@@ -265,7 +262,8 @@ if result[1] == pypsa_opt_resol_status:
     # IV.8) Plot a few info/results
     print('Plot installed capas (parameters), generation and prices (optim. outputs) figures')
     # IV.8.1) Plot installed capacities
-    pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year)
+    pypsa_model.plot_installed_capas(country=unique_country, year=uc_run_params.selected_target_year,
+                                     toy_model_output=True)
     # IV.8.2) Plot 'stack' of optimized production profiles -> key graph to interpret UC solution -> will be 
     # saved in file output/long_term_uc/figures/prod_italy_{year}_{period start, under format %Y-%m-%d}.png
     # get plot parameters associated to aggreg. production types
@@ -287,19 +285,22 @@ if result[1] == pypsa_opt_resol_status:
     plot_params_zone = per_dim_plot_params[DataDimensions.zone]
     pypsa_model.plot_marginal_price(plot_params_zone=plot_params_zone, year=uc_run_params.selected_target_year,
                                     climatic_year=uc_run_params.selected_climatic_year,
-                                    start_horizon=uc_run_params.uc_period_start, toy_model_output=True)
+                                    start_horizon=uc_run_params.uc_period_start, toy_model_output=True,
+                                    country=country)
 
     # IV.9) Save optimal decisions to output csv files
     print('Save optimal dispatch decisions to .csv file')
     # save optimal prod. decision to an output file
     pypsa_model.save_opt_decisions_to_csv(year=uc_run_params.selected_target_year,
                                           climatic_year=uc_run_params.selected_climatic_year,
-                                          start_horizon=uc_run_params.uc_period_start, toy_model_output=True)
+                                          start_horizon=uc_run_params.uc_period_start, toy_model_output=True,
+                                          country=country)
 
     # save marginal prices to an output file
     pypsa_model.save_marginal_prices_to_csv(year=uc_run_params.selected_target_year,
                                             climatic_year=uc_run_params.selected_climatic_year,
-                                            start_horizon=uc_run_params.uc_period_start, toy_model_output=True)
+                                            start_horizon=uc_run_params.uc_period_start, toy_model_output=True,
+                                            country=country)
 else:
     print(f'Optimisation resolution status is not {pypsa_opt_resol_status} '
           f'-> output data (resp. figures) cannot be saved (resp. plotted), excepting installed capas one')

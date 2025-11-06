@@ -170,15 +170,20 @@ def get_output_figure(fig_name: str, country: str, year: int, climatic_year: int
     return output_fig_filepath
 
 
-def set_full_lt_uc_output_folder(folder_type: str, country: str = None, toy_model_output: bool = False) -> str:
+def set_full_lt_uc_output_folder(folder_type: str = None, country: str = None, toy_model_output: bool = False) -> str:
     subfolder = f'monozone_{set_country_trigram(country=country)}' if toy_model_output else 'multizones_eur'
-    subfolder_2 = OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG
-    return f'{OUTPUT_FOLDER_LT}/{subfolder}/{subfolder_2}'
+    folders_tb_join = [OUTPUT_FOLDER_LT, subfolder]
+    if folder_type is not None:
+        folders_tb_join.append(OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG)
+    return '/'.join(folders_tb_join)
 
 
 def get_csv_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime,
-                       toy_model_output: bool = False) -> str:
+                       toy_model_output: bool = False, create_subdir: bool = True) -> str:
     output_folder = set_full_lt_uc_output_folder(folder_type='data', country=country, toy_model_output=toy_model_output)
+    if create_subdir:
+        make_dir(full_path=output_folder)
+
     return get_output_file_named(name, 'csv', output_folder, country, year, climatic_year, start_horizon)
 
 

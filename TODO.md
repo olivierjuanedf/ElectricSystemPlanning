@@ -14,6 +14,7 @@ M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally n
 -> needs Python >= 3.10...
 M13) Vérif cohérence FuelNames avec ProdTypeNames -> utilité des 2 ?
 M14) Virer les gitignore qui traînent...
+M15) log files in their respective folders
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7

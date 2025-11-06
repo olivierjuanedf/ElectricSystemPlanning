@@ -327,8 +327,8 @@ class PypsaModel:
         plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country))
         plt.close()
 
-    def optimize_network(self, year: int, n_countries: int, period_start: datetime,
-                         save_lp_file: bool = True) -> PYPSA_RESULT_TYPE:
+    def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
+                         toy_model_output: str = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
         """
         Solve the optimization UC problem associated to current network
         :returns a tuple (xxx, status of resolution)
@@ -337,7 +337,8 @@ class PypsaModel:
         result = self.network.optimize(solver_name='highs')
         logging.info(result)
         if save_lp_file:
-            save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start)
+            save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
+                          toy_model_output=toy_model_output, countries=countries)
         return result
 
     def get_prod_var_opt(self):
@@ -402,21 +403,20 @@ class PypsaModel:
         plt.close()
 
     def plot_marginal_price(self, plot_params_zone: PlotParams, year: int, climatic_year: int, start_horizon: datetime,
-                            toy_model_output: bool = False):
+                            country: str = 'europe', toy_model_output: bool = False):
         sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual_var_opt, cols_ordered=plot_params_zone.order)
         sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh', color=plot_params_zone.per_case_color)
         plt.tight_layout()
-        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.prices, country='europe', year=year,
+        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.prices, country=country, year=year,
                                       climatic_year=climatic_year, start_horizon=start_horizon,
                                       toy_model_output=toy_model_output)
                     )
         plt.close()
 
     def save_opt_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
-                                  rename_snapshot_col: bool = True, toy_model_output: bool = False):
-        # TODO: check if unique country and in this case (i) suppress country prefix in asset names; 
-        # (ii) rename file with country suffix instead of europe one
-        country = 'europe'
+                                  rename_snapshot_col: bool = True, toy_model_output: bool = False,
+                                  country: str = 'europe'):
+        # TODO: check if unique country and in this case (i) suppress country prefix in asset names
         # opt prod decisions for all but Storage assets
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
                                             start_horizon=start_horizon, toy_model_output=toy_model_output)
@@ -444,9 +444,10 @@ class PypsaModel:
         df_storage_all_decs.to_csv(storage_opt_dec_csv_file)
 
     def save_marginal_prices_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
-                                    rename_snapshot_col: bool = True, toy_model_output: bool = False):
+                                    rename_snapshot_col: bool = True, toy_model_output: bool = False,
+                                    country: str = 'europe'):
         logging.info('Save marginal prices decisions to .csv file')
-        marginal_prices_csv_file = get_marginal_prices_file(country='europe', year=year,
+        marginal_prices_csv_file = get_marginal_prices_file(country=country, year=year,
                                                             climatic_year=climatic_year,
                                                             start_horizon=start_horizon,
                                                             toy_model_output=toy_model_output)
@@ -578,7 +579,8 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
 
     period_start_file = set_period_start_file(year=year, period_start=period_start)
     file_suffix = f'{prefix}_{period_start_file}{random_suffix}'
-    country_output_folder = countries[0] if countries is not None else None
+    # if more than 1 country lp will be saved in a europe output folder (not monozone_{country})
+    country_output_folder = countries[0] if countries is not None and len(countries) == 1 else None
     output_folder_data = set_full_lt_uc_output_folder(folder_type=OutputFolderNames.data, country=country_output_folder,
                                                       toy_model_output=toy_model_output)
     make_dir(full_path=output_folder_data)
