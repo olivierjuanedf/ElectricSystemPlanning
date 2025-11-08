@@ -50,7 +50,8 @@ class UCRunParamsSelector:
                 else:
                     self.selected_prod_types[country] = all_prod_types
         else:
-            self.selected_prod_types = self.available_aggreg_prod_types
+            self.selected_prod_types = {country: self.available_aggreg_prod_types[country]
+                                        for country in self.selected_countries}
 
     def set_climatic_years_selection(self, climatic_year_selec_rule: str = None, climatic_year_vals: List[int] = None,
                                      selec_rule_extra_params: dict = None) -> List[int]:

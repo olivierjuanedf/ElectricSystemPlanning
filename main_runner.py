@@ -1,11 +1,13 @@
 import logging
 import os
+import shutil
 from datetime import datetime
 from typing import List, Dict
 
 from common.constants.prod_types import ProdTypeNames
 from common.constants.usage_params_json import EnvPhaseNames
 from common.logger import deactivate_verbose_warnings, init_logger, stop_logger
+from common.long_term_uc_io import set_full_lt_uc_output_folder
 from common.uc_run_params import UCRunParams
 from include_runner.uc_run_params_selection import UCRunParamsSelector
 from my_little_europe_lt_uc import run
@@ -22,10 +24,12 @@ def init(runner_output_folder: str, log_level: str = 'info'):
 
 
 def launch_runner(target_year: int, uc_period_start: datetime, uc_period_end: datetime, runner_output_folder: str,
-                  countries_out: List[str] = None, climatic_year_selec_rule: str = None,
-                  climatic_year_vals: int = None, prod_types_out: Dict[str, List[ProdTypeNames]] = None):
-    run_start = datetime.now()
-    runner_output_folder = os.path.join(runner_output_folder, f'run_{run_start:%Y-%m-%d_%H%M}')
+                  run_idx: int, eur_team_name: str, countries_out: List[str] = None,
+                  climatic_year_selec_rule: str = None, climatic_year_vals: int = None,
+                  prod_types_out: Dict[str, List[ProdTypeNames]] = None):
+    runner_output_folder = os.path.join(runner_output_folder, f'run_{run_idx}', eur_team_name)
+    eur_uc_output_folder = set_full_lt_uc_output_folder()
+
     make_dir(full_path=runner_output_folder)
     init(runner_output_folder=runner_output_folder)
     logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) runner')
@@ -49,6 +53,9 @@ def launch_runner(target_year: int, uc_period_start: datetime, uc_period_end: da
         run(fixed_uc_run_params=UCRunParams(**fixed_uc_run_params_data),
             fixed_run_params_fields=list(fixed_uc_run_params_data))
         # TODO: copy/paste obtained results to somme specified folder
+        # current_cy_output_folder = os.path.join(runner_output_folder, f'cy{clim_year}')
+        # shutil.copytree(eur_uc_output_folder, current_cy_output_folder)
+        # then suppress files wo cy{clim_year} suffix
 
     logging.info('THE END of ERAA-PyPSA long-term UC runner!')
     stop_logger()

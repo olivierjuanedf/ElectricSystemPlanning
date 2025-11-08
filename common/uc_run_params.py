@@ -52,7 +52,7 @@ class UCRunParams:
         repr_str += f'\n- climatic year: {self.selected_climatic_year}'
         return repr_str
 
-    def process(self, available_countries: List[str]):
+    def process(self, available_countries: List[str], fullfill_selected_pt: bool = True):
         # if dates in str format, cast them as datetime
         # - setting end of period to default value if not provided
         if isinstance(self.uc_period_start, str):
@@ -65,10 +65,11 @@ class UCRunParams:
         elif isinstance(self.uc_period_end, str):
             self.uc_period_end = datetime.strptime(self.uc_period_end, DATE_FORMAT_IN_JSON)
         # replace None and missing countries in dict of aggreg. prod. types
-        for country in available_countries:
-            if country not in self.selected_prod_types \
-                    or self.selected_prod_types[country] is None:
-                self.selected_prod_types[country] = []
+        if fullfill_selected_pt:
+            for country in available_countries:
+                if country not in self.selected_prod_types \
+                        or self.selected_prod_types[country] is None:
+                    self.selected_prod_types[country] = []
         # empty dict if interco. added values is empty
         if self.interco_capas_tb_overwritten is None:
             self.interco_capas_tb_overwritten = {}
