@@ -1,5 +1,6 @@
 import logging
-from random import random
+from dataclasses import dataclass
+from random import sample
 from typing import List, Dict
 
 from common.constants.extract_eraa_data import ERAADatasetDescr
@@ -42,6 +43,13 @@ def set_prod_types_selection(eraa_data_descr: ERAADatasetDescr, selected_countri
     return selected_prod_types
 
 
+@dataclass
+class ClimYearsSelecRules:
+    random: str = 'weather_is_so_unpredictable'
+    cold: str = 'winter_is_coming'
+    hot: str = 'some_like_summer_hot'
+
+
 def set_climatic_years_selection(climatic_year_selec_rule: str = None, climatic_year_vals: List[int] = None,
                                  eraa_data_descr: ERAADatasetDescr = None,
                                  selec_rule_extra_params: dict = None) -> List[int]:
@@ -57,9 +65,9 @@ def set_climatic_years_selection(climatic_year_selec_rule: str = None, climatic_
     all_clim_years = eraa_data_descr.available_climatic_years
     logging.info(f'Apply rule {climatic_year_selec_rule} to select climatic year(s) '
                  f'among available values: {all_clim_years}')
-    if climatic_year_selec_rule == 'weather_is_so_unpredictable':
-        return random.sample(all_clim_years, selec_rule_extra_params['n_cy'])
-    if climatic_year_selec_rule == 'winter_is_coming':
-        return random.sample(COLD_CLIMATIC_YEARS, selec_rule_extra_params['n_cy'])
-    if climatic_year_selec_rule == 'some_like_summer_hot':
-        return random.sample(HOT_CLIMATIC_YEARS, selec_rule_extra_params['n_cy'])
+    if climatic_year_selec_rule == ClimYearsSelecRules.random:
+        return sample(all_clim_years, selec_rule_extra_params['n_cy'])
+    if climatic_year_selec_rule == ClimYearsSelecRules.cold:
+        return sample(COLD_CLIMATIC_YEARS, selec_rule_extra_params['n_cy'])
+    if climatic_year_selec_rule == ClimYearsSelecRules.hot:
+        return sample(HOT_CLIMATIC_YEARS, selec_rule_extra_params['n_cy'])
