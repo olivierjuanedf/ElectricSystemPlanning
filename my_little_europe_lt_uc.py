@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 import pandas as pd
 from datetime import datetime
@@ -14,6 +14,7 @@ from common.long_term_uc_io import set_full_lt_uc_output_folder
 from common.uc_run_params import UCRunParams
 from include.dataset import Dataset
 from include.dataset_builder import PypsaModel
+from include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
 from utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_static_params, read_given_phase_plot_params,
@@ -145,12 +146,16 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
 
 
 def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM_SOLVER,
-        solver_licence_file: str = None):
+        solver_licence_file: str = None, fixed_uc_run_params: UCRunParams = None,
+        fixed_run_params_fields: List[str] = None):
     """
     Run N-zones European Unit Commitment model
     :param network_name: just to set associated attribute in PyPSA network
     :param solver_name: optimisation solver to be used
     :param solver_licence_file: associated licence file (.lic); that must be at root of this project
+    :param fixed_uc_run_params: to impose some values of UCRunParams attributes when running this function;
+    it will overwrite the values in input JSON files
+    :param fixed_run_params_fields: list of fields to be overwritten
     """
 
     # deactivate some annoying and useless warnings in pypsa/pandas
@@ -165,6 +170,12 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     output_folder = set_full_lt_uc_output_folder()
     logger = init_logger(logger_dir=output_folder, logger_name='eraa_lt_uc_pb.log',
                          log_level=usage_params.log_level)
+
+    if fixed_uc_run_params is not None:
+        uc_run_params = (
+            apply_fixed_uc_run_params(uc_run_params=uc_run_params, fixed_uc_run_params=fixed_uc_run_params,
+                                      eraa_data_descr=eraa_data_descr, fixed_run_params_fields=fixed_run_params_fields)
+        )
 
     logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation')
 
@@ -191,4 +202,13 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
 
 
 if __name__ == '__main__':
-    run(solver_name='highs')
+    from common.uc_run_params import UCRunParams
+    from common.constants.prod_types import ProdTypeNames
+
+    pt_selec = {'france': [ProdTypeNames.nuclear, ProdTypeNames.wind_offshore, ProdTypeNames.wind_onshore],
+                'germany': [ProdTypeNames.oil, ProdTypeNames.wind_onshore, ProdTypeNames.wind_offshore]}
+    fixed_uc_run_params_data = {'selected_countries': list(pt_selec), 'selected_target_year': 2025,
+                                'selected_climatic_year': 1985, 'selected_prod_types': pt_selec,
+                                'uc_period_start': '1900/1/1'}
+    run(solver_name='highs', fixed_uc_run_params=UCRunParams(**fixed_uc_run_params_data),
+        fixed_run_params_fields=list(fixed_uc_run_params_data))

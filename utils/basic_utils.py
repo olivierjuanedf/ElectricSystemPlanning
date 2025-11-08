@@ -134,6 +134,10 @@ def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = Non
         logging.info('All default values used')
 
 
+def get_all_attr_names(obj) -> List[str]:
+    return [f.name for f in fields(obj)]
+
+
 def get_first_level_with_multiple_vals(tuple_list: List[tuple], init_level: int = None,
                                        return_none_if_not_found: bool = False) -> Optional[int]:
     if init_level is None:
