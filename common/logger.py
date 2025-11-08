@@ -2,11 +2,18 @@ import os
 import sys
 import traceback
 import logging
+import warnings
 from logging.handlers import RotatingFileHandler
 
 
 LOG_LEVEL_STR_TO_INT = {name: value for name, value in vars(logging).items() if
                         isinstance(value, int) and name.isupper()}
+
+
+def deactivate_verbose_warnings():
+    # deactivate some annoying and useless warnings in pypsa/pandas
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+    warnings.simplefilter(action='ignore', category=UserWarning)
 
 
 def init_logger(logger_dir: str, logger_name: str, log_level: str) -> logging.Logger:

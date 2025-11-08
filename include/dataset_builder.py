@@ -14,9 +14,8 @@ from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from common.error_msgs import print_errors_list
 from common.fuel_sources import FuelSource, DummyFuelNames
-from common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
-    get_opt_power_file, get_storage_opt_dec_file, \
-    get_figure_file_named, FigNamesPrefix, get_output_figure, SOLVER_LIC_PATH
+from common.long_term_uc_io import (get_marginal_prices_file, get_network_figure, get_opt_power_file,
+                                    get_storage_opt_dec_file, get_figure_file_named, FigNamesPrefix, get_output_figure)
 from common.plot_params import PlotParams
 from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
 from utils.df_utils import rename_df_columns
@@ -355,7 +354,7 @@ class PypsaModel:
                     os.environ[f'{self.optim_solver_name.upper()}_LICENSE_FILE'] = licence_file
 
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
-                         toy_model_output: str = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
+                         toy_model_output: bool = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
         """
         Solve the optimization UC problem associated to current network
         :returns a tuple (xxx, status of resolution)
@@ -382,7 +381,8 @@ class PypsaModel:
     def get_opt_value(self, pypsa_resol_status: str) -> float:
         objective_value = get_network_obj_value(network=self.network)
         logging.info(
-            f'Optimisation resolution status is {pypsa_resol_status} with objective value (cost) = {objective_value:.2f} -> output data (resp. figures) can be generated')
+            f'Optimisation resolution status is {pypsa_resol_status} with objective value (cost) = '
+            f'{objective_value:.2f} -> output data (resp. figures) can be generated')
         return objective_value
 
     def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False):
