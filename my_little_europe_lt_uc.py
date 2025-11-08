@@ -93,6 +93,9 @@ fig_style = read_given_phase_plot_params(phase_name=phase_name)
 print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
 
 pypsa_model.plot_network(toy_model_output=False)
+# use alternatively set_optim_solver(name='gurobi', licence_file='gurobi.lic') to use Gurobi,
+# with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
+pypsa_model.set_optim_solver()
 result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year,
                                       n_countries=len(uc_run_params.selected_countries),
                                       period_start=uc_run_params.uc_period_start)
