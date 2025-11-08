@@ -2,10 +2,11 @@ import logging
 from typing import Dict, Tuple
 
 import pandas as pd
+from datetime import datetime
 
 from common.constants.datadims import DataDimensions
 from common.constants.extract_eraa_data import ERAADatasetDescr
-from common.constants.optimisation import OPTIM_RESOL_STATUS
+from common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER
 from common.constants.usage_params_json import EnvPhaseNames
 from common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, DummyFuelNames, FuelSource
 from common.logger import init_logger, stop_logger, deactivate_verbose_warnings
@@ -85,13 +86,22 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     return pypsa_model
 
 
-def solve_pypsa_network_model(pypsa_model: PypsaModel, uc_run_params: UCRunParams) -> Tuple[str, str]:
+def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: int, uc_period_start: datetime,
+                              solver_name: str = DEFAULT_OPTIM_SOLVER, solver_licence_file: str = None) \
+        -> Tuple[str, str]:
+    """
+    Solve PyPSA network (UC) model, using an optimisation solver
+    :param pypsa_model: to be solved
+    :param year: of considered UC pb
+    :param n_countries: in the considered network
+    :param uc_period_start: date of the beginning of UC pb
+    :param solver_name: name of optim. solver to be used
+    :param solver_licence_file: name of .lic file, if not default solver (highs) used
+    """
     # use alternatively set_optim_solver(name='gurobi', licence_file='gurobi.lic') to use Gurobi,
     # with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
-    pypsa_model.set_optim_solver()
-    result = pypsa_model.optimize_network(year=uc_run_params.selected_target_year,
-                                          n_countries=len(uc_run_params.selected_countries),
-                                          period_start=uc_run_params.uc_period_start)
+    pypsa_model.set_optim_solver(name=solver_name, licence_file=solver_licence_file)
+    result = pypsa_model.optimize_network(year=year, n_countries=n_countries, period_start=uc_period_start)
     return result
 
 
@@ -134,7 +144,15 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                      f'-> output data (resp. figures) cannot be saved (resp. plotted)')
 
 
-def run(network_name: str = 'my little europe'):
+def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM_SOLVER,
+        solver_licence_file: str = None):
+    """
+    Run N-zones European Unit Commitment model
+    :param network_name: just to set associated attribute in PyPSA network
+    :param solver_name: optimisation solver to be used
+    :param solver_licence_file: associated licence file (.lic); that must be at root of this project
+    """
+
     # deactivate some annoying and useless warnings in pypsa/pandas
     deactivate_verbose_warnings()
 
@@ -161,7 +179,10 @@ def run(network_name: str = 'my little europe'):
                                              zones_gps_coords=eraa_data_descr.gps_coordinates,
                                              fuel_sources=fuel_sources)
 
-    result = solve_pypsa_network_model(pypsa_model=pypsa_model, uc_run_params=uc_run_params)
+    result = solve_pypsa_network_model(pypsa_model=pypsa_model, year=uc_run_params.selected_target_year,
+                                       n_countries=len(uc_run_params.selected_countries),
+                                       uc_period_start=uc_run_params.uc_period_start,
+                                       solver_name=solver_name, solver_licence_file=solver_licence_file)
 
     save_data_and_fig_results(pypsa_model=pypsa_model, uc_run_params=uc_run_params, result_optim_status=result[1])
 
@@ -170,4 +191,4 @@ def run(network_name: str = 'my little europe'):
 
 
 if __name__ == '__main__':
-    run()
+    run(solver_name='highs')
