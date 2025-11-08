@@ -10,10 +10,13 @@ LOG_LEVEL_STR_TO_INT = {name: value for name, value in vars(logging).items() if
                         isinstance(value, int) and name.isupper()}
 
 
-def deactivate_verbose_warnings():
+def deactivate_verbose_warnings(deact_deprecation_warn: bool = False):
     # deactivate some annoying and useless warnings in pypsa/pandas
     warnings.simplefilter(action='ignore', category=FutureWarning)
     warnings.simplefilter(action='ignore', category=UserWarning)
+    # Suppress matplotlib specific DeprecationWarning from Pillow
+    if deact_deprecation_warn:
+        warnings.simplefilter(action="ignore", category=DeprecationWarning)
 
 
 def init_logger(logger_dir: str, logger_name: str, log_level: str) -> logging.Logger:

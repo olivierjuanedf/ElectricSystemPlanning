@@ -24,7 +24,7 @@ from utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer,
 @dataclass
 class Dataset:
     agg_prod_types_with_cf_data: List[str]
-    source: str = 'eraa'
+    source: str = 'eraa_2023.2'
     is_stress_test: bool = False
     demand: Dict[str, pd.DataFrame] = None
     net_demand: Dict[str, pd.DataFrame] = None
