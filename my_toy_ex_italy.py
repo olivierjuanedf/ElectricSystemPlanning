@@ -238,6 +238,11 @@ print(pypsa_model.network.generators)
 # IV.7.1) Solve and print result. N.B. Default solver used is highs, that is 'sufficient' for a
 # 1-zone model as the one solved here
 n_countries = len(uc_run_params.selected_countries)
+# set optimisation solver to be used to get a solution for the model
+# -> default is to use "highs", that must be largely sufficient to solve this 1-zone toy model
+# -> alternatively pypsa_model.set_optim_solver(name='gurobi', licence_file='gurobi.lic') can be used,
+# with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
+pypsa_model.set_optim_solver()
 # Here lp model is saved before solving it
 # N.B. .lp files is a standard format containing the equations associated to the solved optim. problem
 # -> will be saved in output folder output/long_term_uc/monozone_{country trigram}/data

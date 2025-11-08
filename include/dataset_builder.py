@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
@@ -9,12 +10,13 @@ import pypsa
 import matplotlib.pyplot as plt
 
 from common.constants.countries import set_country_trigram
+from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from common.error_msgs import print_errors_list
 from common.fuel_sources import FuelSource, DummyFuelNames
 from common.long_term_uc_io import get_marginal_prices_file, get_network_figure, \
     get_opt_power_file, get_storage_opt_dec_file, \
-    get_figure_file_named, FigNamesPrefix, get_output_figure
+    get_figure_file_named, FigNamesPrefix, get_output_figure, SOLVER_LIC_PATH
 from common.plot_params import PlotParams
 from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
 from utils.df_utils import rename_df_columns
@@ -206,6 +208,7 @@ class PypsaModel:
     storage_prod_var_opt: pd.DataFrame = None  # idem for Storage prod -> prod (turbining)
     storage_cons_var_opt: pd.DataFrame = None  # idem for Storage prod -> cons (pumping)
     storage_soc_opt: pd.DataFrame = None  # idem for Storage prod -> SoC (State-of-Charge)
+    optim_solver_name: str = None
 
     def init_pypsa_network(self, date_idx: pd.Index, date_range: pd.DatetimeIndex = None):
         # TODO: type date_idx, date_range
@@ -327,6 +330,30 @@ class PypsaModel:
         plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country))
         plt.close()
 
+    def set_default_optim_solver(self, warning_msg: str):
+        msg_default_solver_used = f'-> default {DEFAULT_OPTIM_SOLVER} will be used instead'
+        logging.warning(f'{warning_msg} {msg_default_solver_used}')
+        self.optim_solver_name = DEFAULT_OPTIM_SOLVER
+
+    def set_optim_solver(self, name: str = None, licence_file: str = None):
+        all_solver_names = OptimSolvers.__dict__.values()
+        if name not in all_solver_names:
+            self.set_default_optim_solver(warning_msg=f'Solver name {name} not in allowed list {all_solver_names}')
+        else:
+            self.optim_solver_name = name
+        if not self.optim_solver_name == DEFAULT_OPTIM_SOLVER:
+            # check that licence file exists
+            if licence_file is None:
+                self.set_default_optim_solver(warning_msg=f'Licence file for optim. solver {self.optim_solver_name} '
+                                                          f'not provided')
+            else:
+                # licence file must be at root of the project
+                if not os.path.exists(path=licence_file):
+                    self.set_default_optim_solver(warning_msg=f'Licence file {licence_file} does not exist '
+                                                              f'(at root of project)')
+                else:
+                    os.environ[f'{self.optim_solver_name.upper()}_LICENSE_FILE'] = licence_file
+
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
                          toy_model_output: str = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
         """
@@ -334,7 +361,7 @@ class PypsaModel:
         :returns a tuple (xxx, status of resolution)
         """
         logging.info('Optimize "network" - i.e. solve associated UC problem')
-        result = self.network.optimize(solver_name='highs')
+        result = self.network.optimize(solver_name=self.optim_solver_name)
         logging.info(result)
         if save_lp_file:
             save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
