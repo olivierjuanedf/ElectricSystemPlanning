@@ -87,7 +87,7 @@ def get_generators(country_trigram: str, fuel_sources: Dict[str, FuelSource], wi
         # QUESTION: what is this - very necessary - last fictive asset?
         {
             GEN_UNITS_PYPSA_PARAMS.name: f'{country_trigram}_failure',
-            GEN_UNITS_PYPSA_PARAMS.carrier: DummyFuelNames.failure,
+            GEN_UNITS_PYPSA_PARAMS.carrier: DummyFuelNames.ac,
             GEN_UNITS_PYPSA_PARAMS.nominal_power: 1e10,
             GEN_UNITS_PYPSA_PARAMS.marginal_cost: 1e5
         }

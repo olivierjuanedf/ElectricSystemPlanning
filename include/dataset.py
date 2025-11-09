@@ -10,6 +10,7 @@ from datetime import datetime
 
 from common.constants.aggreg_operations import AggregOpeNames
 from common.constants.datatypes import DATATYPE_NAMES
+from common.constants.prod_types import ProdTypeNames
 from common.error_msgs import print_errors_list
 from common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER
@@ -154,7 +155,7 @@ def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[st
 
 def add_failure_asset_to_capas_data(df_gen_capa: pd.DataFrame, failure_power_capa: float) -> pd.DataFrame:
     failure_df = pd.DataFrame.from_dict({
-        PROD_TYPE_AGG_COL: ['failure'],
+        PROD_TYPE_AGG_COL: [ProdTypeNames.failure],
         'power_capacity': [failure_power_capa],
         'power_capacity_turbine': [0.0],
         'power_capacity_pumping': [0.0],
@@ -336,7 +337,7 @@ class Dataset:
                                                  selected_agg_prod_types=uc_run_params.selected_prod_types[country])
                 )
                 # add failure fictive one
-                if 'failure' in uc_run_params.selected_prod_types[country]:
+                if ProdTypeNames.failure in uc_run_params.selected_prod_types[country]:
                     current_df_gen_capa = (
                         add_failure_asset_to_capas_data(df_gen_capa=current_df_gen_capa,
                                                         failure_power_capa=uc_run_params.failure_power_capa)
@@ -427,10 +428,10 @@ class Dataset:
                     # max hours for storage-like assets (energy capa/power capa)
 
                     # marginal costs/efficiency, from FuelSources
-                elif agg_pt == 'failure':
+                elif agg_pt == ProdTypeNames.failure:
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = \
                         self.agg_gen_capa_data[country].loc[
-                            self.agg_gen_capa_data[country]['production_type_agg'] == 'failure', 'power_capacity'].iloc[
+                            self.agg_gen_capa_data[country]['production_type_agg'] == ProdTypeNames.failure, 'power_capacity'].iloc[
                             0]
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.marginal_cost] = uc_run_params.failure_penalty
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = False

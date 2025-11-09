@@ -725,8 +725,3 @@ def plot_uc_run_figs(network: pypsa.Network, countries: List[str], year: int, uc
     # [Coding trick] Matplotlib can directly adapt size of figure to fit with values plotted
     plt.tight_layout()
     plt.close()
-
-
-if __name__ == '__main__':
-    msg_test = set_per_origin_bus_links_msg(link_names=['ben-fra', 'ben-ger', 'ben-sca', 'fra-ben', 'fra-ger', 'ger-fra'])
-    print(msg_test)

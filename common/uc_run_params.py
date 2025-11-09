@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import logging
 
 from common.constants.extract_eraa_data import ERAADatasetDescr
+from common.constants.prod_types import ProdTypeNames
 from common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
 from common.constants.uc_json_inputs import ALL_KEYWORD
@@ -71,6 +72,7 @@ class UCRunParams:
                 if country not in self.selected_prod_types \
                         or self.selected_prod_types[country] is None:
                     self.selected_prod_types[country] = []
+
         # empty dict if interco. added values is empty
         if self.interco_capas_tb_overwritten is None:
             self.interco_capas_tb_overwritten = {}
@@ -115,7 +117,7 @@ class UCRunParams:
 
         return errors_list
 
-    def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
+    def coherence_check(self, eraa_data_descr: ERAADatasetDescr, add_failure_asset_if_missing: bool = True):
         # start by checking Target Year (TY) and Climatic Year (CY)
         errors_list = self.coherence_check_ty_and_cy(eraa_data_descr=eraa_data_descr)
 
@@ -157,6 +159,17 @@ class UCRunParams:
                 f'Countries are different in selection list ({self.selected_countries}) versus keys of aggreg. prod. '
                 f'types selection dict. - wo None value ({agg_pt_countries_with_val})')
 
+        # add failure asset if not considered for some countries
+        if add_failure_asset_if_missing:
+            countries_with_added_failure = []
+            for country in self.selected_prod_types:
+                if ProdTypeNames.failure not in self.selected_prod_types[country]:
+                    countries_with_added_failure.append(country)
+                    self.selected_prod_types[country].append(ProdTypeNames.failure)
+            if len(countries_with_added_failure) > 0:
+                logging.info(f'A failure asset has been added to the following countries: '
+                             f'{countries_with_added_failure} (to get a feasible UC resolution)')
+
         # check that aggreg. prod types are not repeated, and known -> can be done only if coherent TY
         if is_coherent_ty:
             msg_suffix = 'in values of dict. of aggreg. prod. types selection, for country'
@@ -164,8 +177,9 @@ class UCRunParams:
                 # check can be done only if country keys are known
                 if elt_country in unknown_agg_pt_countries:
                     continue
-                current_avail_aggreg_pt_set = (
-                    set(eraa_data_descr.available_aggreg_prod_types[elt_country][self.selected_target_year]))
+                current_avail_aggreg_pts = (
+                    eraa_data_descr.available_aggreg_prod_types)[elt_country][self.selected_target_year]
+                current_avail_aggreg_pt_set = set(current_avail_aggreg_pts)
                 current_agg_pt_set = set(current_agg_pt)
                 if len(current_agg_pt_set) < len(current_agg_pt):
                     errors_list.append(f'Repetition of aggreg. prod. types {msg_suffix} {elt_country}')

@@ -79,8 +79,7 @@ def set_fuel_sources_from_json(add_other_fs: bool = True) -> Dict[str, FuelSourc
 # to have carriers defined for all prod units in PyPSA
 # TODO: make code ok without dummy CO2 emission values
 dummy_co2_emissions = 0
-DUMMY_FUEL_SOURCES = {DummyFuelNames.failure: FuelSource(DummyFuelNames.failure.capitalize(), dummy_co2_emissions),
-                      DummyFuelNames.flexibility: FuelSource(DummyFuelNames.flexibility.capitalize(),
+DUMMY_FUEL_SOURCES = {DummyFuelNames.flexibility: FuelSource(DummyFuelNames.flexibility.capitalize(),
                                                              dummy_co2_emissions),
                       DummyFuelNames.demande_side_resp: FuelSource(DummyFuelNames.demande_side_resp.capitalize(),
                                                                    dummy_co2_emissions),
@@ -89,3 +88,4 @@ DUMMY_FUEL_SOURCES = {DummyFuelNames.failure: FuelSource(DummyFuelNames.failure.
                       DummyFuelNames.ac: FuelSource(DummyFuelNames.ac.capitalize(), dummy_co2_emissions),
                       DummyFuelNames.dc: FuelSource(DummyFuelNames.dc.capitalize(), dummy_co2_emissions)
                       }
+# DummyFuelNames.failure: FuelSource(DummyFuelNames.failure.capitalize(), dummy_co2_emissions),

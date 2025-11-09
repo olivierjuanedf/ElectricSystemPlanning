@@ -8,6 +8,7 @@ class ProdTypeNames:  # by alpha. order
     coal: str = 'coal'
     csp_no_storage: str = 'csp_nostorage'
     demand_side_response: str = 'demand_side_response_capacity'  # TODO: why capa in this name?
+    failure: str = 'failure'
     gas: str = 'gas'
     hard_coal: str = 'hard_coal'
     hydro_pondage: str = 'hydro_pondage'

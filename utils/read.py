@@ -58,11 +58,15 @@ def apply_per_country_json_file_params(countries_data: dict, available_countries
 
 
 def update_country_json_params(countries_data: dict, json_params_tb_modif: dict) -> (dict, dict):
+    """
+    Update parameter values obtained from collective file input/long_term_uc/elec-europe_params_to-be-modif.json
+    based on the ones of files input/long_term_uc/countries/{country.json}
+    """
     selected_pt_param_name = CountryJsonParamNames.selected_prod_types
     if len(countries_data[selected_pt_param_name]) > 0:
-        for c, v in countries_data[selected_pt_param_name].items():
-            logging.info(f'Selected production type overwritten (not all the ones from ERAA) for {c}')
-            json_params_tb_modif[selected_pt_param_name][c] = v
+        for elt_country, new_prod_types in countries_data[selected_pt_param_name].items():
+            logging.info(f'Selected production type overwritten (not all the ones from ERAA) for {elt_country}')
+            json_params_tb_modif[selected_pt_param_name][elt_country] = new_prod_types
     # suppress pt selection key in countries data dict, not to have multiple values for same attr.
     # when creating UCRunParams object hereafter
     del countries_data[selected_pt_param_name]
