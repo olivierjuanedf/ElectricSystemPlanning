@@ -42,7 +42,9 @@ def launch_runner(target_year: int, uc_period_start: datetime, uc_period_end: da
     logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) runner')
 
     # get ERAA data description from JSON file
-    _, eraa_data_descr, _ = read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model)
+    _, eraa_data_descr, _ = (
+        read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model, get_only_eraa_data_descr=True)
+    )
     # Apply selection for the main UC run parameters
     uc_run_params_selector = UCRunParamsSelector(eraa_data_descr=eraa_data_descr, selected_target_year=target_year)
     uc_run_params_selector.set_countries_selection(countries_out=countries_out)
@@ -75,3 +77,4 @@ if __name__ == '__main__':
                   uc_period_end=datetime(1900, 1, 15), countries_out=['italy'],
                   climatic_year_selec_rule=ClimYearsSelecRules.random, runner_output_folder=output_folder, run_idx=1,
                   eur_team_name='eu_1')
+    # TODO: coherent logs in this case (redundant/confusing with the ones of my_little_lt_uc.py)
