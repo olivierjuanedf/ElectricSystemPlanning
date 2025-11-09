@@ -4,7 +4,6 @@ from random import sample
 from typing import List, Dict
 
 from common.constants.extract_eraa_data import ERAADatasetDescr
-from common.constants.prod_types import ProdTypeNames
 
 
 @dataclass
@@ -38,7 +37,7 @@ class UCRunParamsSelector:
         self.selected_target_year = selected_target_year
         self.selected_countries: List[str] = None
         self.selected_climatic_years: List[int] = None
-        self.selected_prod_types: Dict[str, List[ProdTypeNames]] = None
+        self.selected_prod_types: Dict[str, List[str]] = None
 
     def set_countries_selection(self, countries_out: List[str] = None):
         if countries_out is not None:
@@ -48,7 +47,7 @@ class UCRunParamsSelector:
         else:
             self.selected_countries = self.available_countries
 
-    def set_prod_types_selection(self, prod_types_out: Dict[str, List[ProdTypeNames]] = None):
+    def set_prod_types_selection(self, prod_types_out: Dict[str, List[str]] = None):
         if prod_types_out is not None:
             logging.info(f'{self.STRESS_TEST_TAG} Technical issue with the following country (key), '
                          f'prod. types (values) that will not be part of current UC run: {prod_types_out}')
