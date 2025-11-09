@@ -73,6 +73,7 @@ def set_col_order_for_plot(df: pd.DataFrame, cols_ordered: List[str]) -> pd.Data
     df = df[current_df_cols_ordered]
     return df
 
+
 # def get_generation_units_data(uc_run_params: UCRunParams,
 #                               pypsa_unit_params_per_agg_pt: Dict[str, dict], 
 #                               units_complem_params_per_agg_pt: Dict[str, Dict[str, str]], 
@@ -123,7 +124,7 @@ def set_col_order_for_plot(df: pd.DataFrame, cols_ordered: List[str]) -> pd.Data
 #                                                 agg_prod_type=agg_pt, value_col="power_capacity",
 #                                                 static_val=True)
 #                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = int(current_power_capa)
-                        
+
 #                 # add pmax_pu when variable for RES/fatal units
 #                 if capa_factor_key in units_complem_params_per_agg_pt[agg_pt]:
 #                     print_out_msg(msg_level="info", msg=2*n_spaces_msg * " " + f"-> add {capa_factor_key}")
@@ -359,9 +360,9 @@ class PypsaModel:
         Solve the optimization UC problem associated to current network
         :returns a tuple (xxx, status of resolution)
         """
-        logging.info('Optimize "network" - i.e. solve associated UC problem')
+        logging.info('Optimise "network" - i.e. solve associated UC problem')
         result = self.network.optimize(solver_name=self.optim_solver_name)
-        logging.info(result)
+        logging.info(f'Obtained result: {result}')
         if save_lp_file:
             save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
                           toy_model_output=toy_model_output, countries=countries)
@@ -506,6 +507,7 @@ def get_country_bus_name(country: str) -> str:
 
 STORAGE_LIKE_UNITS = ['batteries', 'flexibility', 'hydro']
 
+
 # def init_pypsa_network(df_demand_first_country: pd.DataFrame):
 #     print("Initialize PyPSA network")
 #     network = pypsa.Network(snapshots=df_demand_first_country.index)
@@ -527,7 +529,6 @@ STORAGE_LIKE_UNITS = ['batteries', 'flexibility', 'hydro']
 #     return network
 
 
-
 def add_generators(network, generators_data: Dict[str, List[GenerationUnitData]]):
     print("Add generators - associated to their respective buses")
     for country, gen_units_data in generators_data.items():
@@ -536,8 +537,10 @@ def add_generators(network, generators_data: Dict[str, List[GenerationUnitData]]
             pypsa_gen_unit_dict = gen_unit_data.__dict__
             print(country, pypsa_gen_unit_dict)
             if pypsa_gen_unit_dict.get('max_hours', None) is not None:
-                network.add("StorageUnit", bus=f"{country_bus_name}", **pypsa_gen_unit_dict, state_of_charge_initial= pypsa_gen_unit_dict['p_nom'] * pypsa_gen_unit_dict['max_hours'] * 0.8
-)
+                network.add("StorageUnit", bus=f"{country_bus_name}", **pypsa_gen_unit_dict,
+                            state_of_charge_initial=pypsa_gen_unit_dict['p_nom'] * pypsa_gen_unit_dict[
+                                'max_hours'] * 0.8
+                            )
             else:
                 network.add("Generator", bus=f"{country_bus_name}", **pypsa_gen_unit_dict)
     print("Considered generators", network.generators)
@@ -580,7 +583,6 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False):
-    logging.info('Save lp model')
     import pypsa.optimization as opt
     from common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
@@ -611,7 +613,9 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
     output_folder_data = set_full_lt_uc_output_folder(folder_type=OutputFolderNames.data, country=country_output_folder,
                                                       toy_model_output=toy_model_output)
     make_dir(full_path=output_folder_data)
-    m.to_file(Path(f'{output_folder_data}/model_{file_suffix}.lp'))
+    lp_filepath = f'{output_folder_data}/model_{file_suffix}.lp'
+    logging.info(f'Save model in .lp file: {lp_filepath}')
+    m.to_file(Path(lp_filepath))
 
 
 def get_stationary_batt_opt_dec(network: pypsa.Network, countries: List[str]):

@@ -44,7 +44,7 @@ def get_plots_params() -> (PlotParams, PlotParams):
     from utils.read import read_given_phase_plot_params
     fig_style = read_given_phase_plot_params(phase_name=phase_name)
     from utils.basic_utils import print_non_default
-    print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
+    print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
     return per_dim_plot_params[DataDimensions.agg_prod_type], per_dim_plot_params[DataDimensions.zone]
 
 

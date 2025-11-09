@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List
 
 from common.constants.countries import set_country_trigram
-from utils.dir_utils import make_dir
+from utils.dir_utils import make_dir, uniformize_path_os
 
 
 @dataclass
@@ -75,23 +75,23 @@ OUTPUT_DATA_ANALYSIS_FOLDER = f'{OUTPUT_FOLDER}/data_analysis'
 
 
 def get_json_usage_params_file() -> str:
-    return os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'usage_params.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'usage_params.json'))
 
 
 def get_json_fixed_params_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_fixed.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_fixed.json'))
 
 
 def get_json_eraa_avail_values_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_eraa-available-values.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_eraa-available-values.json'))
 
 
 def get_json_params_tb_modif_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_to-be-modif.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_to-be-modif.json'))
 
 
 def get_json_fuel_sources_tb_modif_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'fuel_sources_to-be_modif.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'fuel_sources_to-be_modif.json'))
 
 
 def get_json_params_modif_country_files() -> List[str]:
@@ -102,19 +102,20 @@ def get_json_params_modif_country_files() -> List[str]:
 
 
 def get_json_pypsa_static_params_file() -> str:
-    return os.path.join(INPUT_LT_UC_SUBFOLDER, 'pypsa_static_params.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'pypsa_static_params.json'))
 
 
 def get_json_data_analysis_params_file() -> str:
-    return os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER, 'data-analysis_params_to-be-modif.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_DATA_ANALYSIS_SUBFOLDER,
+                                                    'data-analysis_params_to-be-modif.json'))
 
 
 def get_json_plot_params_file() -> str:
-    return os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'plot_params.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'plot_params.json'))
 
 
 def get_json_fuel_sources_file() -> str:
-    return os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'params.json')
+    return uniformize_path_os(path_str=os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'params.json'))
 
 
 def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True) -> str:

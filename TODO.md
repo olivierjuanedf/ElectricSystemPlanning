@@ -2,6 +2,7 @@
 TODO
 
 MAIN actions (M)
+M0) Pb with lfsolarpv data
 M1) See "TODO[debug]"
 M2) [CR] Voir "TODO[CR]"
 M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les infaisabilités ? (bcp au début... surtout si on leur fait passer les embûches pédagos - ne pas mettre d'actif défaillance par ex !)

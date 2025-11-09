@@ -48,9 +48,10 @@ class Dataset:
         {country: df with installed generation capas}, df with all interconnection capas (for considered 
         countries and year)
         """
-        # default is to read all data
+        # default is to read all data, excepting net demand (only used for data-analysis)
         if datatypes_selec is None:
             datatypes_selec = list(DATATYPE_NAMES.__dict__.values())
+            datatypes_selec.remove(DATATYPE_NAMES.net_demand)
         # and not to apply capa. values fixed in arg
         if capas_aggreg_pt_with_cf is None:
             capas_aggreg_pt_with_cf = {}
@@ -100,14 +101,14 @@ class Dataset:
         aggreg_pt_gen_capa_def = aggreg_prod_types_def[DATATYPE_NAMES.installed_capa]
 
         for country in countries:
-            logging.info(5 * '#' + f' For country: {country}')
+            logging.info(3 * '#' + f' For country: {country}')
             # read csv files
             # [Coding trick] f'{year}_{country}' directly fullfill string with value of year 
             # and country variables (f-string completion)
             current_suffix = f'{year}_{country}'  # common suffix to all ERAA data files
             if DATATYPE_NAMES.demand in dts_tb_read:
                 # get demand
-                logging.info('Get demand')
+                logging.debug('Get demand')
                 if self.is_stress_test:
                     demand_folder_full = f'{demand_folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}'
                 else:
@@ -124,7 +125,7 @@ class Dataset:
 
             if DATATYPE_NAMES.capa_factor in dts_tb_read:
                 # get RES capacity factor data
-                logging.info('Get RES capacity factors')
+                logging.debug('Get RES capacity factors')
                 if DATATYPE_NAMES.capa_factor in datatypes_selec:
                     self.agg_cf_data[country] = None
                 df_res_cf_list = []
@@ -188,14 +189,13 @@ class Dataset:
 
             if DATATYPE_NAMES.installed_capa in dts_tb_read:
                 # get installed generation capacity data
-                logging.info(
-                    'Get installed generation capacities (unique file per country and year, '
-                    'with all prod. types in it)')
+                logging.debug(
+                    'Get installed generation capacities (1 file per country and year)')
                 # fixed capas for agg. prod types with CF data not accounted for here
-                if capas_aggreg_pt_with_cf is not None:
-                    logging.warning(f'Capas for following agg. prod types (with CF data) will not be accounted for '
-                                    f'to get installed capas data: {capas_aggreg_pt_with_cf} (arg only used '
-                                    f'for net demand calculation)')
+                if capas_aggreg_pt_with_cf is not None and len(capas_aggreg_pt_with_cf) > 0:
+                    logging.warning(f'ERAA capas data for following agg. prod types (with CF data) will not be '
+                                    f'accounted for: {capas_aggreg_pt_with_cf} -> replaced by values provided in arg, '
+                                    f'for net demand calculation only')
                 gen_capa_data_file = f'{gen_capas_folder}/{gen_capas_prefix}_{current_suffix}.csv'
                 if not os.path.exists(gen_capa_data_file):
                     logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
@@ -241,7 +241,7 @@ class Dataset:
                     power_capa_dict = create_dict_from_cols_in_df(df=current_df_gen_capa,
                                                                   key_col=prod_type_agg_col,
                                                                   val_col='power_capacity')
-                    logging.info(f'-> power capa. values, in MW: {power_capa_dict}')
+                    logging.info(f'-> power capacity values, in MW: {power_capa_dict}')
                     logging.debug('#' * 100 + f'{current_df_gen_capa}' + '#' * 100)
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
@@ -273,7 +273,7 @@ class Dataset:
 
         if DATATYPE_NAMES.interco_capa in datatypes_selec:
             # read interconnection capas file
-            logging.info('Get interconnection capacities, with unique file for all nodes (zones=countries) and year')
+            logging.info('Get interconnection capacities (1 file with data of all countries and years)')
             interco_capas_data_file = f'{interco_capas_folder}/{interco_capas_prefix}_{year}.csv'
             if not os.path.exists(interco_capas_data_file):
                 logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')

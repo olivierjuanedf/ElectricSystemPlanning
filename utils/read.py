@@ -204,9 +204,7 @@ def read_and_check_uc_run_params(phase_name: str, get_only_eraa_data_descr: bool
 
 def read_and_check_pypsa_static_params() -> PypsaStaticParams:
     json_pypsa_static_params_file = get_json_pypsa_static_params_file()
-    logging.info(
-        f'Read and check PyPSA static parameters file; the ones modified in file {json_pypsa_static_params_file}')
-
+    logging.debug(f'Read and check PyPSA static parameters file {json_pypsa_static_params_file}')
     json_pypsa_static_params = check_and_load_json_file(json_file=json_pypsa_static_params_file,
                                                         file_descr='JSON PyPSA static params')
     pypsa_static_params = PypsaStaticParams(**json_pypsa_static_params)
@@ -234,8 +232,7 @@ def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> Li
 
 def read_given_phase_plot_params(phase_name: str) -> FigureStyle:
     json_plot_params_file = get_json_plot_params_file()
-    logging.info(f'Read and check {phase_name} plot parameters file: {json_plot_params_file}')
-
+    logging.debug(f'Read and check {phase_name} plot parameters file: {json_plot_params_file}')
     json_data_analysis_plot_params = check_and_load_json_file(json_file=json_plot_params_file,
                                                               file_descr=f'JSON {phase_name} plot params')
     return FigureStyle(**json_data_analysis_plot_params[f'fig_style_{phase_name}'])

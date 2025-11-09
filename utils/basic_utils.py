@@ -119,7 +119,7 @@ def lowest_common_multiple(a, b):
     return abs(a * b) // math.gcd(a, b)
 
 
-def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = None):
+def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = None, log_level: str = 'info'):
     non_default_msg = ''
     sep = '\n- '
     for f in fields(obj):
@@ -127,11 +127,20 @@ def print_non_default(obj, msg_if_all_defaults: bool = True, obj_name: str = Non
         value = getattr(obj, f.name)
         if value != default:
             non_default_msg += f"{sep}{f.name} = {value}"
+    # set log msg
+    log_msg = None
     if len(non_default_msg) > 0:
         obj_name_suffix = f' for object {obj_name}' if obj_name is not None else ''
-        logging.info(f'Non-default attrs used{obj_name_suffix}:{non_default_msg}')
+        log_msg = f'Non-default attrs used{obj_name_suffix}:{non_default_msg}'
     elif msg_if_all_defaults:
-        logging.info('All default values used')
+        log_msg = 'All default values used'
+
+    # print it out at proper log level
+    if log_msg is not None:
+        if log_level == 'info':
+            logging.info(log_msg)
+        elif log_level == 'debug':
+            logging.debug(log_level)
 
 
 def get_all_attr_names(obj) -> List[str]:

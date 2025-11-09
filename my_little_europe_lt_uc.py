@@ -2,6 +2,7 @@ import logging
 from typing import Dict, Tuple, List
 
 import pandas as pd
+import time
 from datetime import datetime
 
 from common.constants.datadims import DataDimensions
@@ -9,7 +10,7 @@ from common.constants.extract_eraa_data import ERAADatasetDescr
 from common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER
 from common.constants.usage_params_json import EnvPhaseNames
 from common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, DummyFuelNames, FuelSource
-from common.logger import init_logger, stop_logger, deactivate_verbose_warnings
+from common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
 from common.long_term_uc_io import set_full_lt_uc_output_folder
 from common.uc_run_params import UCRunParams
 from include.dataset import Dataset
@@ -28,7 +29,8 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
                                    period_end=uc_run_params.uc_period_end)
 
-    logging.info(f'Read needed ERAA ({eraa_data_descr.eraa_edition}) data for period {uc_period_msg}')
+    logging.info(f'{TITLE_LOG_SEP} I)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data '
+                 f'for period {uc_period_msg} {TITLE_LOG_SEP}')
     # initialize dataset object
     eraa_dataset = Dataset(source=f'eraa_{eraa_data_descr.eraa_edition}',
                            agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data,
@@ -37,7 +39,9 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                     aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
 
-    logging.info('Get generation units data, from both ERAA data - read just before - and JSON parameter file')
+    logging.info(f'{TITLE_LOG_SEP} I)2) Check data coherence {TITLE_LOG_SEP}')
+    logging.info('Get generation units data, from both ERAA data - read just before '
+                 '- and complementary JSON parameter files')
     eraa_dataset.get_generation_units_data(uc_run_params=uc_run_params,
                                            pypsa_unit_params_per_agg_pt=eraa_data_descr.pypsa_unit_params_per_agg_pt,
                                            units_complem_params_per_agg_pt=
@@ -58,6 +62,7 @@ def check_min_pypsa_params_provided(eraa_dataset: Dataset):
 def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_dataset: Dataset,
                                zones_gps_coords: Dict[str, Tuple[float, float]],
                                fuel_sources: Dict[str, FuelSource]) -> PypsaModel:
+    logging.info(f'{TITLE_LOG_SEP} II) Create PyPSA UC model {TITLE_LOG_SEP}')
     pypsa_model = PypsaModel(name=name)
     date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
     horizon = pd.date_range(
@@ -82,7 +87,7 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     # a multi-zone (Eur.) Unit Commitment model
     phase_name = EnvPhaseNames.multizones_uc_model
     fig_style = read_given_phase_plot_params(phase_name=phase_name)
-    print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
+    print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
     pypsa_model.plot_network(toy_model_output=False)
     return pypsa_model
 
@@ -99,6 +104,7 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
     :param solver_name: name of optim. solver to be used
     :param solver_licence_file: name of .lic file, if not default solver (highs) used
     """
+    logging.info(f'{TITLE_LOG_SEP} III) Get a solution for European UC model {TITLE_LOG_SEP}')
     # use alternatively set_optim_solver(name='gurobi', licence_file='gurobi.lic') to use Gurobi,
     # with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
     pypsa_model.set_optim_solver(name=solver_name, licence_file=solver_licence_file)
@@ -158,6 +164,8 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     :param fixed_run_params_fields: list of fields to be overwritten
     """
 
+    run_start = time.time()
+
     # deactivate some annoying and useless warnings in pypsa/pandas
     deactivate_verbose_warnings()
 
@@ -177,7 +185,7 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
                                       eraa_data_descr=eraa_data_descr, fixed_run_params_fields=fixed_run_params_fields)
         )
 
-    logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation')
+    logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation for network: {network_name}')
 
     # Get needed data (demand, RES Capa. Factors, installed generation capacities)
     eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr)
@@ -197,7 +205,10 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
 
     save_data_and_fig_results(pypsa_model=pypsa_model, uc_run_params=uc_run_params, result_optim_status=result[1])
 
-    logging.info('THE END of ERAA-PyPSA long-term UC simulation!')
+    run_end = time.time()
+
+    logging.info(f'{TITLE_LOG_SEP} THE END of ERAA-PyPSA long-term UC simulation! '
+                 f'(after {run_end - run_start:.2f}s) {TITLE_LOG_SEP}')
     stop_logger()
 
 
@@ -210,5 +221,6 @@ if __name__ == '__main__':
     fixed_uc_run_params_data = {'selected_countries': list(pt_selec), 'selected_target_year': 2025,
                                 'selected_climatic_year': 1985, 'selected_prod_types': pt_selec,
                                 'uc_period_start': '1900/1/1'}
-    run(solver_name='highs', fixed_uc_run_params=UCRunParams(**fixed_uc_run_params_data),
-        fixed_run_params_fields=list(fixed_uc_run_params_data))
+    fixed_uc_run_params = UCRunParams(**fixed_uc_run_params_data)
+    fixed_run_params_fields = list(fixed_uc_run_params_data)
+    run(solver_name='highs', fixed_uc_run_params=None, fixed_run_params_fields=None)

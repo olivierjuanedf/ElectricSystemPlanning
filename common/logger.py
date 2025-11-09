@@ -8,6 +8,7 @@ from logging.handlers import RotatingFileHandler
 
 LOG_LEVEL_STR_TO_INT = {name: value for name, value in vars(logging).items() if
                         isinstance(value, int) and name.isupper()}
+TITLE_LOG_SEP = 6 * '#'
 
 
 def deactivate_verbose_warnings(deact_deprecation_warn: bool = False):

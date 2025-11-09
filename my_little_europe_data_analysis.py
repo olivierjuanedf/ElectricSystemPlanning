@@ -24,7 +24,7 @@ logging.info('START ERAA (input) data analysis')
 # set params and figure style for plots
 per_dim_plot_params = read_plot_params()
 fig_style = read_given_phase_plot_params(phase_name=phase_name)
-print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}')
+print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
 
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:

@@ -15,6 +15,10 @@ def check_file_existence(file: str, file_descr: str = None):
         raise Exception(f'{msg_prefix} {file} does not exist -> STOP')
 
 
+def uniformize_path_os(path_str: str) -> str:
+    return os.path.normpath(path_str)
+
+
 def make_dir(full_path: str, with_warning: bool = False):
     if os.path.exists(full_path):
         if with_warning:
