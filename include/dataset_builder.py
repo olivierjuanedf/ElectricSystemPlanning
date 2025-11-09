@@ -17,7 +17,7 @@ from common.fuel_sources import FuelSource, DummyFuelNames
 from common.long_term_uc_io import (get_marginal_prices_file, get_network_figure, get_opt_power_file,
                                     get_storage_opt_dec_file, get_figure_file_named, FigNamesPrefix, get_output_figure)
 from common.plot_params import PlotParams
-from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val
+from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically
 from utils.df_utils import rename_df_columns
 from utils.dir_utils import make_dir
 from utils.pypsa_utils import get_network_obj_value
@@ -220,6 +220,27 @@ def set_per_bus_asset_msg(asset_names: List[str]):
     return per_bus_msg
 
 
+def set_per_origin_bus_links_msg(link_names: List[str]) -> str:
+    link_sep = '-'
+    links_msg = ''
+    n_links = len(link_names)
+    i_link = 0
+    while i_link < n_links:
+        common_origin_links = [link_names[i_link]]
+        origin = link_names[i_link].split(link_sep)[0]
+        j = 1
+        while i_link + j < n_links:
+            current_origin = link_names[i_link + j].split(link_sep)[0]
+            if current_origin == origin:
+                common_origin_links.append(link_names[i_link + j])
+                j += 1
+            else:
+                break
+        links_msg += f'\n- from {origin}: {[tuple(elt_link.split(link_sep)) for elt_link in common_origin_links]}'
+        i_link += j
+    return links_msg
+
+
 @dataclass
 class PypsaModel:
     name: str
@@ -333,9 +354,12 @@ class PypsaModel:
                         symmetric_links.append(link_tuple)
                     else:
                         p_min_pu, p_max_pu = 0, 1
-                    links.append({'name': f'{country_origin_bus_name}-{country_dest_bus_name}_ac',
-                                  'bus0': f'{country_origin_bus_name}', 'bus1': f'{country_dest_bus_name}',
-                                  'p_nom': current_interco_capa, 'p_min_pu': p_min_pu, 'p_max_pu': p_max_pu}
+                    links.append({GEN_UNITS_PYPSA_PARAMS.name: f'{country_origin_bus_name}-{country_dest_bus_name}_ac',
+                                  f'{GEN_UNITS_PYPSA_PARAMS.bus}0': country_origin_bus_name,
+                                  f'{GEN_UNITS_PYPSA_PARAMS.bus}1': country_dest_bus_name,
+                                  GEN_UNITS_PYPSA_PARAMS.nominal_power: current_interco_capa,
+                                  GEN_UNITS_PYPSA_PARAMS.min_power_pu: p_min_pu,
+                                  GEN_UNITS_PYPSA_PARAMS.max_power_pu: p_max_pu}
                                  )
         if len(links_wo_capa_msg) > 0:
             print_errors_list(error_name='-> interco. links without capacity data',
@@ -345,6 +369,9 @@ class PypsaModel:
         for link in links:
             if link[GEN_UNITS_PYPSA_PARAMS.power_capa] > 0:
                 self.network.add('Link', **link)
+        link_names = self.get_link_names()
+        logging.info(f'Considered links - the ones with nonzero capacity ({len(link_names)}), in alphabetic order '
+                     f'of origin: {set_per_origin_bus_links_msg(link_names=link_names)}')
 
     def get_bus_names(self) -> List[str]:
         return list(set(self.network.buses.index))
@@ -354,6 +381,19 @@ class PypsaModel:
 
     def get_storage_unit_names(self) -> List[str]:
         return list(self.network.storage_units.index)
+
+    def get_link_names(self, only_links_with_nonzero_capa: bool = True, rm_carrier_name: bool = True,
+                       lexico_sort: bool = True) -> List[str]:
+        df_links = self.network.links
+        if only_links_with_nonzero_capa:
+            df_links = df_links[df_links[GEN_UNITS_PYPSA_PARAMS.nominal_power] > 0]
+        link_names = list(df_links.index)
+        if rm_carrier_name:
+            link_names = [rm_elts_in_str(my_str=full_link_name, elts_tb_removed=['_ac', '_dc'])
+                          for full_link_name in link_names]
+        if lexico_sort:
+            link_names = sort_lexicographically(strings=link_names)
+        return link_names
 
     def plot_network(self, toy_model_output: bool = False, country: str = None):
         self.network.plot(title=f'{self.name.capitalize()} network', color_geomap=True, jitter=0.3)
@@ -676,3 +716,8 @@ def plot_uc_run_figs(network: pypsa.Network, countries: List[str], year: int, uc
     # [Coding trick] Matplotlib can directly adapt size of figure to fit with values plotted
     plt.tight_layout()
     plt.close()
+
+
+if __name__ == '__main__':
+    msg_test = set_per_origin_bus_links_msg(link_names=['ben-fra', 'ben-ger', 'ben-sca', 'fra-ben', 'fra-ger', 'ger-fra'])
+    print(msg_test)

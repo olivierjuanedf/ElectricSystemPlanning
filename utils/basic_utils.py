@@ -174,3 +174,14 @@ def endswith_in_list(my_str: str, end_elts: List[str]) -> bool:
         if my_str.endswith(elt):
             return True
     return False
+
+
+def rm_elts_in_str(my_str: str, elts_tb_removed: List[str]) -> str:
+    for elt in elts_tb_removed:
+        if elt in my_str:
+            my_str = my_str.replace(elt, '')
+    return my_str
+
+
+def sort_lexicographically(strings: list[str]) -> list[str]:
+    return sorted(strings)
