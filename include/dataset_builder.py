@@ -260,12 +260,15 @@ class PypsaModel:
         if date_range is not None:
             self.network.set_snapshots(date_range[:-1])
 
-    def add_gps_coordinates(self, countries_gps_coords: Dict[str, Tuple[float, float]]):
+    def add_gps_coordinates(self, countries_gps_coords: Dict[str, Tuple[float, float]], carrier_name: str = None):
+        if carrier_name is None:
+            carrier_name = self.DEFAULT_CARRIER
+
         logging.info('Add GPS coordinates')
         for country, gps_coords in countries_gps_coords.items():
             country_bus_name = get_country_bus_name(country=country)
             self.network.add(GEN_UNITS_PYPSA_PARAMS.bus.capitalize(), name=f'{country_bus_name}',
-                             x=gps_coords[0], y=gps_coords[1], carrier=f'{country_bus_name}')
+                             x=gps_coords[0], y=gps_coords[1], carrier=carrier_name)
 
     def add_energy_carriers(self, fuel_sources: Dict[str, FuelSource]):
         logging.info('Add energy carriers')
