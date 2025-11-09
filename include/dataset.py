@@ -53,9 +53,18 @@ def get_cf_agg_prod_types_tb_read(selected_agg_prod_types: List[str], agg_prod_t
 
 
 def get_res_capa_factors_data(folder: str, file_suffix: str, climatic_year: int, cf_agg_prod_types_tb_read: List[str],
-                              aggreg_pt_cf_def, period: Tuple[datetime, datetime],
+                              aggreg_pt_cf_def: Dict[str, List[str]], period: Tuple[datetime, datetime],
                               is_stress_test: bool = False) -> Optional[pd.DataFrame]:
-    # TODO: type
+    """
+    Get RES capa. factors (CF) data
+    :param folder: in which RES CF data must be read
+    :param file_suffix: of files to be read
+    :param climatic_year: considered
+    :param cf_agg_prod_types_tb_read: list of aggreg. prod. types with CF data to be read
+    :param aggreg_pt_cf_def: def. of aggreg. prod. types - the ones with CF data: {agg. pt: list of associated pts}
+    :param period: considered (start, end)
+    :param is_stress_test: adapt subfolder in which data is to be read accordingly
+    """
     logging.debug('Get RES capacity factors')
     date_col = COLUMN_NAMES.date
     # full path to folder in which RES CF data can be read
@@ -269,8 +278,6 @@ class Dataset:
             dts_tb_read.extend([DATATYPE_NAMES.demand, DATATYPE_NAMES.installed_capa, DATATYPE_NAMES.capa_factor])
             dts_tb_read = list(set(dts_tb_read))
 
-        aggreg_pt_gen_capa_def = aggreg_prod_types_def[DATATYPE_NAMES.installed_capa]
-
         for country in uc_run_params.selected_countries:
             logging.info(3 * '#' + f' For country: {country}')
             logging.info(f'With selected aggreg. prod. types: {uc_run_params.selected_prod_types[country]}')
@@ -323,7 +330,9 @@ class Dataset:
                 # get ERAA capas for gen. assets
                 current_df_gen_capa = (
                     get_installed_gen_capas_data(folder=gen_capas_folder, file_suffix=current_suffix,
-                                                 country=country, aggreg_pt_gen_capa_def=aggreg_pt_gen_capa_def,
+                                                 country=country,
+                                                 aggreg_pt_gen_capa_def=
+                                                 aggreg_prod_types_def[DATATYPE_NAMES.installed_capa],
                                                  selected_agg_prod_types=uc_run_params.selected_prod_types[country])
                 )
                 # add failure fictive one
