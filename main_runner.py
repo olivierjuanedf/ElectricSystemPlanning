@@ -11,7 +11,7 @@ from common.long_term_uc_io import set_full_lt_uc_output_folder
 from common.uc_run_params import UCRunParams
 from include_runner.uc_run_params_selection import UCRunParamsSelector
 from my_little_europe_lt_uc import run
-from utils.dir_utils import make_dir
+from utils.dir_utils import make_dir, delete_files
 from utils.read import read_and_check_uc_run_params
 
 
@@ -21,6 +21,13 @@ def init(runner_output_folder: str, log_level: str = 'info'):
 
     logger = init_logger(logger_dir=runner_output_folder, logger_name='eraa_lt_uc_runner.log',
                          log_level=log_level)
+
+
+def copy_results_to_runner_folder(uc_output_folder: str, runner_output_folder: str, climatic_year: int):
+    current_cy_output_folder = os.path.join(runner_output_folder, f'cy{climatic_year}')
+    shutil.copytree(uc_output_folder, current_cy_output_folder)
+    # then suppress files wo cy{climatic_year} suffix
+    delete_files(directory=current_cy_output_folder, str_in_file=f'_cy{climatic_year}')
 
 
 def launch_runner(target_year: int, uc_period_start: datetime, uc_period_end: datetime, runner_output_folder: str,
@@ -52,10 +59,9 @@ def launch_runner(target_year: int, uc_period_start: datetime, uc_period_end: da
                                     'uc_period_start': uc_period_start, 'uc_period_end': uc_period_end}
         run(fixed_uc_run_params=UCRunParams(**fixed_uc_run_params_data),
             fixed_run_params_fields=list(fixed_uc_run_params_data))
-        # TODO: copy/paste obtained results to somme specified folder
-        # current_cy_output_folder = os.path.join(runner_output_folder, f'cy{clim_year}')
-        # shutil.copytree(eur_uc_output_folder, current_cy_output_folder)
-        # then suppress files wo cy{clim_year} suffix
+        # copy/paste obtained results - for current climatic year - to somme specified folder
+        copy_results_to_runner_folder(uc_output_folder=eur_uc_output_folder, runner_output_folder=runner_output_folder,
+                                      climatic_year=clim_year)
 
     logging.info('THE END of ERAA-PyPSA long-term UC runner!')
     stop_logger()
@@ -67,4 +73,5 @@ if __name__ == '__main__':
                      '\\tests_ob\\runner')
     launch_runner(target_year=2025, uc_period_start=datetime(1900, 1, 1),
                   uc_period_end=datetime(1900, 1, 15), countries_out=['italy'],
-                  climatic_year_selec_rule=ClimYearsSelecRules.random, runner_output_folder=output_folder)
+                  climatic_year_selec_rule=ClimYearsSelecRules.random, runner_output_folder=output_folder, run_idx=1,
+                  eur_team_name='eu_1')

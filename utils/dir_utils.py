@@ -21,3 +21,12 @@ def make_dir(full_path: str, with_warning: bool = False):
             logging.warning(f'Directory {full_path} already exists -> not created again')
     else:
         Path(full_path).mkdir(parents=True)
+
+
+def delete_files(directory: str, str_in_file: str = None, suffix: str = None):
+    path = Path(directory)
+    str_search = f'*{suffix}' if suffix is not None else str_in_file
+    for file in path.rglob(str_search):
+        if file.is_file():
+            logging.debug(f"Deleting: {file}")
+            file.unlink()

@@ -24,5 +24,8 @@ def apply_fixed_uc_run_params(uc_run_params: UCRunParams, fixed_uc_run_params: U
     fixed_uc_run_params.coherence_check(eraa_data_descr=eraa_data_descr)
     uc_run_params = overwrite_uc_run_params(uc_run_params=uc_run_params, uc_run_params_2=fixed_uc_run_params,
                                             fields_tb_overwritten=fixed_run_params_fields)
+    # check coherence again, as mixing attrs of two UCRunParams objects can introduce issues (e.g., if stress test
+    # is used with a climatic year in the set of standard ones)
+    uc_run_params.coherence_check(eraa_data_descr=eraa_data_descr)
     logging.info(f'UCRunParams AFTER overwriting: {str(uc_run_params)}')
     return uc_run_params

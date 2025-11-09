@@ -20,6 +20,7 @@ def check_unique_int_value(param_name: str, param_value) -> Optional[str]:
         return None
 
 
+UNKNOWN_CY_ERROR = 'Unknown climatic year'
 UNKNOWN_TY_ERROR = 'Unknown target year'
 
 
@@ -90,23 +91,24 @@ class UCRunParams:
     def set_is_stress_test(self, avail_cy_stress_test: List[int]):
         self.is_stress_test = self.selected_climatic_year in avail_cy_stress_test
 
-    def coherence_check_ty_and_cy(self, eraa_data_descr: ERAADatasetDescr,
-                                  stop_if_error: bool = False) -> List[str]:
+    def coherence_check_ty_and_cy(self, eraa_data_descr: ERAADatasetDescr, stop_if_error: bool = False) -> List[str]:
         errors_list = []
         # check that unique value provided
-        target_yr_msg = check_unique_int_value(param_name='target year', param_value=self.selected_target_year)
-        if target_yr_msg is not None:
-            errors_list.append(target_yr_msg)
-        climatic_yr_msg = check_unique_int_value(param_name='climatic year', param_value=self.selected_climatic_year)
-        if climatic_yr_msg is not None:
-            errors_list.append(climatic_yr_msg)
-        if isinstance(self.selected_target_year, int) \
-                and self.selected_target_year not in eraa_data_descr.available_target_years:
-            errors_list.append(f'{UNKNOWN_TY_ERROR} {self.selected_target_year}')
-        if isinstance(self.selected_climatic_year, int) \
-                and (self.selected_climatic_year not in eraa_data_descr.available_climatic_years \
-                     and self.selected_climatic_year not in eraa_data_descr.available_climatic_years_stress_test):
-            errors_list.append(f'Unknown climatic year {self.selected_climatic_year}')
+        year_int_checker = {'target year': self.selected_target_year, 'climatic year': self.selected_climatic_year}
+        for year_type, year_val in year_int_checker.items():
+            year_error_msg = check_unique_int_value(param_name=year_type, param_value=year_val)
+            if year_error_msg is not None:
+                errors_list.append(year_error_msg)
+        available_climatic_years = eraa_data_descr.available_climatic_years_stress_test if self.is_stress_test \
+            else eraa_data_descr.available_climatic_years
+        cy_error_suffix = ' (in stress test mode)' if self.is_stress_test else ''
+        year_avail_val_checker = {self.selected_target_year:
+                                      (eraa_data_descr.available_target_years, UNKNOWN_TY_ERROR, ''),
+                                  self.selected_climatic_year:
+                                      (available_climatic_years, UNKNOWN_CY_ERROR, cy_error_suffix)}
+        for year_val, (available_values, error_prefix, error_suffix) in year_avail_val_checker.items():
+            if isinstance(year_val, int) and year_val not in available_values:
+                errors_list.append(f'{error_prefix} {year_val}{error_suffix}')
         # stop if any error
         if stop_if_error and len(errors_list) > 0:
             uncoherent_param_stop(param_errors=errors_list)
