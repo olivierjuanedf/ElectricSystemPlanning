@@ -282,10 +282,10 @@ class PypsaModel:
                                      )
                 else:
                     self.network.add('Generator', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
-        generator_names = list(self.network.generators.index)
+        generator_names = self.get_generator_names()
         logging.info(f'Considered generators ({len(generator_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=generator_names)}')
-        storage_unit_names = list(self.network.storage_units.index)
+        storage_unit_names = self.get_storage_unit_names()
         logging.info(f'Considered storage units ({len(storage_unit_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=storage_unit_names)}')
 
@@ -348,6 +348,12 @@ class PypsaModel:
 
     def get_bus_names(self) -> List[str]:
         return list(set(self.network.buses.index))
+
+    def get_generator_names(self) -> List[str]:
+        return list(self.network.generators.index)
+
+    def get_storage_unit_names(self) -> List[str]:
+        return list(self.network.storage_units.index)
 
     def plot_network(self, toy_model_output: bool = False, country: str = None):
         self.network.plot(title=f'{self.name.capitalize()} network', color_geomap=True, jitter=0.3)
