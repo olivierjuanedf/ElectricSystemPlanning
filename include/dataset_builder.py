@@ -251,6 +251,7 @@ class PypsaModel:
     storage_cons_var_opt: pd.DataFrame = None  # idem for Storage prod -> cons (pumping)
     storage_soc_opt: pd.DataFrame = None  # idem for Storage prod -> SoC (State-of-Charge)
     optim_solver_name: str = None
+    DEFAULT_CARRIER = 'ac'
 
     def init_pypsa_network(self, date_idx: pd.Index, date_range: pd.DatetimeIndex = None):
         # TODO: type date_idx, date_range
@@ -312,7 +313,7 @@ class PypsaModel:
 
     def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
         if carrier_name is None:
-            carrier_name = 'AC'
+            carrier_name = self.DEFAULT_CARRIER
         logging.info('Add loads - associated to their respective buses')
         for country in demand:
             country_bus_name = get_country_bus_name(country=country)
@@ -322,7 +323,11 @@ class PypsaModel:
                          GEN_UNITS_PYPSA_PARAMS.set_power: demand[country]['value'].values}
             self.network.add('Load', **load_data)
 
-    def add_interco_links(self, countries: List[str], interco_capas: Dict[Tuple[str, str], float]):
+    def add_interco_links(self, countries: List[str], interco_capas: Dict[Tuple[str, str], float],
+                          carrier_name: str = None):
+        if carrier_name is None:
+            carrier_name = self.DEFAULT_CARRIER
+
         logging.info(f'Add interco. links - between the selected countries: {countries}')
         links = []
         symmetric_links = []
@@ -354,16 +359,17 @@ class PypsaModel:
                         symmetric_links.append(link_tuple)
                     else:
                         p_min_pu, p_max_pu = 0, 1
-                    links.append({GEN_UNITS_PYPSA_PARAMS.name: f'{country_origin_bus_name}-{country_dest_bus_name}_ac',
+                    links.append({GEN_UNITS_PYPSA_PARAMS.name:
+                                      f'{country_origin_bus_name}-{country_dest_bus_name}_{carrier_name}',
                                   f'{GEN_UNITS_PYPSA_PARAMS.bus}0': country_origin_bus_name,
                                   f'{GEN_UNITS_PYPSA_PARAMS.bus}1': country_dest_bus_name,
                                   GEN_UNITS_PYPSA_PARAMS.nominal_power: current_interco_capa,
                                   GEN_UNITS_PYPSA_PARAMS.min_power_pu: p_min_pu,
-                                  GEN_UNITS_PYPSA_PARAMS.max_power_pu: p_max_pu}
+                                  GEN_UNITS_PYPSA_PARAMS.max_power_pu: p_max_pu,
+                                  GEN_UNITS_PYPSA_PARAMS.carrier: carrier_name}
                                  )
         if len(links_wo_capa_msg) > 0:
-            print_errors_list(error_name='-> interco. links without capacity data',
-                              errors_list=links_wo_capa_msg)
+            print_errors_list(error_name='-> interco. links without capacity data', errors_list=links_wo_capa_msg)
 
         # add to PyPSA network
         for link in links:
