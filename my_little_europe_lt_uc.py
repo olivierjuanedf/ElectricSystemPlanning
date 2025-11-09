@@ -26,11 +26,11 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     """
     Get ERAA data which is needed for current UC simulation; extracted from the data folder of this project
     """
+    logging.info(f'{TITLE_LOG_SEP} I)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data {TITLE_LOG_SEP}')
     uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
                                    period_end=uc_run_params.uc_period_end)
-
-    logging.info(f'{TITLE_LOG_SEP} I)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data '
-                 f'for period {uc_period_msg} {TITLE_LOG_SEP}')
+    logging.info(f'For year (resp. climatic year) {uc_run_params.selected_target_year} '
+                 f'(resp. {uc_run_params.selected_climatic_year}) and period {uc_period_msg}')
     # initialize dataset object
     eraa_dataset = Dataset(source=f'eraa_{eraa_data_descr.eraa_edition}',
                            agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data,

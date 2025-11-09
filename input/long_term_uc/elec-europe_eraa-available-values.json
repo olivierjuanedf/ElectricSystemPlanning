@@ -7,10 +7,6 @@
     2010,
     2016
   ],
-  "climatic_years_stress_test": [
-    1985,
-    1987
-  ],
   "countries": [
     "benelux",
     "france",
@@ -274,5 +270,9 @@
     "poland2germany",
     "poland2scandinavia",
     "scandinavia2germany"
+  ],
+  "climatic_years_stress_test": [
+    1985,
+    1987
   ]
 }

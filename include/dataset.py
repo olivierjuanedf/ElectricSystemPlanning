@@ -2,10 +2,11 @@ import os
 from copy import deepcopy
 from dataclasses import dataclass
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
 from common.constants.aggreg_operations import AggregOpeNames
 from common.constants.datatypes import DATATYPE_NAMES
@@ -19,6 +20,90 @@ from utils.basic_utils import get_intersection_of_lists
 from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp
 from utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
     set_aggreg_cf_prod_types_data
+
+N_SPACES_MSG = 2
+PROD_TYPE_AGG_COL = f'{COLUMN_NAMES.production_type}_agg'
+
+
+def get_demand_data(folder: str, file_suffix: str, climatic_year: int, period: Tuple[datetime, datetime],
+                    is_stress_test: bool = False) -> pd.DataFrame:
+    # get demand
+    logging.debug('Get demand')
+    if is_stress_test:
+        demand_folder_full = f'{folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}'
+    else:
+        demand_folder_full = folder
+    demand_file = f'{demand_folder_full}/{DT_FILE_PREFIX.demand}_{file_suffix}.csv'
+    df_demand = pd.read_csv(demand_file, sep=FILES_FORMAT.column_sep, decimal=FILES_FORMAT.decimal_sep)
+    # then keep only selected period date range and climatic year
+    df_demand = filter_input_data(df=df_demand, date_col=COLUMN_NAMES.date,
+                                  climatic_year_col=COLUMN_NAMES.climatic_year, period_start=period[0],
+                                  period_end=period[1], climatic_year=climatic_year)
+    return df_demand
+
+
+def get_cf_agg_prod_types_tb_read(selected_agg_prod_types: List[str], agg_prod_types_with_cf_data: List[str],
+                                  subdt_selec: List[str] = None) -> List[str]:
+    if subdt_selec is not None:
+        agg_prod_types_tb_read = get_intersection_of_lists(list1=selected_agg_prod_types, list2=subdt_selec)
+    else:
+        agg_prod_types_tb_read = selected_agg_prod_types
+    # list of prod types with CF data
+    return [agg_prod_type for agg_prod_type in agg_prod_types_tb_read if agg_prod_type in agg_prod_types_with_cf_data]
+
+
+def get_res_capa_factors(folder: str, file_suffix: str, climatic_year: int, cf_agg_prod_types_tb_read: List[str],
+                         aggreg_pt_cf_def, period: Tuple[datetime, datetime],
+                         is_stress_test: bool = False) -> Optional[pd.DataFrame]:
+    logging.debug('Get RES capacity factors')
+    date_col = COLUMN_NAMES.date
+    # full path to folder in which RES CF data can be read
+    if is_stress_test:
+        res_cf_folder_full = f'{folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}'
+    else:
+        res_cf_folder_full = folder
+    # loop over the agg. production types to be read, the ones with CF data
+    df_res_cf_list = []
+    for agg_prod_type in cf_agg_prod_types_tb_read:
+        logging.debug(N_SPACES_MSG * ' ' + f'- For aggreg. prod. type: {agg_prod_type}')
+        current_agg_pt_df_res_cf_list = []
+        for prod_type in aggreg_pt_cf_def[agg_prod_type]:
+            cf_filename = f'{DT_FILE_PREFIX.res_capa_factors}_{prod_type}_{file_suffix}.csv'
+            cf_data_file = f'{res_cf_folder_full}/{cf_filename}'
+            if not os.path.exists(cf_data_file):
+                logging.warning(
+                    2 * N_SPACES_MSG * ' ' + f'RES capa. factor data file does not exist: '
+                                             f'{prod_type} not accounted for here')
+            else:
+                logging.debug(2 * N_SPACES_MSG * ' ' + f'* Prod. type: {prod_type}')
+                current_df_res_cf = pd.read_csv(cf_data_file, sep=FILES_FORMAT.column_sep,
+                                                decimal=FILES_FORMAT.decimal_sep)
+                current_df_res_cf = \
+                    filter_input_data(df=current_df_res_cf, date_col=date_col,
+                                      climatic_year_col=COLUMN_NAMES.climatic_year,
+                                      period_start=period[0], period_end=period[1],
+                                      climatic_year=climatic_year)
+                if len(current_df_res_cf) == 0:
+                    logging.warning(
+                        2 * N_SPACES_MSG * ' ' + f'No RES capa. factor data for prod. type '
+                                                 f'{prod_type} and climatic year {climatic_year}')
+                else:
+                    # add column with production type (for later aggreg.)
+                    current_df_res_cf[PROD_TYPE_AGG_COL] = agg_prod_type
+                    current_agg_pt_df_res_cf_list.append(current_df_res_cf)
+        if len(current_agg_pt_df_res_cf_list) == 0:
+            logging.warning(
+                N_SPACES_MSG * ' ' + f'No data available for aggregate RES prod. type '
+                                     f'{agg_prod_type} -> not accounted for in UC model here')
+        else:
+            df_res_cf_list.extend(current_agg_pt_df_res_cf_list)
+    # concatenate, aggreg. over prod type of same aggreg. type and avg
+    if len(df_res_cf_list) == 0:
+        return None
+    agg_cf_data_read = (
+        set_aggreg_cf_prod_types_data(df_cf_list=df_res_cf_list, pt_agg_col=PROD_TYPE_AGG_COL,
+                                      date_col=date_col, val_col=COLUMN_NAMES.value))
+    return agg_cf_data_read
 
 
 @dataclass
@@ -70,19 +155,10 @@ class Dataset:
         gen_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.generation_capas)
         interco_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.interco_capas)
         # file prefix
-        demand_prefix = DT_FILE_PREFIX.demand
-        res_cf_prefix = DT_FILE_PREFIX.res_capa_factors
         gen_capas_prefix = DT_FILE_PREFIX.generation_capas
         interco_capas_prefix = DT_FILE_PREFIX.interco_capas
-        # column names
-        date_col = COLUMN_NAMES.date
-        climatic_year_col = COLUMN_NAMES.climatic_year
         prod_type_col = COLUMN_NAMES.production_type
-        prod_type_agg_col = f'{prod_type_col}_agg'
         value_col = COLUMN_NAMES.value
-        # separators for csv reader
-        column_sep = FILES_FORMAT.column_sep
-        decimal_sep = FILES_FORMAT.decimal_sep
 
         self.demand = {}
         self.net_demand = {}
@@ -95,30 +171,17 @@ class Dataset:
             dts_tb_read.extend([DATATYPE_NAMES.demand, DATATYPE_NAMES.installed_capa, DATATYPE_NAMES.capa_factor])
             dts_tb_read = list(set(dts_tb_read))
 
-        n_spaces_msg = 2
-
-        aggreg_pt_cf_def = aggreg_prod_types_def[DATATYPE_NAMES.capa_factor]
         aggreg_pt_gen_capa_def = aggreg_prod_types_def[DATATYPE_NAMES.installed_capa]
 
         for country in countries:
             logging.info(3 * '#' + f' For country: {country}')
-            # read csv files
-            # [Coding trick] f'{year}_{country}' directly fullfill string with value of year 
-            # and country variables (f-string completion)
+            # read csv files for different types of data
             current_suffix = f'{year}_{country}'  # common suffix to all ERAA data files
             if DATATYPE_NAMES.demand in dts_tb_read:
                 # get demand
-                logging.debug('Get demand')
-                if self.is_stress_test:
-                    demand_folder_full = f'{demand_folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}'
-                else:
-                    demand_folder_full = f'{demand_folder}'
-                demand_file = f'{demand_folder_full}/{demand_prefix}_{current_suffix}.csv'
-                current_df_demand = pd.read_csv(demand_file, sep=column_sep, decimal=decimal_sep)
-                # then keep only selected period date range and climatic year
-                current_df_demand = filter_input_data(df=current_df_demand, date_col=date_col,
-                                                      climatic_year_col=climatic_year_col, period_start=period_start,
-                                                      period_end=period_end, climatic_year=climatic_year)
+                current_df_demand = get_demand_data(folder=demand_folder, file_suffix=current_suffix,
+                                                    climatic_year=climatic_year, period=(period_start, period_end),
+                                                    is_stress_test=self.is_stress_test)
                 # if demand selected add it to dataset
                 if DATATYPE_NAMES.demand in datatypes_selec:
                     self.demand[country] = current_df_demand
@@ -128,64 +191,26 @@ class Dataset:
                 logging.debug('Get RES capacity factors')
                 if DATATYPE_NAMES.capa_factor in datatypes_selec:
                     self.agg_cf_data[country] = None
-                df_res_cf_list = []
-                if subdt_selec is not None:
-                    agg_prod_types_tb_read = \
-                        get_intersection_of_lists(list1=selec_agg_prod_types[country],
-                                                  list2=subdt_selec)
-                else:
-                    agg_prod_types_tb_read = selec_agg_prod_types[country]
-                for agg_prod_type in agg_prod_types_tb_read:
-                    # if prod type with CF data
-                    if agg_prod_type in self.agg_prod_types_with_cf_data:
-                        logging.debug(n_spaces_msg * ' ' + f'- For aggreg. prod. type: {agg_prod_type}')
-                        current_agg_pt_df_res_cf_list = []
-                        for prod_type in aggreg_pt_cf_def[agg_prod_type]:
-                            if self.is_stress_test:
-                                res_cf_folder_full = f'{res_cf_folder}/{INPUT_CY_STRESS_TEST_SUBFOLDER}'
-                            else:
-                                res_cf_folder_full = f'{res_cf_folder}'
-                            cf_filename = f'{res_cf_prefix}_{prod_type}_{current_suffix}.csv'
-                            cf_data_file = f'{res_cf_folder_full}/{cf_filename}'
-                            if not os.path.exists(cf_data_file):
-                                logging.warning(
-                                    2 * n_spaces_msg * ' ' + f'RES capa. factor data file does not exist: '
-                                                             f'{prod_type} not accounted for here')
-                            else:
-                                logging.debug(2 * n_spaces_msg * ' ' + f'* Prod. type: {prod_type}')
-                                current_df_res_cf = pd.read_csv(cf_data_file, sep=column_sep, decimal=decimal_sep)
-                                current_df_res_cf = \
-                                    filter_input_data(df=current_df_res_cf, date_col=date_col,
-                                                      climatic_year_col=climatic_year_col,
-                                                      period_start=period_start, period_end=period_end,
-                                                      climatic_year=climatic_year)
-                                if len(current_df_res_cf) == 0:
-                                    logging.warning(
-                                        2 * n_spaces_msg * ' ' + f'No RES capa. factor data for prod. type '
-                                                                 f'{prod_type} and climatic year {climatic_year}')
-                                else:
-                                    # add column with production type (for later aggreg.)
-                                    current_df_res_cf[prod_type_agg_col] = agg_prod_type
-                                    current_agg_pt_df_res_cf_list.append(current_df_res_cf)
-                        if len(current_agg_pt_df_res_cf_list) == 0:
-                            logging.warning(
-                                n_spaces_msg * ' ' + f'No data available for aggregate RES prod. type '
-                                                     f'{agg_prod_type} -> not accounted for in UC model here')
-                        else:
-                            df_res_cf_list.extend(current_agg_pt_df_res_cf_list)
+                # get list of agg. prod. types for which data must be read
+                cf_agg_prod_types_tb_read = (
+                    get_cf_agg_prod_types_tb_read(selected_agg_prod_types=selec_agg_prod_types[country],
+                                                  agg_prod_types_with_cf_data=self.agg_prod_types_with_cf_data,
+                                                  subdt_selec=subdt_selec)
+                )
+                # get RES CF data for these prod. types
+                agg_cf_data_read = (
+                    get_res_capa_factors(folder=res_cf_folder, file_suffix=current_suffix, climatic_year=climatic_year,
+                                         cf_agg_prod_types_tb_read=cf_agg_prod_types_tb_read,
+                                         aggreg_pt_cf_def=aggreg_prod_types_def[DATATYPE_NAMES.capa_factor],
+                                         period=(period_start, period_end), is_stress_test=self.is_stress_test)
+                )
 
-                # concatenate, aggreg. over prod type of same aggreg. type and avg
-                if len(df_res_cf_list) == 0:
+                if agg_cf_data_read is None:
                     logging.warning(
-                        n_spaces_msg * ' ' + f'No RES data available for country {country} '
+                        N_SPACES_MSG * ' ' + f'No RES data available for country {country} '
                                              f'-> not accounted for in UC model here')
-                    agg_cf_data_read = None
-                else:
-                    agg_cf_data_read = (
-                        set_aggreg_cf_prod_types_data(df_cf_list=df_res_cf_list, pt_agg_col=prod_type_agg_col,
-                                                      date_col=date_col, val_col=value_col))
-                    if DATATYPE_NAMES.capa_factor in datatypes_selec:
-                        self.agg_cf_data[country] = agg_cf_data_read
+                elif DATATYPE_NAMES.capa_factor in datatypes_selec:
+                    self.agg_cf_data[country] = agg_cf_data_read
 
             if DATATYPE_NAMES.installed_capa in dts_tb_read:
                 # get installed generation capacity data
@@ -200,28 +225,29 @@ class Dataset:
                 if not os.path.exists(gen_capa_data_file):
                     logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
                 else:
-                    current_df_gen_capa = pd.read_csv(gen_capa_data_file, sep=column_sep, decimal=decimal_sep)
+                    current_df_gen_capa = pd.read_csv(gen_capa_data_file, sep=FILES_FORMAT.column_sep,
+                                                      decimal=FILES_FORMAT.decimal_sep)
                     # Keep sanitize prod. types col values
                     current_df_gen_capa[prod_type_col] = current_df_gen_capa[prod_type_col].apply(
                         gen_capa_pt_str_sanitizer)
                     # Keep only selected aggreg. prod. types
                     current_df_gen_capa = \
                         set_aggreg_col_based_on_corresp(df=current_df_gen_capa, col_name=prod_type_col,
-                                                        created_agg_col_name=prod_type_agg_col,
+                                                        created_agg_col_name=PROD_TYPE_AGG_COL,
                                                         val_cols=GEN_CAPA_SUBDT_COLS,
                                                         agg_corresp=aggreg_pt_gen_capa_def,
                                                         common_aggreg_ope=AggregOpeNames.sum)
                     current_df_gen_capa = \
-                        selec_in_df_based_on_list(df=current_df_gen_capa, selec_col=prod_type_agg_col,
+                        selec_in_df_based_on_list(df=current_df_gen_capa, selec_col=PROD_TYPE_AGG_COL,
                                                   selec_vals=selec_agg_prod_types[country])
                     if country in power_capacities:
                         for k, v in power_capacities[country].items():
                             current_df_gen_capa.loc[
-                                current_df_gen_capa[prod_type_agg_col] == k, 'power_capacity'] = v
+                                current_df_gen_capa[PROD_TYPE_AGG_COL] == k, 'power_capacity'] = v
 
                     if 'failure' in selec_agg_prod_types[country]:
                         failure_df = pd.DataFrame.from_dict({
-                            prod_type_agg_col: ['failure'],
+                            PROD_TYPE_AGG_COL: ['failure'],
                             'power_capacity': [uc_run_params.failure_power_capa],
                             'power_capacity_turbine': [0.0],
                             'power_capacity_pumping': [0.0],
@@ -234,34 +260,31 @@ class Dataset:
                     if country in power_capacities:
                         for k, v in power_capacities[country].items():
                             current_df_gen_capa.loc[
-                                current_df_gen_capa[prod_type_agg_col] == k, 'power_capacity'] = v
+                                current_df_gen_capa[PROD_TYPE_AGG_COL] == k, 'power_capacity'] = v
                     if DATATYPE_NAMES.installed_capa in datatypes_selec:
                         self.agg_gen_capa_data[country] = current_df_gen_capa
                     # get dict. with only power capacity values to get less verbose logs
                     power_capa_dict = create_dict_from_cols_in_df(df=current_df_gen_capa,
-                                                                  key_col=prod_type_agg_col,
+                                                                  key_col=PROD_TYPE_AGG_COL,
                                                                   val_col='power_capacity')
                     logging.info(f'-> power capacity values, in MW: {power_capa_dict}')
                     logging.debug('#' * 100 + f'{current_df_gen_capa}' + '#' * 100)
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
                 pts_with_capa_from_arg = []
-                # list of prod types with CF data
-                cf_agg_prod_types = [agg_prod_type for agg_prod_type in agg_prod_types_tb_read
-                                     if agg_prod_type in self.agg_prod_types_with_cf_data]
                 # TODO: directly in pd to avoid creation of np arrays?
                 # convert to float so that subtraction of CF can be done hereafter
                 current_np_net_demand = np.array(current_df_demand[value_col]).astype(np.float64)
-                for agg_prod_type in cf_agg_prod_types:
+                for agg_prod_type in cf_agg_prod_types_tb_read:
                     # get current capa either from fixed data provided as arg of this function
                     if agg_prod_type in capas_aggreg_pt_with_cf:
                         current_capa = capas_aggreg_pt_with_cf[agg_prod_type]
                         pts_with_capa_from_arg.append(agg_prod_type)
                     else:  # or from (ERAA) dataset data
                         current_capa = (
-                            current_df_gen_capa.loc[current_df_gen_capa[prod_type_agg_col] == agg_prod_type,
+                            current_df_gen_capa.loc[current_df_gen_capa[PROD_TYPE_AGG_COL] == agg_prod_type,
                             'power_capacity'].values)[0]
-                    current_cf_data = agg_cf_data_read[agg_cf_data_read[prod_type_agg_col] == agg_prod_type]
+                    current_cf_data = agg_cf_data_read[agg_cf_data_read[PROD_TYPE_AGG_COL] == agg_prod_type]
                     current_np_net_demand -= current_capa * np.array(current_cf_data[value_col])
                 current_df_net_demand = deepcopy(current_df_demand)
                 current_df_net_demand[value_col] = current_np_net_demand
@@ -278,7 +301,8 @@ class Dataset:
             if not os.path.exists(interco_capas_data_file):
                 logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
             else:
-                df_interco_capas = pd.read_csv(interco_capas_data_file, sep=column_sep, decimal=decimal_sep)
+                df_interco_capas = pd.read_csv(interco_capas_data_file, sep=FILES_FORMAT.column_sep,
+                                               decimal=FILES_FORMAT.decimal_sep)
             # and select information needed for selected countries
             df_interco_capas = select_interco_capas(df_intercos_capa=df_interco_capas, countries=countries)
             # set as dictionary
@@ -343,7 +367,7 @@ class Dataset:
 
                     # add pmax_pu when variable for RES/fatal units
                     if capa_factor_key in units_complem_params_per_agg_pt[agg_pt]:
-                        logging.debug(2 * n_spaces_msg * ' ' + f'-> add {capa_factor_key}')
+                        logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {capa_factor_key}')
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = \
                             get_val_of_agg_pt_in_df(df_data=current_res_cf_data, prod_type_agg_col=prod_type_agg_col,
                                                     agg_prod_type=agg_pt, value_col=value_col, static_val=False)

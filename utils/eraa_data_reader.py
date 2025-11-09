@@ -22,7 +22,8 @@ def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, p
     return df_filtered
 
 
-def set_aggreg_cf_prod_types_data(df_cf_list: List[pd.DataFrame], pt_agg_col: str, date_col: str, val_col: str) -> pd.DataFrame:
+def set_aggreg_cf_prod_types_data(df_cf_list: List[pd.DataFrame], pt_agg_col: str, date_col: str,
+                                  val_col: str) -> pd.DataFrame:
     # concatenate, aggreg. over prod type of same aggreg. type and avg
     df_cf_agg = concatenate_dfs(dfs=df_cf_list)
     df_cf_agg = df_cf_agg.groupby([pt_agg_col, date_col]).agg({val_col: AggregOpeNames.mean}).reset_index()
