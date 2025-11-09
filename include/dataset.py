@@ -273,6 +273,7 @@ class Dataset:
 
         for country in uc_run_params.selected_countries:
             logging.info(3 * '#' + f' For country: {country}')
+            logging.info(f'With selected aggreg. prod. types: {uc_run_params.selected_prod_types[country]}')
             # read csv files for different types of data
             current_suffix = f'{uc_run_params.selected_target_year}_{country}'  # common suffix to all ERAA data files
             if DATATYPE_NAMES.demand in dts_tb_read:
@@ -306,7 +307,7 @@ class Dataset:
                                               is_stress_test=self.is_stress_test)
                 )
 
-                if agg_cf_data_read is None:
+                if len(cf_agg_prod_types_tb_read) > 0 and agg_cf_data_read is None:
                     logging.warning(
                         N_SPACES_MSG * ' ' + f'No RES data available for country {country} '
                                              f'-> not accounted for in UC model here')
