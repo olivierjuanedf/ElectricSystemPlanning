@@ -110,7 +110,7 @@
   },
   "pypsa_unit_params_per_agg_pt": {
     "batteries": {
-      "carrier": "flexibility",
+      "carrier": "ac",
       "p_min_pu": -1,
       "p_max_pu": 1
     },
@@ -129,14 +129,14 @@
       "committable": "false"
     },
     "dsr": {
-      "carrier": "dsr",
+      "carrier": "ac",
       "max_hours": 3,
       "p_min_pu": 0,
       "p_max_pu": 1,
       "cyclic_state_of_charge": "true"
     },
     "failure": {
-      "carrier": "failure",
+      "carrier": "ac",
       "p_min_pu": 0,
       "p_max_pu": 1,
       "efficiency": 1,
