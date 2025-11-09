@@ -199,6 +199,27 @@ def check_gen_unit_params(params: dict, n_ts: int) -> bool:
     return True
 
 
+def set_per_bus_asset_msg(asset_names: List[str]):
+    """
+    List of {bus name}_{asset name} to be converted to more elegant msg
+    """
+    name_sep = '_'
+    # get dict. gathering asset names per bus
+    per_bus_assets = {}
+    for full_name in asset_names:
+        name_split = full_name.split(name_sep)
+        bus_name = name_split[0]
+        asset_name = name_sep.join(name_split[1:])
+        if bus_name not in per_bus_assets:
+            per_bus_assets[bus_name] = []
+        per_bus_assets[bus_name].append(asset_name)
+    # get log message with one line per bus
+    per_bus_msg = ''
+    for bus, assets in per_bus_assets.items():
+        per_bus_msg += f'\n- {bus}: {assets}'
+    return per_bus_msg
+
+
 @dataclass
 class PypsaModel:
     name: str
@@ -261,9 +282,12 @@ class PypsaModel:
                                      )
                 else:
                     self.network.add('Generator', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
-        # TODO: better msg with per bus list of generators/stocks (easier to be read) 
-        logging.info(f'Considered generators: {list(self.network.generators.index)}')
-        logging.info(f'Considered storage units: {list(self.network.storage_units.index)}')
+        generator_names = list(self.network.generators.index)
+        logging.info(f'Considered generators ({len(generator_names)}): '
+                     f'{set_per_bus_asset_msg(asset_names=generator_names)}')
+        storage_unit_names = list(self.network.storage_units.index)
+        logging.info(f'Considered storage units ({len(storage_unit_names)}): '
+                     f'{set_per_bus_asset_msg(asset_names=storage_unit_names)}')
 
     def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
         if carrier_name is None:
