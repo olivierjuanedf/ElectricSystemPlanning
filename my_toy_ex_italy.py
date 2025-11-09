@@ -211,7 +211,7 @@ pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
 
 # IV.2.iii) Add load
 # [N-countries] Add country name (key), demand (values) in eraa_dataset.demand used below
-pypsa_model.add_loads(demand=eraa_dataset.demand, carrier_name=DummyFuelNames.load)
+pypsa_model.add_loads(demand=eraa_dataset.demand)
 
 # IV.2.iv) Check/observe that created PyPSA model be coherent
 print(f'PyPSA network main properties: {pypsa_model.network}')

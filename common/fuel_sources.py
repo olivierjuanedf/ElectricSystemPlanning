@@ -32,7 +32,6 @@ class DummyFuelNames:
     failure: str = 'failure'
     flexibility: str = 'flexibility'
     link: str = 'link'
-    load: str = 'load'
 
 
 @dataclass
@@ -87,7 +86,6 @@ DUMMY_FUEL_SOURCES = {DummyFuelNames.failure: FuelSource(DummyFuelNames.failure.
                                                                    dummy_co2_emissions),
                       DummyFuelNames.link: FuelSource(DummyFuelNames.link.capitalize(), dummy_co2_emissions),
                       DummyFuelNames.bus: FuelSource(DummyFuelNames.bus.capitalize(), dummy_co2_emissions),
-                      DummyFuelNames.load: FuelSource(DummyFuelNames.load.capitalize(), dummy_co2_emissions),
                       DummyFuelNames.ac: FuelSource(DummyFuelNames.ac.capitalize(), dummy_co2_emissions),
                       DummyFuelNames.dc: FuelSource(DummyFuelNames.dc.capitalize(), dummy_co2_emissions)
                       }
