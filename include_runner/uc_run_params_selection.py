@@ -14,17 +14,27 @@ class ClimYearsSelecRules:
     hot: str = 'some_like_summer_hot'
 
 
+@dataclass
+class ScenarioNames:
+    stress_test: str = 'stress_test'
+    standard: str = 'standard'
+
+
 class UCRunParamsSelector:
-    COLD_CLIMATIC_YEARS = [1985, 2001]  # TODO: check with experts
-    HOT_CLIMATIC_YEARS = [2003]  # TODO: idem
+    # cold/hot climatic years in stress test/standard sets of available values
+    COLD_CLIMATIC_YEARS = {ScenarioNames.stress_test: [1985, 1987],
+                           ScenarioNames.standard: []}  # TODO: check with experts
+    HOT_CLIMATIC_YEARS = {ScenarioNames.stress_test: [2003],
+                          ScenarioNames.standard: []}  # TODO: idem
     STRESS_TEST_TAG = '[STRESSSSS TEST]'
 
-    def __init__(self, eraa_data_descr: ERAADatasetDescr, selected_target_year: int):
+    def __init__(self, eraa_data_descr: ERAADatasetDescr, selected_target_year: int, is_stress_test: bool = False):
         self.available_countries = eraa_data_descr.available_countries
         self.available_clim_years = eraa_data_descr.available_climatic_years
         self.available_aggreg_prod_types = \
             {country: eraa_data_descr.available_aggreg_prod_types[country][selected_target_year]
              for country in eraa_data_descr.available_aggreg_prod_types}
+        self.is_stress_test = is_stress_test
         self.selected_target_year = selected_target_year
         self.selected_countries: List[str] = None
         self.selected_climatic_years: List[int] = None
@@ -67,9 +77,9 @@ class UCRunParamsSelector:
                             f'{climatic_year_selec_rule} will be applied instead to select a value for this parameter')
         logging.info(f'Apply rule {climatic_year_selec_rule} to select climatic year(s) '
                      f'among available values: {self.available_clim_years}')
-        if climatic_year_selec_rule == ClimYearsSelecRules.random:
-            self.selected_climatic_years = sample(self.available_clim_years, selec_rule_extra_params['n_cy'])
-        if climatic_year_selec_rule == ClimYearsSelecRules.cold:
-            self.selected_climatic_years = sample(self.COLD_CLIMATIC_YEARS, selec_rule_extra_params['n_cy'])
-        if climatic_year_selec_rule == ClimYearsSelecRules.hot:
-            self.selected_climatic_years = sample(self.HOT_CLIMATIC_YEARS, selec_rule_extra_params['n_cy'])
+        cys_for_sample = {ClimYearsSelecRules.random: self.available_clim_years,
+                          ClimYearsSelecRules.cold: self.COLD_CLIMATIC_YEARS[self.is_stress_test],
+                          ClimYearsSelecRules.hot: self.HOT_CLIMATIC_YEARS[self.is_stress_test]}
+        if climatic_year_selec_rule in cys_for_sample:
+            self.selected_climatic_years = sample(cys_for_sample[climatic_year_selec_rule],
+                                                  selec_rule_extra_params['n_cy'])
