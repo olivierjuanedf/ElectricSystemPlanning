@@ -52,9 +52,10 @@ def get_cf_agg_prod_types_tb_read(selected_agg_prod_types: List[str], agg_prod_t
     return [agg_prod_type for agg_prod_type in agg_prod_types_tb_read if agg_prod_type in agg_prod_types_with_cf_data]
 
 
-def get_res_capa_factors(folder: str, file_suffix: str, climatic_year: int, cf_agg_prod_types_tb_read: List[str],
-                         aggreg_pt_cf_def, period: Tuple[datetime, datetime],
-                         is_stress_test: bool = False) -> Optional[pd.DataFrame]:
+def get_res_capa_factors_data(folder: str, file_suffix: str, climatic_year: int, cf_agg_prod_types_tb_read: List[str],
+                              aggreg_pt_cf_def, period: Tuple[datetime, datetime],
+                              is_stress_test: bool = False) -> Optional[pd.DataFrame]:
+    # TODO: type
     logging.debug('Get RES capacity factors')
     date_col = COLUMN_NAMES.date
     # full path to folder in which RES CF data can be read
@@ -106,6 +107,61 @@ def get_res_capa_factors(folder: str, file_suffix: str, climatic_year: int, cf_a
     return agg_cf_data_read
 
 
+def get_installed_gen_capas_data(folder: str, file_suffix: str, country: str, aggreg_pt_gen_capa_def,
+                                 selected_agg_prod_types: List[str]) -> Optional[pd.DataFrame]:
+    # TODO: type
+    # get installed generation capacity data
+    logging.debug(
+        'Get installed generation capacities (1 file per country and year)')
+    gen_capa_data_file = f'{folder}/{DT_FILE_PREFIX.generation_capas}_{file_suffix}.csv'
+    prod_type_col = COLUMN_NAMES.production_type
+    if not os.path.exists(gen_capa_data_file):
+        logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
+        return None
+    else:
+        df_gen_capa = pd.read_csv(gen_capa_data_file, sep=FILES_FORMAT.column_sep, decimal=FILES_FORMAT.decimal_sep)
+        # Keep sanitize prod. types col values
+        df_gen_capa[prod_type_col] = df_gen_capa[prod_type_col].apply(gen_capa_pt_str_sanitizer)
+        # Keep only selected aggreg. prod. types
+        df_gen_capa = (
+            set_aggreg_col_based_on_corresp(df=df_gen_capa, col_name=prod_type_col,
+                                            created_agg_col_name=PROD_TYPE_AGG_COL, val_cols=GEN_CAPA_SUBDT_COLS,
+                                            agg_corresp=aggreg_pt_gen_capa_def, common_aggreg_ope=AggregOpeNames.sum)
+        )
+        df_gen_capa = \
+            selec_in_df_based_on_list(df=df_gen_capa, selec_col=PROD_TYPE_AGG_COL, selec_vals=selected_agg_prod_types)
+        return df_gen_capa
+
+
+def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[str, Dict[str, float]],
+                             country: str) -> pd.DataFrame:
+    if df_gen_capa is not None and country in new_power_capas:
+        logging.info(f'OVERWRITTEN ERAA prod. capacity values, in MW: {new_power_capas[country]}')
+        for agg_prod_type, new_capa_val in new_power_capas[country].items():
+            df_gen_capa.loc[
+                df_gen_capa[PROD_TYPE_AGG_COL] == agg_prod_type, 'power_capacity'] = new_capa_val
+    return df_gen_capa
+
+
+def add_failure_asset_to_capas_data(df_gen_capa: pd.DataFrame, failure_power_capa: float) -> pd.DataFrame:
+    failure_df = pd.DataFrame.from_dict({
+        PROD_TYPE_AGG_COL: ['failure'],
+        'power_capacity': [failure_power_capa],
+        'power_capacity_turbine': [0.0],
+        'power_capacity_pumping': [0.0],
+        'power_capacity_injection': [0.0],
+        'power_capacity_offtake': [0.0],
+        'energy_capacity': [0.0]
+    })
+    return pd.concat([df_gen_capa, failure_df], ignore_index=True)
+
+
+def capa_info_log(df_gen_capa: pd.DataFrame):
+    # get dict. with only power capacity values to get less verbose logs
+    power_capa_dict = create_dict_from_cols_in_df(df=df_gen_capa, key_col=PROD_TYPE_AGG_COL, val_col='power_capacity')
+    logging.info(f'-> power capacity values, in MW: {power_capa_dict}')
+
+
 @dataclass
 class Dataset:
     agg_prod_types_with_cf_data: List[str]
@@ -155,9 +211,7 @@ class Dataset:
         gen_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.generation_capas)
         interco_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.interco_capas)
         # file prefix
-        gen_capas_prefix = DT_FILE_PREFIX.generation_capas
         interco_capas_prefix = DT_FILE_PREFIX.interco_capas
-        prod_type_col = COLUMN_NAMES.production_type
         value_col = COLUMN_NAMES.value
 
         self.demand = {}
@@ -199,10 +253,11 @@ class Dataset:
                 )
                 # get RES CF data for these prod. types
                 agg_cf_data_read = (
-                    get_res_capa_factors(folder=res_cf_folder, file_suffix=current_suffix, climatic_year=climatic_year,
-                                         cf_agg_prod_types_tb_read=cf_agg_prod_types_tb_read,
-                                         aggreg_pt_cf_def=aggreg_prod_types_def[DATATYPE_NAMES.capa_factor],
-                                         period=(period_start, period_end), is_stress_test=self.is_stress_test)
+                    get_res_capa_factors_data(folder=res_cf_folder, file_suffix=current_suffix,
+                                              climatic_year=climatic_year,
+                                              cf_agg_prod_types_tb_read=cf_agg_prod_types_tb_read,
+                                              aggreg_pt_cf_def=aggreg_prod_types_def[DATATYPE_NAMES.capa_factor],
+                                              period=(period_start, period_end), is_stress_test=self.is_stress_test)
                 )
 
                 if agg_cf_data_read is None:
@@ -213,62 +268,31 @@ class Dataset:
                     self.agg_cf_data[country] = agg_cf_data_read
 
             if DATATYPE_NAMES.installed_capa in dts_tb_read:
-                # get installed generation capacity data
-                logging.debug(
-                    'Get installed generation capacities (1 file per country and year)')
                 # fixed capas for agg. prod types with CF data not accounted for here
                 if capas_aggreg_pt_with_cf is not None and len(capas_aggreg_pt_with_cf) > 0:
                     logging.warning(f'ERAA capas data for following agg. prod types (with CF data) will not be '
                                     f'accounted for: {capas_aggreg_pt_with_cf} -> replaced by values provided in arg, '
                                     f'for net demand calculation only')
-                gen_capa_data_file = f'{gen_capas_folder}/{gen_capas_prefix}_{current_suffix}.csv'
-                if not os.path.exists(gen_capa_data_file):
-                    logging.warning(f'Generation capas data file does not exist: {country} not accounted for here')
-                else:
-                    current_df_gen_capa = pd.read_csv(gen_capa_data_file, sep=FILES_FORMAT.column_sep,
-                                                      decimal=FILES_FORMAT.decimal_sep)
-                    # Keep sanitize prod. types col values
-                    current_df_gen_capa[prod_type_col] = current_df_gen_capa[prod_type_col].apply(
-                        gen_capa_pt_str_sanitizer)
-                    # Keep only selected aggreg. prod. types
-                    current_df_gen_capa = \
-                        set_aggreg_col_based_on_corresp(df=current_df_gen_capa, col_name=prod_type_col,
-                                                        created_agg_col_name=PROD_TYPE_AGG_COL,
-                                                        val_cols=GEN_CAPA_SUBDT_COLS,
-                                                        agg_corresp=aggreg_pt_gen_capa_def,
-                                                        common_aggreg_ope=AggregOpeNames.sum)
-                    current_df_gen_capa = \
-                        selec_in_df_based_on_list(df=current_df_gen_capa, selec_col=PROD_TYPE_AGG_COL,
-                                                  selec_vals=selec_agg_prod_types[country])
-                    if country in power_capacities:
-                        for k, v in power_capacities[country].items():
-                            current_df_gen_capa.loc[
-                                current_df_gen_capa[PROD_TYPE_AGG_COL] == k, 'power_capacity'] = v
-
-                    if 'failure' in selec_agg_prod_types[country]:
-                        failure_df = pd.DataFrame.from_dict({
-                            PROD_TYPE_AGG_COL: ['failure'],
-                            'power_capacity': [uc_run_params.failure_power_capa],
-                            'power_capacity_turbine': [0.0],
-                            'power_capacity_pumping': [0.0],
-                            'power_capacity_injection': [0.0],
-                            'power_capacity_offtake': [0.0],
-                            'energy_capacity': [0.0]
-                        })
-                        current_df_gen_capa = pd.concat([current_df_gen_capa, failure_df], ignore_index=True)
-
-                    if country in power_capacities:
-                        for k, v in power_capacities[country].items():
-                            current_df_gen_capa.loc[
-                                current_df_gen_capa[PROD_TYPE_AGG_COL] == k, 'power_capacity'] = v
-                    if DATATYPE_NAMES.installed_capa in datatypes_selec:
-                        self.agg_gen_capa_data[country] = current_df_gen_capa
-                    # get dict. with only power capacity values to get less verbose logs
-                    power_capa_dict = create_dict_from_cols_in_df(df=current_df_gen_capa,
-                                                                  key_col=PROD_TYPE_AGG_COL,
-                                                                  val_col='power_capacity')
-                    logging.info(f'-> power capacity values, in MW: {power_capa_dict}')
-                    logging.debug('#' * 100 + f'{current_df_gen_capa}' + '#' * 100)
+                # get ERAA capas for gen. assets
+                current_df_gen_capa = (
+                    get_installed_gen_capas_data(folder=gen_capas_folder, file_suffix=current_suffix,
+                                                 country=country, aggreg_pt_gen_capa_def=aggreg_pt_gen_capa_def,
+                                                 selected_agg_prod_types=selec_agg_prod_types[country])
+                )
+                # add failure fictive one
+                if 'failure' in selec_agg_prod_types[country]:
+                    current_df_gen_capa = (
+                        add_failure_asset_to_capas_data(df_gen_capa=current_df_gen_capa,
+                                                        failure_power_capa=uc_run_params.failure_power_capa)
+                    )
+                # overwrite capacity values - based on the ones provided in input JSON file(s)
+                current_df_gen_capa = (
+                    overwrite_gen_capas_data(df_gen_capa=current_df_gen_capa, new_power_capas=power_capacities,
+                                             country=country)
+                )
+                if DATATYPE_NAMES.installed_capa in datatypes_selec:
+                    self.agg_gen_capa_data[country] = current_df_gen_capa
+                capa_info_log(df_gen_capa=current_df_gen_capa)
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
                 pts_with_capa_from_arg = []
