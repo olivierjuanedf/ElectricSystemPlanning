@@ -1,3 +1,6 @@
+import logging
+import warnings
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List
@@ -52,8 +55,10 @@ def create_dict_from_cols_in_df(df: pd.DataFrame, key_col, val_col) -> dict:
 
 
 def rename_df_columns(df: pd.DataFrame, old_to_new_cols: dict) -> pd.DataFrame:
-    df = df.copy()
-    df.rename(columns=old_to_new_cols, inplace=True)
+    # catch SettingWithCopyWarning
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        df.rename(columns=old_to_new_cols, inplace=True)
     return df
 
 
