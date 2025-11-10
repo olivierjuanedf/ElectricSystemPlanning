@@ -109,9 +109,10 @@ eraa_dataset = Dataset(agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_type
 """
 
 # (III.1) Get data for Italy... just for test -> data used when writing PyPSA model will be re-obtained afterwards
-# TODO: "just for test"? Suppress this line of code then?
+# TODO: "just for test"? Suppress these lines of code then?
 eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                 aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
+eraa_dataset.complete_data()
 
 # (III.2) Accessing the data: globally all is made with pandas dataframes (df)
 # In this case, for ex. decompose aggregated Capacity Factor data into three sub-dictionaries

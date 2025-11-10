@@ -16,8 +16,7 @@ from common.error_msgs import print_errors_list
 from common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER
 from common.uc_run_params import UCRunParams
-from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, get_val_of_agg_pt_in_df, \
-    set_gen_unit_name
+from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, set_gen_unit_name
 from utils.basic_utils import get_intersection_of_lists
 from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row
@@ -229,6 +228,47 @@ def get_interco_capas_data(folder: str, countries: List[str], year: int) -> Opti
     return create_dict_from_cols_in_df(df=df_interco_capas, key_col=tuple_key_col, val_col=COLUMN_NAMES.value)
 
 
+def get_data_for_gen_unit_with_e_capa(capa_data_dict: Dict[str, float]) -> Dict[str, float]:
+    """
+    Get data for a generation unit with energy capacity attribute -> hydro or stock asset
+    :param capa_data_dict: {capa. attr. name IN ERAA DATA: value}
+    :returns {capa. attr. name IN PyPSA framework: value}
+    """
+    current_asset_data = {}
+    energy_capacity = capa_data_dict[ERAAParamNames.energy_capacity]
+    # first check if hydro-like asset, with power capa turbine/pumping attributes
+    power_capacity_turbine = capa_data_dict[ERAAParamNames.power_capacity_turbine]
+    power_capacity_pumping = capa_data_dict[ERAAParamNames.power_capacity_pumping]
+    if power_capacity_turbine > 0:
+        p_nom = max(abs(power_capacity_turbine), abs(power_capacity_pumping))
+        p_min_pu = power_capacity_pumping / p_nom
+        p_max_pu = power_capacity_turbine / p_nom
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.min_power_pu] = p_min_pu
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
+        # max hours for storage-like assets (energy capa/power capa)
+        max_hours = energy_capacity / p_nom
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
+    # then if stock-like asset, with power capa injection/offtake attributes
+    power_capacity_injection = capa_data_dict[ERAAParamNames.power_capacity_injection]
+    power_capacity_offtake = capa_data_dict[ERAAParamNames.power_capacity_offtake]
+    if power_capacity_injection > 0:
+        p_nom = max(abs(power_capacity_injection), abs(power_capacity_offtake))
+        p_min_pu = -power_capacity_offtake / p_nom
+        p_max_pu = power_capacity_injection / p_nom
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.min_power_pu] = p_min_pu
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
+        max_hours = energy_capacity / p_nom
+        current_asset_data[GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
+    return current_asset_data
+
+
+def complete_country_data(per_country_data: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+    empty_df = pd.DataFrame()
+    return {country: empty_df if val is None else val for country, val in per_country_data.items()}
+
+
 @dataclass
 class Dataset:
     agg_prod_types_with_cf_data: List[str]
@@ -373,6 +413,13 @@ class Dataset:
                 interco_capas |= uc_run_params.interco_capas_tb_overwritten
             self.interco_capas = interco_capas
 
+    def complete_data(self):
+        # TODO: see cases leading to None data at this stage... and if to be treated before
+        self.demand = complete_country_data(per_country_data=self.demand)
+        self.net_demand = complete_country_data(per_country_data=self.net_demand)
+        self.agg_cf_data = complete_country_data(per_country_data=self.agg_cf_data)
+        self.agg_gen_capa_data = complete_country_data(per_country_data=self.agg_gen_capa_data)
+
     def get_generation_units_data(self, uc_run_params: UCRunParams, pypsa_unit_params_per_agg_pt: Dict[str, dict],
                                   units_complem_params_per_agg_pt: Dict[str, Dict[str, str]]):
         """
@@ -382,6 +429,7 @@ class Dataset:
         :param units_complem_params_per_agg_pt: # for each aggreg. prod type, a dict. {complem. param name: source
         - "from_json_tb_modif"/"from_eraa_data"}
         """
+        # TODO: marginal costs/efficiency, from FuelSources??
         countries = list(self.agg_gen_capa_data)
         # TODO: set as global constants/unify...
         power_capa_key = 'power_capa'
@@ -390,10 +438,8 @@ class Dataset:
         for country in countries:
             logging.debug(f'- for country {country}')
             self.generation_units_data[country] = []
-            current_capa_data = self.agg_gen_capa_data[country]
-            current_res_cf_data = self.agg_cf_data[country]
             # get list of assets to be treated from capa. data
-            agg_prod_types = list(set(current_capa_data[PROD_TYPE_AGG_COL]))
+            agg_prod_types = list(set(self.agg_gen_capa_data[country][PROD_TYPE_AGG_COL]))
             # initialize set of params for each unit by using pypsa default values
             current_assets_data = {agg_pt: pypsa_unit_params_per_agg_pt[agg_pt] for agg_pt in agg_prod_types}
             # and loop over pt to add complementary params
@@ -401,19 +447,20 @@ class Dataset:
                 logging.debug(N_SPACES_MSG * ' ' + f'* for aggreg. prod. type {agg_pt}')
                 # set and add asset name
                 gen_unit_name = set_gen_unit_name(country=country, agg_prod_type=agg_pt)
-                current_assets_data[agg_pt]['name'] = gen_unit_name
+                current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.name] = gen_unit_name
                 # and 'type' (the aggreg. prod types used here, with a direct corresp. to PyPSA generators; 
                 # made explicit in JSON fixed params files)
                 current_assets_data[agg_pt]['type'] = agg_pt
                 # extract data of current agg. pt (and country) as dict {capa attr. name: value}
                 current_pt_capa_data_dict = (
-                    create_dict_from_df_row(df=current_capa_data, col_and_val_for_selec=('production_type_agg', agg_pt))
+                    create_dict_from_df_row(df=self.agg_gen_capa_data[country],
+                                            col_and_val_for_selec=(PROD_TYPE_AGG_COL, agg_pt))
                 )
-                current_pt_res_cf_data = current_res_cf_data[current_res_cf_data[PROD_TYPE_AGG_COL] == agg_pt]
-                # power capacity, for all assets TODO : check if moved here ok (diff vs oj code)
+                # power capacity, for all assets
                 power_capacity = current_pt_capa_data_dict[ERAAParamNames.power_capacity]
-                current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
-                # TODO: end check
+                power_capacity_turbine = current_pt_capa_data_dict[ERAAParamNames.power_capacity_turbine]
+                energy_capacity = current_pt_capa_data_dict[ERAAParamNames.energy_capacity]
+                is_storage_like = energy_capacity > 0
                 if agg_pt in units_complem_params_per_agg_pt and len(units_complem_params_per_agg_pt[agg_pt]) > 0:
                     # add pnom attribute if needed
                     # TODO: useful? Or redundant with preceding extract of pnom...
@@ -424,48 +471,30 @@ class Dataset:
                     # add pmax_pu when variable for RES/fatal units
                     if capa_factor_key in units_complem_params_per_agg_pt[agg_pt]:
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {capa_factor_key}')
+                        current_pt_res_cf_data = (
+                            self.agg_cf_data)[country][self.agg_cf_data[country][PROD_TYPE_AGG_COL] == agg_pt]
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = (
                             np.array(current_pt_res_cf_data[COLUMN_NAMES.value])
                         )
-
-                    # marginal costs/efficiency, from FuelSources TODO ??
                 # specific parameters for failure
                 elif agg_pt == ProdTypeNames.failure:
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.marginal_cost] = uc_run_params.failure_penalty
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = False
-                energy_capacity = current_pt_capa_data_dict[ERAAParamNames.energy_capacity]
-                power_capacity_turbine = current_pt_capa_data_dict[ERAAParamNames.power_capacity_turbine]
                 # storage-like assets
-                if energy_capacity > 0:
-                    power_capacity_pumping = current_pt_capa_data_dict[ERAAParamNames.power_capacity_pumping]
-                    if power_capacity_turbine > 0:
-                        p_nom = max(abs(power_capacity_turbine), abs(power_capacity_pumping))
-                        p_min_pu = power_capacity_pumping / p_nom
-                        p_max_pu = power_capacity_turbine / p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power_pu] = p_min_pu
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
-                        # max hours for storage-like assets (energy capa/power capa)
-                        max_hours = energy_capacity / p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
-                    power_capacity_injection = current_pt_capa_data_dict[ERAAParamNames.power_capacity_injection]
-                    power_capacity_offtake = current_pt_capa_data_dict[ERAAParamNames.power_capacity_offtake]
-                    if power_capacity_injection > 0:
-                        p_nom = max(abs(power_capacity_injection), abs(power_capacity_offtake))
-                        p_min_pu = -power_capacity_offtake / p_nom
-                        p_max_pu = power_capacity_injection / p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power_pu] = p_min_pu
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
-                        max_hours = energy_capacity / p_nom
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
-                    if power_capacity > 0:  # TODO: already set up at the beginning of this function?
+                if is_storage_like:
+                    current_agg_pt_data = get_data_for_gen_unit_with_e_capa(capa_data_dict=current_pt_capa_data_dict)
+                    current_assets_data[agg_pt] |= current_agg_pt_data
+                    # overwrite specific turbine/pumping (injection/offtake) max values by power capa. if provided
+                    if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
+                # DSR with reinjection??
                 elif power_capacity_turbine > 0:
                     p_nom = abs(power_capacity_turbine)
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power_pu] = 0
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = 1
+                    # idem overwrite by power capa. value if provided
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
 

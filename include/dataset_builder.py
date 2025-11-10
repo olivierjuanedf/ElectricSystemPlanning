@@ -41,15 +41,6 @@ class GenerationUnitData:
         return [key for key, val in self.__dict__.items() if val is not None]
 
 
-def get_val_of_agg_pt_in_df(df_data: pd.DataFrame, prod_type_agg_col: str,
-                            agg_prod_type: str, value_col: str, static_val: bool) \
-        -> Union[np.ndarray, float]:
-    if static_val:
-        return df_data[df_data[prod_type_agg_col] == agg_prod_type][value_col].iloc[0]
-    else:
-        return np.array(df_data[df_data[prod_type_agg_col] == agg_prod_type][value_col])
-
-
 UNIT_NAME_SEP = '_'
 
 

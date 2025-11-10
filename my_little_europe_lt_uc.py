@@ -38,7 +38,7 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
 
     eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                     aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
-
+    eraa_dataset.complete_data()
     logging.info(f'{TITLE_LOG_SEP} I)2) Check data coherence {TITLE_LOG_SEP}')
     logging.info('Get generation units data, from both ERAA data - read just before '
                  '- and complementary JSON parameter files')
@@ -153,7 +153,7 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
 
 def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM_SOLVER,
         solver_licence_file: str = None, fixed_uc_run_params: UCRunParams = None,
-        fixed_run_params_fields: List[str] = None):
+        fixed_run_params_fields: List[str] = None, log_level: str = None):
     """
     Run N-zones European Unit Commitment model
     :param network_name: just to set associated attribute in PyPSA network
@@ -162,9 +162,11 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     :param fixed_uc_run_params: to impose some values of UCRunParams attributes when running this function;
     it will overwrite the values in input JSON files
     :param fixed_run_params_fields: list of fields to be overwritten
+    :param log_level: it will overwrite the one defined in usage parameters JSON file
     """
 
     run_start = time.time()
+    output_folder = set_full_lt_uc_output_folder()
 
     # deactivate some annoying and useless warnings in pypsa/pandas
     deactivate_verbose_warnings()
@@ -175,9 +177,10 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(
         phase_name=EnvPhaseNames.multizones_uc_model)
 
-    output_folder = set_full_lt_uc_output_folder()
-    logger = init_logger(logger_dir=output_folder, logger_name='eraa_lt_uc_pb.log',
-                         log_level=usage_params.log_level)
+    if log_level is None:
+        log_level = usage_params.log_level
+
+    logger = init_logger(logger_dir=output_folder, logger_name='eraa_lt_uc_pb.log', log_level=log_level)
 
     if fixed_uc_run_params is not None:
         uc_run_params = (

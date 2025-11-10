@@ -68,6 +68,7 @@ for elt_analysis in data_analyses:
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
                                         datatypes_selec=[elt_analysis.data_type], subdt_selec=subdt_selec,
                                         **extra_params_vals)
+        eraa_dataset.complete_data()
         # create Unit Commitment Timeseries object from data read
         if elt_analysis.data_type == DATATYPE_NAMES.demand:
             # loop over country to extract per-country data from dataset.
