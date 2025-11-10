@@ -10,6 +10,7 @@ from datetime import datetime
 
 from common.constants.aggreg_operations import AggregOpeNames
 from common.constants.datatypes import DATATYPE_NAMES
+from common.constants.eraa_data import ERAAParamNames
 from common.constants.prod_types import ProdTypeNames
 from common.error_msgs import print_errors_list
 from common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
@@ -18,7 +19,8 @@ from common.uc_run_params import UCRunParams
 from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, get_val_of_agg_pt_in_df, \
     set_gen_unit_name
 from utils.basic_utils import get_intersection_of_lists
-from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp
+from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
+    create_dict_from_df_row
 from utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
     set_aggreg_cf_prod_types_data
 
@@ -156,12 +158,12 @@ def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[st
 def add_failure_asset_to_capas_data(df_gen_capa: pd.DataFrame, failure_power_capa: float) -> pd.DataFrame:
     failure_df = pd.DataFrame.from_dict({
         PROD_TYPE_AGG_COL: [ProdTypeNames.failure],
-        'power_capacity': [failure_power_capa],
-        'power_capacity_turbine': [0.0],
-        'power_capacity_pumping': [0.0],
-        'power_capacity_injection': [0.0],
-        'power_capacity_offtake': [0.0],
-        'energy_capacity': [0.0]
+        ERAAParamNames.power_capacity: [failure_power_capa],
+        ERAAParamNames.power_capacity_turbine: [0.0],
+        ERAAParamNames.power_capacity_pumping: [0.0],
+        ERAAParamNames.power_capacity_injection: [0.0],
+        ERAAParamNames.power_capacity_offtake: [0.0],
+        ERAAParamNames.energy_capacity: [0.0]
     })
     return pd.concat([df_gen_capa, failure_df], ignore_index=True)
 
@@ -403,42 +405,39 @@ class Dataset:
                 # and 'type' (the aggreg. prod types used here, with a direct corresp. to PyPSA generators; 
                 # made explicit in JSON fixed params files)
                 current_assets_data[agg_pt]['type'] = agg_pt
-                # TODO: make once here the df selection based on agg pt
-                # power capacity, for all assets TODO : check if moved here ok (vs oj code)
-                power_capacity = current_capa_data.loc[
-                    current_capa_data['production_type_agg'] == agg_pt, 'power_capacity'].iloc[0]
+                # extract data of current agg. pt (and country) as dict {capa attr. name: value}
+                current_pt_capa_data_dict = (
+                    create_dict_from_df_row(df=current_capa_data, col_and_val_for_selec=('production_type_agg', agg_pt))
+                )
+                current_pt_res_cf_data = current_res_cf_data[current_res_cf_data[PROD_TYPE_AGG_COL] == agg_pt]
+                # power capacity, for all assets TODO : check if moved here ok (diff vs oj code)
+                power_capacity = current_pt_capa_data_dict[ERAAParamNames.power_capacity]
                 current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
-                # TODO: end
+                # TODO: end check
                 if agg_pt in units_complem_params_per_agg_pt and len(units_complem_params_per_agg_pt[agg_pt]) > 0:
                     # add pnom attribute if needed
+                    # TODO: useful? Or redundant with preceding extract of pnom...
                     if power_capa_key in units_complem_params_per_agg_pt[agg_pt]:
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {power_capa_key}')
-                        current_power_capa = \
-                            get_val_of_agg_pt_in_df(df_data=current_capa_data, prod_type_agg_col=PROD_TYPE_AGG_COL,
-                                                    agg_prod_type=agg_pt, value_col='power_capacity',
-                                                    static_val=True)
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = int(current_power_capa)
+                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = int(power_capacity)
 
                     # add pmax_pu when variable for RES/fatal units
                     if capa_factor_key in units_complem_params_per_agg_pt[agg_pt]:
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {capa_factor_key}')
-                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = \
-                            get_val_of_agg_pt_in_df(df_data=current_res_cf_data, prod_type_agg_col=PROD_TYPE_AGG_COL,
-                                                    agg_prod_type=agg_pt, value_col=COLUMN_NAMES.value,
-                                                    static_val=False)
+                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = (
+                            np.array(current_pt_res_cf_data[COLUMN_NAMES.value])
+                        )
 
                     # marginal costs/efficiency, from FuelSources TODO ??
                 # specific parameters for failure
                 elif agg_pt == ProdTypeNames.failure:
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.marginal_cost] = uc_run_params.failure_penalty
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = False
-                energy_capacity = (
-                    current_capa_data.loc[current_capa_data['production_type_agg'] == agg_pt, 'energy_capacity'].iloc)[0]
-                power_capacity_turbine = (
-                    current_capa_data.loc[current_capa_data['production_type_agg'] == agg_pt, 'power_capacity_turbine'].iloc)[0]
+                energy_capacity = current_pt_capa_data_dict[ERAAParamNames.energy_capacity]
+                power_capacity_turbine = current_pt_capa_data_dict[ERAAParamNames.power_capacity_turbine]
                 # storage-like assets
                 if energy_capacity > 0:
-                    power_capacity_pumping = current_capa_data.loc[current_capa_data['production_type_agg'] == agg_pt, 'power_capacity_pumping'].iloc[0]
+                    power_capacity_pumping = current_pt_capa_data_dict[ERAAParamNames.power_capacity_pumping]
                     if power_capacity_turbine > 0:
                         p_nom = max(abs(power_capacity_turbine), abs(power_capacity_pumping))
                         p_min_pu = power_capacity_pumping / p_nom
@@ -449,14 +448,8 @@ class Dataset:
                         # max hours for storage-like assets (energy capa/power capa)
                         max_hours = energy_capacity / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
-                    power_capacity_injection = (
-                        current_capa_data.loc[current_capa_data[
-                                                                'production_type_agg'] == agg_pt,
-                        'power_capacity_injection'].iloc)[0]
-                    power_capacity_offtake = (
-                        current_capa_data.loc[current_capa_data[
-                                                                'production_type_agg'] == agg_pt,
-                        'power_capacity_offtake'].iloc)[0]
+                    power_capacity_injection = current_pt_capa_data_dict[ERAAParamNames.power_capacity_injection]
+                    power_capacity_offtake = current_pt_capa_data_dict[ERAAParamNames.power_capacity_offtake]
                     if power_capacity_injection > 0:
                         p_nom = max(abs(power_capacity_injection), abs(power_capacity_offtake))
                         p_min_pu = -power_capacity_offtake / p_nom

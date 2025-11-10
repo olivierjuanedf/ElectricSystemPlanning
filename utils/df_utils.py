@@ -29,8 +29,9 @@ def concatenate_dfs(dfs: List[pd.DataFrame], reset_index: bool = True) -> pd.Dat
 
 
 def set_aggreg_col_based_on_corresp(df: pd.DataFrame, col_name: str, created_agg_col_name: str, val_cols: List[str],
-                                    agg_corresp: Dict[str, List[str]], common_aggreg_ope, other_col_for_agg: str = None) -> pd.DataFrame:
-    df[created_agg_col_name] = df[col_name].apply(get_key_of_val, args=(agg_corresp,)) 
+                                    agg_corresp: Dict[str, List[str]], common_aggreg_ope,
+                                    other_col_for_agg: str = None) -> pd.DataFrame:
+    df[created_agg_col_name] = df[col_name].apply(get_key_of_val, args=(agg_corresp,))
     agg_operations = {col: common_aggreg_ope for col in val_cols}
     if other_col_for_agg is not None:
         gpby_cols = [created_agg_col_name]
@@ -52,6 +53,26 @@ def get_subdf_from_date_range(df: pd.DataFrame, date_col: str, date_min: datetim
 def create_dict_from_cols_in_df(df: pd.DataFrame, key_col, val_col) -> dict:
     df_to_dict = df[[key_col, val_col]]
     return dict(pd.MultiIndex.from_frame(df_to_dict))
+
+
+def create_dict_from_df_row(df: pd.DataFrame, col_and_val_for_selec: tuple = None, key_cols: list = None,
+                            rm_col_for_selec: bool=True) -> dict:
+    if col_and_val_for_selec is not None:
+        col_for_selec = col_and_val_for_selec[0]
+        val_for_selec = col_and_val_for_selec[1]
+        df = df.loc[df[col_for_selec] == val_for_selec]
+
+    # columns used as key -> all as default
+    if key_cols is None:
+        key_cols = list(df.columns)
+
+    dict_from_df = {col: df[col].iloc[0] for col in key_cols}
+
+    # remove column used for row selection?
+    if col_and_val_for_selec is not None and rm_col_for_selec:
+        del dict_from_df[col_for_selec]
+
+    return dict_from_df
 
 
 def rename_df_columns(df: pd.DataFrame, old_to_new_cols: dict) -> pd.DataFrame:
