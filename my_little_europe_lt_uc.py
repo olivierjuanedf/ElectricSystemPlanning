@@ -9,7 +9,7 @@ from common.constants.datadims import DataDimensions
 from common.constants.extract_eraa_data import ERAADatasetDescr
 from common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER
 from common.constants.usage_params_json import EnvPhaseNames
-from common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, DummyFuelNames, FuelSource
+from common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
 from common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
 from common.long_term_uc_io import set_full_lt_uc_output_folder
 from common.uc_run_params import UCRunParams
