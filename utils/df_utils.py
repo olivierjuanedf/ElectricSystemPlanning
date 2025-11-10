@@ -52,6 +52,7 @@ def create_dict_from_cols_in_df(df: pd.DataFrame, key_col, val_col) -> dict:
 
 
 def rename_df_columns(df: pd.DataFrame, old_to_new_cols: dict) -> pd.DataFrame:
+    df = df.copy()
     df.rename(columns=old_to_new_cols, inplace=True)
     return df
 
