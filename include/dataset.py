@@ -403,10 +403,12 @@ class Dataset:
                 # and 'type' (the aggreg. prod types used here, with a direct corresp. to PyPSA generators; 
                 # made explicit in JSON fixed params files)
                 current_assets_data[agg_pt]['type'] = agg_pt
-                # power capacity, for all assets
-                power_capacity = self.agg_gen_capa_data[country].loc[
-                    self.agg_gen_capa_data[country]['production_type_agg'] == agg_pt, 'power_capacity'].iloc[0]
+                # TODO: make once here the df selection based on agg pt
+                # power capacity, for all assets TODO : check if moved here ok (vs oj code)
+                power_capacity = current_capa_data.loc[
+                    current_capa_data['production_type_agg'] == agg_pt, 'power_capacity'].iloc[0]
                 current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
+                # TODO: end
                 if agg_pt in units_complem_params_per_agg_pt and len(units_complem_params_per_agg_pt[agg_pt]) > 0:
                     # add pnom attribute if needed
                     if power_capa_key in units_complem_params_per_agg_pt[agg_pt]:
@@ -424,23 +426,19 @@ class Dataset:
                             get_val_of_agg_pt_in_df(df_data=current_res_cf_data, prod_type_agg_col=PROD_TYPE_AGG_COL,
                                                     agg_prod_type=agg_pt, value_col=COLUMN_NAMES.value,
                                                     static_val=False)
-                    # max hours for storage-like assets (energy capa/power capa) TODO ??
 
                     # marginal costs/efficiency, from FuelSources TODO ??
                 # specific parameters for failure
                 elif agg_pt == ProdTypeNames.failure:
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.marginal_cost] = uc_run_params.failure_penalty
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = False
-                energy_capacity = self.agg_gen_capa_data[country].loc[
-                    self.agg_gen_capa_data[country]['production_type_agg'] == agg_pt, 'energy_capacity'].iloc[0]
-                power_capacity_turbine = self.agg_gen_capa_data[country].loc[
-                    self.agg_gen_capa_data[country]['production_type_agg'] == agg_pt, 'power_capacity_turbine'].iloc[0]
+                energy_capacity = (
+                    current_capa_data.loc[current_capa_data['production_type_agg'] == agg_pt, 'energy_capacity'].iloc)[0]
+                power_capacity_turbine = (
+                    current_capa_data.loc[current_capa_data['production_type_agg'] == agg_pt, 'power_capacity_turbine'].iloc)[0]
                 # storage-like assets
                 if energy_capacity > 0:
-                    power_capacity_pumping = (
-                        self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
-                                                                'production_type_agg'] == agg_pt,
-                        'power_capacity_pumping'].iloc)[0]
+                    power_capacity_pumping = current_capa_data.loc[current_capa_data['production_type_agg'] == agg_pt, 'power_capacity_pumping'].iloc[0]
                     if power_capacity_turbine > 0:
                         p_nom = max(abs(power_capacity_turbine), abs(power_capacity_pumping))
                         p_min_pu = power_capacity_pumping / p_nom
@@ -448,14 +446,15 @@ class Dataset:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.min_power_pu] = p_min_pu
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
+                        # max hours for storage-like assets (energy capa/power capa)
                         max_hours = energy_capacity / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
                     power_capacity_injection = (
-                        self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                        current_capa_data.loc[current_capa_data[
                                                                 'production_type_agg'] == agg_pt,
                         'power_capacity_injection'].iloc)[0]
                     power_capacity_offtake = (
-                        self.agg_gen_capa_data[country].loc[self.agg_gen_capa_data[country][
+                        current_capa_data.loc[current_capa_data[
                                                                 'production_type_agg'] == agg_pt,
                         'power_capacity_offtake'].iloc)[0]
                     if power_capacity_injection > 0:
@@ -467,7 +466,7 @@ class Dataset:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = p_max_pu
                         max_hours = energy_capacity / p_nom
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] = max_hours
-                    if power_capacity > 0:
+                    if power_capacity > 0:  # TODO: already set up at the beginning of this function?
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
                 elif power_capacity_turbine > 0:
                     p_nom = abs(power_capacity_turbine)
