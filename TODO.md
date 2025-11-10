@@ -19,6 +19,8 @@ M15) Corriger warning carriers undefined (sur les links _ac a priori)
 M16) Tests is_stress_test case...
 M17 (later)) Introduce aggreg. prod types -> "all_res". To avoid typing lists of all RES types for selection...
 M18) Reformat data files description with file objects (folder, separators, column names...)
+M19) AJouter graphe camembert à la DJ
+M20) SOrtir les graphes en html pour pouvoir en discuter de manière interactive
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
