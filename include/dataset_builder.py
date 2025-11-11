@@ -1,4 +1,5 @@
 import os
+import warnings
 from itertools import product
 from pathlib import Path
 from datetime import datetime
@@ -303,9 +304,12 @@ class PypsaModel:
         return link_names
 
     def plot_network(self, toy_model_output: bool = False, country: str = None):
-        self.network.plot(title=f'{self.name.capitalize()} network', color_geomap=True, jitter=0.3)
-        plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country))
-        plt.close()
+        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.network.plot(title=f'{self.name.capitalize()} network', color_geomap=True, jitter=0.3)
+            plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country))
+            plt.close()
 
     def set_default_optim_solver(self, warning_msg: str):
         msg_default_solver_used = f'-> default {DEFAULT_OPTIM_SOLVER} will be used instead'
@@ -381,42 +385,55 @@ class PypsaModel:
         """ 
         Plot 'stack' of optimized production profiles
         """
-        # sort values to get only prod of given country
-        country_trigram = set_country_trigram(country=country)
-        country_prod_cols = [prod_unit_name for prod_unit_name in list(self.prod_var_opt)
-                             if prod_unit_name.startswith(country_trigram)]
-        current_prod_var_opt = self.prod_var_opt[country_prod_cols]
-        # suppress trigram from prod unit names to simplify legend in figures
-        new_prod_cols = {col: col[4:] for col in country_prod_cols}
-        current_prod_var_opt = rename_df_columns(df=current_prod_var_opt, old_to_new_cols=new_prod_cols)
-        current_prod_var_opt = set_col_order_for_plot(df=current_prod_var_opt, cols_ordered=plot_params_agg_pt.order)
-        current_prod_var_opt.div(1e3).plot.area(subplots=False, ylabel='GW', color=plot_params_agg_pt.per_case_color)
-        plt.tight_layout()
-        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.production, country=country, year=year,
-                                      climatic_year=climatic_year, start_horizon=start_horizon,
-                                      toy_model_output=toy_model_output))
-        plt.close()
+        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # sort values to get only prod of given country
+            country_trigram = set_country_trigram(country=country)
+            country_prod_cols = [prod_unit_name for prod_unit_name in list(self.prod_var_opt)
+                                 if prod_unit_name.startswith(country_trigram)]
+            current_prod_var_opt = self.prod_var_opt[country_prod_cols]
+            # suppress trigram from prod unit names to simplify legend in figures
+            new_prod_cols = {col: col[4:] for col in country_prod_cols}
+            current_prod_var_opt = rename_df_columns(df=current_prod_var_opt, old_to_new_cols=new_prod_cols)
+            current_prod_var_opt = set_col_order_for_plot(df=current_prod_var_opt,
+                                                          cols_ordered=plot_params_agg_pt.order)
+            current_prod_var_opt.div(1e3).plot.area(subplots=False, ylabel='GW',
+                                                    color=plot_params_agg_pt.per_case_color)
+            plt.tight_layout()
+            plt.savefig(get_output_figure(fig_name=FigNamesPrefix.production, country=country, year=year,
+                                          climatic_year=climatic_year, start_horizon=start_horizon,
+                                          toy_model_output=toy_model_output))
+            plt.close()
 
     def plot_failure_at_opt(self, country: str, year: int, climatic_year: int, start_horizon: datetime,
                             toy_model_output: bool = False):
-        failure_unit_name = set_gen_unit_name(country=country, agg_prod_type='failure')
-        self.network.generators_t.p.div(1e3)[failure_unit_name].plot.line(subplots=False, ylabel='GW')
-        plt.tight_layout()
-        plt.savefig(get_figure_file_named('failure', country=country, year=year, climatic_year=climatic_year,
-                                          start_horizon=start_horizon, toy_model_output=toy_model_output)
-                    )
-        plt.close()
+        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            failure_unit_name = set_gen_unit_name(country=country, agg_prod_type='failure')
+            self.network.generators_t.p.div(1e3)[failure_unit_name].plot.line(subplots=False, ylabel='GW')
+            plt.tight_layout()
+            plt.savefig(get_figure_file_named('failure', country=country, year=year, climatic_year=climatic_year,
+                                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+                        )
+            plt.close()
 
     def plot_marginal_price(self, plot_params_zone: PlotParams, year: int, climatic_year: int, start_horizon: datetime,
                             country: str = 'europe', toy_model_output: bool = False):
-        sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual_var_opt, cols_ordered=plot_params_zone.order)
-        sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh', color=plot_params_zone.per_case_color)
-        plt.tight_layout()
-        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.prices, country=country, year=year,
-                                      climatic_year=climatic_year, start_horizon=start_horizon,
-                                      toy_model_output=toy_model_output)
-                    )
-        plt.close()
+        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual_var_opt,
+                                                           cols_ordered=plot_params_zone.order)
+            sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh',
+                                            color=plot_params_zone.per_case_color)
+            plt.tight_layout()
+            plt.savefig(get_output_figure(fig_name=FigNamesPrefix.prices, country=country, year=year,
+                                          climatic_year=climatic_year, start_horizon=start_horizon,
+                                          toy_model_output=toy_model_output)
+                        )
+            plt.close()
 
     def save_opt_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                                   rename_snapshot_col: bool = True, toy_model_output: bool = False,
