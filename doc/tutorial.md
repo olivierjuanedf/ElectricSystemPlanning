@@ -2,7 +2,7 @@
 
 * **PyPSA documentation**: https://pypsa.readthedocs.io/en/latest/ -> **normally not really useful** as the connection with PyPSA framework is already done in the code you will be playing with 
 
-* **On ERAA (European Resource Adequacy Assessment)** (2023.2 will be used): https://www.entsoe.eu/outlooks/eraa/ -> to get **some information about the collection, preparation and limitations of data**
+* **On ERAA (European Resource Adequacy Assessment)** (2023.2 will be used): https://www.entsoe.eu/outlooks/eraa/ -> to get **some information about the collection, preparation and limitations of data**.
     - (i) **ERAA is a dataset** yearly collected, "built" and made available by ENTSO-E, but also a long-term planning model (and study) to assess... European Resource Adequacy! 
     - (ii) **Only an extract of these data is available here**: 2 "Target Years" (2025, 2033) over the 4 ones provided in ERAA2023.2 edition, 6 climatic years over 35 ones available (1982-2016 historical period).
 
@@ -39,7 +39,7 @@ In detail, and **except if the resolution of PyPSA optimization model was not su
 * **seasons** -> by changing **uc_period_start** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../input/long_term_uc/elec-europe_params_to-be-modif.json). **Question**: how would you select a few typical, or extreme, weeks to be considered to size your system? Is it possible to do it *ex-ante*, i.e. only looking at input data (e.g., demand, RES sources CF, installed generation capacities) or do you need some iterative process with UC runs to do that?
 * **(target) years** -> using 2025 or 2033. **Question**: would your capacity design be similarly "efficient" at both horizons?
 * **climatic years** -> how sensitive are your results to the choice of this parameter? in combination with the ones of the season (associated period)? **Question** how would you choose one/a few scenarios used for your investment planning decision-making?
-* **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? **N.B.** Playing with parameter "interco_capas_tb_overwritten" in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../input/long_term_uc/elec-europe_params_to-be-modif.json), you can get some preliminar insights on this
+* **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? **N.B.** Playing with parameter **interco_capas_tb_overwritten** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../input/long_term_uc/elec-europe_params_to-be-modif.json), you can get some preliminar insights on this
 * (in solo mode) **What if... my neighbouring countries..." -> how are your individual country results sensitive to the decisions made by your neighbours? **N.B.** In solo mode you can exactly simulate the desired cases to try answering this question, by testing different configurations for your neighbours - in your own *{country}.json* file
 
 # Appendices
