@@ -147,7 +147,7 @@ class PypsaModel:
     storage_prod_var_opt: pd.DataFrame = None  # idem for Storage prod -> prod (turbining)
     storage_cons_var_opt: pd.DataFrame = None  # idem for Storage prod -> cons (pumping)
     storage_soc_opt: pd.DataFrame = None  # idem for Storage prod -> SoC (State-of-Charge)
-    optim_solver_params: str = None
+    optim_solver_params: SolverParams = None
     DEFAULT_CARRIER = 'ac'
 
     def init_pypsa_network(self, date_idx: pd.Index, date_range: pd.DatetimeIndex = None):
@@ -200,10 +200,10 @@ class PypsaModel:
                 # case of storage units, identified via the presence of max_hours param
                 if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
                     # initial SoC fixed to 80% statically here
+                    init_soc = (pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa]
+                                * pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8)
                     self.network.add('StorageUnit', bus=f'{country_bus_name}', **pypsa_gen_unit_dict,
-                                     state_of_charge_initial=pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa] *
-                                                             pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8
-                                     )
+                                     state_of_charge_initial=init_soc)
                 else:
                     self.network.add('Generator', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
         generator_names = self.get_generator_names()
