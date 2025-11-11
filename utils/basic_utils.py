@@ -90,7 +90,7 @@ def lexico_compar_str(string1: str, string2: str, return_tuple: bool = False) ->
         return (string2, string1) if return_tuple else string2
 
 
-def flatten_list_of_lists(list_of_lists: List[list]) -> list:
+def flatten_list_of_lists(list_of_lists: list) -> list:
     return np.concatenate(list_of_lists).tolist()
 
 
