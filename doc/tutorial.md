@@ -2,42 +2,45 @@
 
 * **PyPSA documentation**: https://pypsa.readthedocs.io/en/latest/ -> **normally not really useful** as the connection with PyPSA framework is already done in the code you will be playing with 
 
-* **On ERAA (European Resource Adequacy Assessment)** (2023.2 will be used): https://www.entsoe.eu/outlooks/eraa/ -> to get **some information about the collection, preparation and limitations of data**. N.B. (i) **ERAA is a dataset** yearly collected, "built" and made available by ENTSO-E, but also a long-term planning model (and study) to assess... European Resource Adequacy! (ii) **Only an extract of these data is available here**: 2 "Target Years" (2025, 2033) over the 4 ones provided in ERAA2023.2 edition, 6 climatic years over 35 ones available (1982-2016 historical period).
+* **On ERAA (European Resource Adequacy Assessment)** (2023.2 will be used): https://www.entsoe.eu/outlooks/eraa/ -> to get **some information about the collection, preparation and limitations of data**
+    - (i) **ERAA is a dataset** yearly collected, "built" and made available by ENTSO-E, but also a long-term planning model (and study) to assess... European Resource Adequacy! 
+    - (ii) **Only an extract of these data is available here**: 2 "Target Years" (2025, 2033) over the 4 ones provided in ERAA2023.2 edition, 6 climatic years over 35 ones available (1982-2016 historical period).
 
 # Tutorial - Long-Term Unit Commitment (UC) part
 
 ## Running a N-countries (European) UC model by... only playing with 2 JSON files...
 
 With the provided code environment you will be able to **run a Unit Commitment model by simply modifying the values in the 2 following files**:
-1) *input/long_term_uc/elec-europe_params_to-be-modif.json* -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
-2) *input/long_term_uc/countries/{country}.json* with "country" the name of your considered country -> the **values used in this file will overwrite values of preceding file**. This is to make your own country choice. N.B. In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighbouring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter. 
+1) [input/long_term_uc/elec-europe_params_to-be-modif.json](../input/long_term_uc/elec-europe_params_to-be-modif.json) -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
+2) [input/long_term_uc/countries/](../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite values of preceding file**. This is to make your own country choice. **N.B.** In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighbouring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter. 
 
-**(To be discussed later altogether) Importantly, note two distinguished behaviours of the code, whether "solo" or "Europe" mode be considered** - as defined in file *input/functional_params/usage_params.json*, field "mode":
+**(To be discussed later altogether) Importantly, note two distinguished behaviours of the code, whether "solo" or "Europe" mode be considered** - as defined in file [input/functional_params/usage_params.json](../input/functional_params/usage_params.json), field "mode":
 - if mode is set to **"solo", all country parameters (for your own country, but also for the rest of them) will be read from your own file *{country}.json***. 
-Example: if in *germany.json* dictionary associated to key "capacities_tb_overwritten" contains "france": {"nuclear": 0}, the French nuclear capacity will be set to 0MW for the UC simulated
+Example: if in [germany.json](../input/long_term_uc/countries/germany.json) dictionary associated to key "capacities_tb_overwritten" contains "france": {"nuclear": 0}, the French nuclear capacity will be set to 0MW for the UC simulated
 - if mode is **"europe", parameters of each country will be extracted from file *{country}.json*; the rest of the values in this file being not accounted for**. 
 
-**Open and run *my_little_eur_long_term_uc.py***: you should get a log "THE END..." in the terminal window. If not, the "checkers" should have indicated you some aspects to be corrected in your - modified - parametrization (e.g., using some unavailable values for country or production types). 
-N.B. (i) The only remaining bug that has been observed in this environment is when you have assets that can both produce and consume for the cumulated production plot (not possible in this case... will be corrected soon); however the .csv results data will have been saved. (ii) Note that run stops correctly - with an explicit error message in the logs - when optimisation problem solved by PyPSA does not have "optimal" status; in this case no output data (neither figures) are obtained.
+**Open and run [my_little_europe_lt_uc.py](../my_little_europe_lt_uc.py)**: you should get a log "THE END..." in the terminal window. If not, the "checkers" should have indicated you some aspects to be corrected in your - modified - parametrization (e.g., using some unavailable values for country or production types). 
+    - (i) The only remaining bug that has been observed in this environment is when you have assets that can both produce and consume for the cumulated production plot (not possible in this case... will be corrected soon); however the .csv results data will have been saved. 
+    - (ii) Note that run stops correctly - with an explicit error message in the logs - when optimisation problem solved by PyPSA does not have "optimal" status; in this case no output data (neither figures) are obtained.
 
 ## ... And directly getting output results for an extended analysis
 
-**Obtained data (resp. plotted figures) results** are given in *output/long_term_uc/multizones_eur/data* (resp. *output/long_term_uc/multizones_eur/figures*) folders.
+**Obtained data (resp. plotted figures) results** are given in [output/long_term_uc/multizones_eur/data](../output/long_term_uc/multizones_eur/data) (resp. [output/long_term_uc/multizones_eur/figures](../output/long_term_uc/multizones_eur/figures)) folders.
 
 In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
-* (*data/* subfolder) **optimal production of all generators** considered in Europe, in a .csv file. N.B. The suffix of this file is indicating the year, climatic year ("cy") and the date of UC start period
-* (*data/* subfolder) **"prices" for all countries** considered in Europe, in a .csv file. N.B. (i) Idem; (ii) Specifically, this prices are the optimal values of dual variables associated to suuply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
+* (*data/* subfolder) **optimal production of all generators** considered in Europe, in a .csv file. **N.B.** The suffix of this file is indicating the year, climatic year ("cy") and the date of UC start period
+* (*data/* subfolder) **"prices" for all countries** considered in Europe, in a .csv file. **N.B.** (i) Idem; (ii) Specifically, this prices are the optimal values of dual variables associated to suuply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
 * (*figures/* subfolder) a **"cumulated vision" of the production**, in a .png file per country
 * (*figures/* subfolder) **price curves**, for the different countries in a unique .png file
 
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
 **Based on the numeric results obtained for each of the simulated configurations you can start "designing" (i.e. sizing the capacities) your own country** (if in "solo" mode)/European ("Europe" mode) system. Consider different:
-* **seasons** -> by changing **uc_period_start* in file *input/long_term_uc/elec-europe_params_to-be-modif.json*. **Question**: how would you select a few typical, or extreme, weeks to be considered to size your system? Is it possible to do it *ex-ante*, i.e. only looking at input data (e.g., demand, RES sources CF, installed generation capacities) or do you need some iterative process with UC runs to do that?
+* **seasons** -> by changing **uc_period_start** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../input/long_term_uc/elec-europe_params_to-be-modif.json). **Question**: how would you select a few typical, or extreme, weeks to be considered to size your system? Is it possible to do it *ex-ante*, i.e. only looking at input data (e.g., demand, RES sources CF, installed generation capacities) or do you need some iterative process with UC runs to do that?
 * **(target) years** -> using 2025 or 2033. **Question**: would your capacity design be similarly "efficient" at both horizons?
 * **climatic years** -> how sensitive are your results to the choice of this parameter? in combination with the ones of the season (associated period)? **Question** how would you choose one/a few scenarios used for your investment planning decision-making?
-* **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? N.B. Playing with parameter "interco_capas_tb_overwritten" in file *input/long_term_uc/elec-europe_params_to-be-modif.json*, you can get some preliminar insights on this
-* (in solo mode) **What if... my neighbouring countries..." -> how are your individual country results sensitive to the decisions made by your neighbours? N.B. In solo mode you can exactly simulate the desired cases to try answering this question, by testing different configurations for your neighbours - in your own *{country}.json* file
+* **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? **N.B.** Playing with parameter "interco_capas_tb_overwritten" in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../input/long_term_uc/elec-europe_params_to-be-modif.json), you can get some preliminar insights on this
+* (in solo mode) **What if... my neighbouring countries..." -> how are your individual country results sensitive to the decisions made by your neighbours? **N.B.** In solo mode you can exactly simulate the desired cases to try answering this question, by testing different configurations for your neighbours - in your own *{country}.json* file
 
 # Appendices
 
