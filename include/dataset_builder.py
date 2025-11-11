@@ -12,7 +12,7 @@ import pypsa
 import matplotlib.pyplot as plt
 
 from common.constants.countries import set_country_trigram
-from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER
+from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from common.error_msgs import print_errors_list
 from common.fuel_sources import FuelSource
@@ -147,7 +147,7 @@ class PypsaModel:
     storage_prod_var_opt: pd.DataFrame = None  # idem for Storage prod -> prod (turbining)
     storage_cons_var_opt: pd.DataFrame = None  # idem for Storage prod -> cons (pumping)
     storage_soc_opt: pd.DataFrame = None  # idem for Storage prod -> SoC (State-of-Charge)
-    optim_solver_name: str = None
+    optim_solver_params: str = None
     DEFAULT_CARRIER = 'ac'
 
     def init_pypsa_network(self, date_idx: pd.Index, date_range: pd.DatetimeIndex = None):
@@ -312,28 +312,36 @@ class PypsaModel:
             plt.close()
 
     def set_default_optim_solver(self, warning_msg: str):
-        msg_default_solver_used = f'-> default {DEFAULT_OPTIM_SOLVER} will be used instead'
+        msg_default_solver_used = f'-> default {DEFAULT_OPTIM_SOLVER_PARAMS.name} will be used instead'
         logging.warning(f'{warning_msg} {msg_default_solver_used}')
-        self.optim_solver_name = DEFAULT_OPTIM_SOLVER
+        self.optim_solver_params = DEFAULT_OPTIM_SOLVER_PARAMS
 
-    def set_optim_solver(self, name: str = None, licence_file: str = None):
-        all_solver_names = OptimSolvers.__dict__.values()
-        if name not in all_solver_names:
-            self.set_default_optim_solver(warning_msg=f'Solver name {name} not in allowed list {all_solver_names}')
+    def set_optim_solver(self, solver_params: SolverParams = None):
+        # if no solver provided in arg. -> set default one
+        if solver_params is None:
+            self.optim_solver_params = DEFAULT_OPTIM_SOLVER_PARAMS
+        # else check if coherent parameters; otherwise set default solver
         else:
-            self.optim_solver_name = name
-        if not self.optim_solver_name == DEFAULT_OPTIM_SOLVER:
-            # check that licence file exists
-            if licence_file is None:
-                self.set_default_optim_solver(warning_msg=f'Licence file for optim. solver {self.optim_solver_name} '
-                                                          f'not provided')
+            all_solver_names = OptimSolvers.__dict__.values()
+            solver_name = solver_params.name
+            if solver_name not in all_solver_names:
+                warning_msg = f'Solver name {solver_name} not in allowed list {all_solver_names}'
+                self.set_default_optim_solver(warning_msg=warning_msg)
             else:
-                # licence file must be at root of the project
-                if not os.path.exists(path=licence_file):
-                    self.set_default_optim_solver(warning_msg=f'Licence file {licence_file} does not exist '
-                                                              f'(at root of project)')
+                self.optim_solver_params = solver_params
+            if not self.optim_solver_params.name == DEFAULT_OPTIM_SOLVER_PARAMS.name:
+                # check that licence file param is defined
+                solver_licence_file = self.optim_solver_params.licence_file
+                if solver_licence_file is None:
+                    warning_msg = f'Licence file for optim. solver {self.optim_solver_params.name} not provided'
+                    self.set_default_optim_solver(warning_msg=warning_msg)
                 else:
-                    os.environ[f'{self.optim_solver_name.upper()}_LICENSE_FILE'] = licence_file
+                    # licence file must be at root of the project
+                    if not os.path.exists(path=solver_licence_file):
+                        warning_msg = f'Licence file {solver_licence_file} does not exist (at root of project)'
+                        self.set_default_optim_solver(warning_msg=warning_msg)
+                    else:
+                        os.environ[f'{self.optim_solver_params.name.upper()}_LICENSE_FILE'] = solver_licence_file
 
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
                          toy_model_output: bool = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
@@ -342,7 +350,7 @@ class PypsaModel:
         :returns a tuple (xxx, status of resolution)
         """
         logging.info('Optimise "network" - i.e. solve associated UC problem')
-        result = self.network.optimize(solver_name=self.optim_solver_name)
+        result = self.network.optimize(solver_name=self.optim_solver_params.name)
         logging.info(f'Obtained result: {result}')
         if save_lp_file:
             save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,

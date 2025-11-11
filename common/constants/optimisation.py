@@ -7,9 +7,6 @@ class OptimSolvers:
     highs: str = 'highs'
 
 
-DEFAULT_OPTIM_SOLVER = OptimSolvers.highs
-
-
 @dataclass
 class OptimResolStatus:
     optimal: str = 'optimal'
@@ -17,3 +14,12 @@ class OptimResolStatus:
     
 
 OPTIM_RESOL_STATUS = OptimResolStatus()
+
+
+@dataclass
+class SolverParams:
+    name: str = 'highs'
+    licence_file: str = None
+
+
+DEFAULT_OPTIM_SOLVER_PARAMS = SolverParams(name=OptimSolvers.highs)

@@ -90,6 +90,10 @@ def get_json_params_tb_modif_file() -> str:
     return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_to-be-modif.json'))
 
 
+def get_json_solver_params_file() -> str:
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'solver_params.json'))
+
+
 def get_json_fuel_sources_tb_modif_file() -> str:
     return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'fuel_sources_to-be_modif.json'))
 

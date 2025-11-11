@@ -2,10 +2,11 @@ import json
 from typing import List, Dict, Optional
 import logging
 
+from common.constants.optimisation import SolverParams
 from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
     get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
-    get_json_data_analysis_params_file, get_json_plot_params_file
+    get_json_data_analysis_params_file, get_json_plot_params_file, get_json_solver_params_file
 from common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
 from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
@@ -100,6 +101,10 @@ def set_json_params_fixed() -> dict:
     return json_params_fixed
 
 
+def set_json_solver_params() -> dict:
+    return check_and_load_json_file(json_file=get_json_solver_params_file(), file_descr='JSON solver params')
+
+
 def set_json_params_tb_modif() -> dict:
     return check_and_load_json_file(json_file=get_json_params_tb_modif_file(), file_descr='JSON params to be modif.')
 
@@ -185,6 +190,7 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
     eraa_data_descr = set_eraa_data_descr(json_params_fixed=set_json_params_fixed())
 
     # Set countries data, applying data selection/overwriting based on JSON file with values to be modified
+    countries_data, json_params_tb_modif = None, None
     if not get_only_eraa_data_descr:
         json_params_tb_modif = set_json_params_tb_modif()
         countries_data, json_params_tb_modif = (
@@ -194,14 +200,13 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
         )
 
     # init. UC run params object
+    uc_run_params = None
     if not get_only_eraa_data_descr:
         # fuel sources values modif.
         json_fuel_sources_tb_modif = set_json_fuel_sources_tb_modif()
         uc_run_params = set_uc_run_params(json_params_tb_modif=json_params_tb_modif, countries_data=countries_data,
                                           json_fuel_sources_tb_modif=json_fuel_sources_tb_modif,
                                           eraa_data_descr=eraa_data_descr)
-    else:
-        uc_run_params = None
 
     return eraa_data_descr, uc_run_params
 
@@ -232,6 +237,24 @@ def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> Li
         elt_analysis.process(eraa_data_descr=eraa_data_descr)
         elt_analysis.coherence_check(eraa_data_descr=eraa_data_descr)
     return data_analyses
+
+
+def read_solver_params() -> SolverParams:
+    solver_params_data = set_json_solver_params()
+    # a few tests on read JSON file
+    name_key = 'name'
+    lic_file_key = 'licence_file'
+    known_keys = [name_key, lic_file_key]
+    solver_params_file = get_json_solver_params_file()
+    if name_key not in solver_params_data:
+        raise Exception(f'Mandatory param {name_key} missing in {solver_params_file} -> STOP')
+    if lic_file_key not in solver_params_data:
+        logging.info(f'Param {lic_file_key} missing in {solver_params_file} -> default optim. solver will be used')
+    unknown_params = list(set(solver_params_data) - set(known_keys))
+    if len(unknown_params) > 0:
+        logging.warning(f'There are unknown parameters in {solver_params_file}: {unknown_params} -> will not be used')
+    solver_params_data = {key: solver_params_data[key] for key in known_keys}
+    return SolverParams(**solver_params_data)
 
 
 def read_given_phase_plot_params(phase_name: str) -> FigureStyle:
