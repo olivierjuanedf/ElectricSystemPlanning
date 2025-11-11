@@ -72,7 +72,8 @@ The ones in folder [input/long_term_uc](../input/long_term_uc/); **file by file 
 
 - (if too slow UC resolution time...) [elec-europe_params_to-be-modif.json](../input/long_term_uc/solver_params.json):
     - "<span style="color:#32B032; font-weight:bold">name</span>": **name of the solver to be used** (*str*, that must be in the set {"highs", "gurobi"} - use lower letters)
-    - (optional) "licence_file": **name of the solver licence file** (only for Gurobi; to be obtained from https://portal.gurobi.com/iam/register with your student email)
+    - (optional) "licence_file": **name of the solver licence file** (only for Gurobi; to be obtained from https://portal.gurobi.com/iam/register with your student email).
+    **N.B.** This file has to be provided at the root of this project
 
 - **[NOT TO BE MODIFIED during this practical class]** [elec-europe_eraa-available-values.json](../input/long_term_uc/elec-europe_eraa-available-values.json): containing values available in the ERAA extract provided in folder [data/](../data/): 
     - "<span style="color:#32B032; font-weight:bold">climatic_years</span>": **past historical years weather conditions** that are 'projected' on ERAA "target year" (<span style="color:#257cbd; font-weight:bold">list of int</span> values)
