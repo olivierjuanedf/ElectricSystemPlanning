@@ -44,12 +44,17 @@ MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
 MAS2) Integrate hydraulic storages... with inflows/min SOC data from ERAA
 MAS3) Usage param auto fulfill interco capa missing -> ??
 MAS4) Add possibility to set Stock (additional to ERAA data) in JSON tb modif input file
-MAS7) Automatically generate some graphs/ppt(s) when launching the runner
--> automatically over multiple projects cloned?
 #################### LATER  ################
 MAS5) Add possibility to provide additional fatal demand -> for iterations between UC and imperfect disaggreg of an aggregate DSR flex (EV for ex) modeled as a Stock for ex! (cf. OMCEP course)
 MAS6) Reformat/simplify JSON params file (in input/long_term_uc/elec-europe_params_to-be-modif.json 
 -> suppress "selec" prefix implicit for some params?
+
+RUNNER (R) (main_runner.py)
+R1) Finish v1 runner
+-> automatically over multiple projects cloned?
+R2) Script to generate some graphs/ppt(s) after launching the runner
+-> for archive/discussing live with the students
+R3) "Stress tests": blackout on some countries * pts; issue on some intercos; techno. breakthrough on some pts
 
 PLOTS
 P1) Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
