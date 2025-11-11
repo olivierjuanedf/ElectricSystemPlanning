@@ -1,7 +1,7 @@
 # Start simple, with a "toy model" (of a unique country Unit Commitment model)
 
 This **session exercise consists in**:
-* **Adapting both scripts** [my_toy_ex_italy.py](../my_toy_ex_italy.py) and associated [toy_model_params/italy_parameters.py](../toy_model_params/italy_parameters.py)
+* **Adapting both scripts** [my_toy_ex_italy.py](../../my_toy_ex_italy.py) and associated [toy_model_params/italy_parameters.py](../../toy_model_params/italy_parameters.py)
 * **Modeling a simple 1-country (the one you are responsible for) *Unit Commitment* (UC) problem in PyPSA**.  
     <span style="color:#257cbd; font-weight:bold">N.B.</span> Monday's theoretical session by Cécile ROTTNER has explained this UC - optimisation - problem in details... summarized in one sentence, it could be: "How can electricity demand be satisfied at the lowest possible cost by optimising the production decisions of the available generation assets?"
 
@@ -10,11 +10,11 @@ You can **proceed in order** to model your own country:
 
 2. **Considering installed generation assets data from file** *data/ERAA_2023-2/generation_capas/generation-capa_{**year**}_{**country**}.csv* - with "***year***" the one considered in this simulation, update values list of generator (dictionaries) in list of function *get_generators* in script *{**country**}_parameters.py*. This mainly consists in:  
     - (i) Extracting from Italy case the assets that are also present in your country, and only adapt "**p_nom**" value based on *generation-capa_{**year**}_{**country**}.csv* file;  
-    - (ii) Complement the obtained list with assets in *generation-capa_{**year**}_{**country**}.csv* for the ones not present in Italy. Ex: looking at file [toy_model_params/ex_italy-complem_parameters.py](../toy_model_params/ex_italy-complem_parameters.py) - again setting "**p_nom**" based on values in generation capas csv file.
+    - (ii) Complement the obtained list with assets in *generation-capa_{**year**}_{**country**}.csv* for the ones not present in Italy. Ex: looking at file [toy_model_params/ex_italy-complem_parameters.py](../../toy_model_params/ex_italy-complem_parameters.py) - again setting "**p_nom**" based on values in generation capas csv file.
 
-Note that **technology names do not directly coincide between the "level" used in this exercise** (see e.g., the production types infos in [input/long_term_uc/countries/france.json](../input/long_term_uc/countries/france.json)) **and data found in csv files** (here, the one with generation capacities). For some cases an aggregation from names in csv files to the ones in PyPSA will be needed; the correspondence to be used for that is provided at the very beginning of [my_toy_ex_italy.py](../my_toy_ex_italy.py) script (see global constant <span style="color:#32B032; font-weight:bold">AGG_PROD_TYPES_DEF</span>).
+Note that **technology names do not directly coincide between the "level" used in this exercise** (see e.g., the production types infos in [input/long_term_uc/countries/france.json](../../input/long_term_uc/countries/france.json)) **and data found in csv files** (here, the one with generation capacities). For some cases an aggregation from names in csv files to the ones in PyPSA will be needed; the correspondence to be used for that is provided at the very beginning of [my_toy_ex_italy.py](../../my_toy_ex_italy.py) script (see global constant <span style="color:#32B032; font-weight:bold">AGG_PROD_TYPES_DEF</span>).
 
-Note also that **available values in data** (years, climatic years, aggregate production types, etc.) **can be found in file** [input/long_term_uc/elec-europe_eraa-available-values.json](../input/long_term_uc/elec-europe_eraa-available-values.json)
+Note also that **available values in data** (years, climatic years, aggregate production types, etc.) **can be found in file** [input/long_term_uc/elec-europe_eraa-available-values.json](../../input/long_term_uc/elec-europe_eraa-available-values.json)
 
 3. **Run your script** to optimise your single-country Unit Commitment model
 

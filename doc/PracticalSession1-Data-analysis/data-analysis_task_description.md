@@ -1,43 +1,20 @@
-To get some insights on the data used in this code environment, from **European Resource Adequacy Assessment (ERAA)**, you can plot very easily some quantities you would like to observe for different countries, years, climatic years. This is done running script [my_little_europe_data_analysis.py](../my_little_europe_data_analysis.py), as explained below.
+# Objectives of the practical session n°1: 
+1. Provide a **short “electrical portrait”** of your country doing some data crunch
+2. **“Manually” solve the capacity planning problem** for your own country (as if non-interconnected in Europe) using the so-called **“Screening curve methodology"**
 
-# How to run data analysis
+# Stages of the practical session:
 
-**Update the JSON input file** dedicated to data analysis: [input/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json](../input/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json). It contains a list of the quantities you would like to get plotted/saved in csv files; each element of this list being a dictionary with fields to specify the analysis/plot to be done:
+1. **Read [doc/PracticalSession1-Data-analysis/data-analysis_tutorial.md](../PracticalSession1-Data-analysis/data-analysis_tutorial.md)**
 
-  <!-- - **analysis_type** (<span style="color:#257cbd; font-weight:bold">str</span>): "plot" - to get some curves plotted e.g., demand of a given (country, year, climatic year); "plot_duration_curve" - idem for duration curve of a given quantity, typically (net) demand; "extract" to get some ERAA data extracted to a .csv file.  -->
-  
-  - **analysis_type** (<span style="color:#257cbd; font-weight:bold">str</span>):  - "plot" - to get some curves plotted e.g., demand of a given (country, year, climatic year)    
-        <span style="margin-left: 123px;"> - "plot_duration_curve" - idem for duration curve of a given quantity, typically (net) demand  
-        <span style="margin-left: 123px;"> - "extract" to get some ERAA data extracted to a .csv file
-  - **data_type** (<span style="color:#257cbd; font-weight:bold">str</span>): datatype to analyze/plot; its value must be in the list of available values given in file [input/long_term_uc/functional_available-values.json](../input/long_term_uc/functional_available-values.json) (e.g., "demand", "net_demand", "res_capa-factors", "generation_capas", etc.).
-  - **country** (<span style="color:#257cbd; font-weight:bold">str</span> or <span style="color:#257cbd; font-weight:bold">list of str</span>): it must be in the list of values given in file [input/long_term_uc/elec-europe_eraa-available-values.json](../input/long_term_uc/elec-europe_eraa-available-values.json) (field "countries").  
-      <span style="color:#257cbd; font-weight:bold">N.B.</span> If list of countries: if plots are displayed, multiple curves will be obtained (one for each country - on the same graph); if csv is written, data of the different countries will be concatenated.
-    N.B. If list of countries: if plots are displayed, multiple curves will be obtained (one for each country - on the same graph); if csv is written, data of the different countries will be concatenated.
-  - **year** (<span style="color:#257cbd; font-weight:bold">int</span> or <span style="color:#257cbd; font-weight:bold">list of int</span>): year(s) to be considered for the data analysis; its value must be in the list of values given in file [input/long_term_uc/elec-europe_eraa-available-values.json](../input/long_term_uc/elec-europe_eraa-available-values.json) (field “target_years”).  
-      <span style="color:#257cbd; font-weight:bold">N.B.</span> If list of years: if plots are displayed, multiple curves will be obtained (one for each year - on the same graph); if csv is written, data of the different years will be concatenated.
-    N.B. If list of years: if plots are displayed, multiple curves will be obtained (one for each year - on the same graph); if csv is written, data of the different years will be concatenated.
-  - **climatic_year** (<span style="color:#257cbd; font-weight:bold">int</span> or <span style="color:#257cbd; font-weight:bold">list of int</span>): the (past) year from which weather conditions will be "extracted" and applied to current year; it must be in list given in file [input/long_term_uc/elec-europe_eraa-available-values.json](../input/long_term_uc/elec-europe_eraa-available-values.json) (field "climatic_years")  
-    N.B. If list of climatic years: if plots are displayed, multiple curves will be obtained (one for each climatic year - on the same graph); if csv is written, data of the different climatic years will be concatenated.
-  - **period_start** (<span style="color:#257cbd; font-weight:bold">str</span>, with date format <span style="color:#257cbd; font-weight:bold">yyyy/mm/dd</span>): start date of the period to be considered
-  - **period_end** (<span style="color:#257cbd; font-weight:bold">str</span>, with date format <span style="color:#257cbd; font-weight:bold">yyyy/mm/dd</span>): end date of the period to be considered
-  - **extra_params** (<span style="color:#257cbd; font-weight:bold">dict</span> or <span style="color:#257cbd; font-weight:bold">list of dict</span>): to specify extra-parameters that can be used to analyse data, e.g. fixed capacities for RES sources for net demand calculation.
-    This dictionary has the following fields:
-    - (optional) **label**: name of the case associated to this extra-params choice, that will be used for plot/csv saving
-    - **values**: a dictionary with {param name: param value}. Only available param is currently **capas_aggreg_pt_with_cf**, for which 
-    the following values can be used for ex. {"wind_onshore": 10000, "wind_offshore": 500, "solar_pv": 10000} to set capacity values of Wind on-/off-shore and Solar PV
-    to 10GW, 500MW and 10GW respectively.
+2. **Run [my_little_europe_data_analysis.py](../../my_little_europe_data_analysis.py)** 
+  - First to check that it is functional!
+  - Then, to get the infos that you seem necessary to start to “draw the elec. portrait” of your country. Some key infos to start with may be: the level of demand and residual demand, and the availability of renewables.
 
-<span style="color:#257cbd; font-weight:bold">N.B.</span> If list are provided for countries, years, climatic years, and extra-params: if plots are displayed, a curve will be obtained for each case in the product of requested lists; if csv is written, concatenation will be done over the product of cases.
-For plots a maximal number of 6 cases is allowed, so that obtained graph be readable.
+3. **Get data and plot the (residual) load duration curve of your country**, for some selected year in the future, using [my_little_europe_data_analysis.py](../../my_little_europe_data_analysis.py). 
+N.B. If you want you can use some other info of your country “elec. portrait” that may be useful for this task (among the ones available in data-analysis tool, or with complementary calculations/plots done on your side - outside of the code env.)
 
-An **example of such a JSON script is provided** in folder [input_example/long_term_uc/data_analysis](../input_example/long_term_uc/data_analysis), providing some of the main cases that could be used for data analysis. 
+4. Based on manual calculations, or on external Excel/simple Python script (out of code env.), **calculate the capacity** of the different production types **you would like to invest in your system**
 
-**Run script [my_little_europe_data_analysis.py](../my_little_europe_data_analysis.py)**
+5. **Create some slides to present the "electricity portrait" of your country** to the other students. Some key information could include: the level of demand, the availability of renewables, the capacities you have chosen to invest in, and the associated price of electricity.
 
-**Outputs**
-
-They will be obtained in folder [output/data_analysis](../output/data_analysis): 
-  - **either .png files**, if "plot" or "plot_duration_curve" chosen for "analysis_type" (cf. description above) or 
-  - **.csv ones**, if "extract"
-  - with explicit filenames - hopefully! -, of the form: 
-  {data_type}_{country(ies)}_{year(s)}_cy{clim. year(s)}_{extra-params cases nber}.csv/png
+6. *(Optional) What are the limits of the screening curve approach? Could it explain the - potential?! - differences that you obtain in your capacities vs. the ones given in ERAA data (available in data/ in code env.)?*
