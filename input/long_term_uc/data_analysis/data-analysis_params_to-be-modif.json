@@ -1,23 +1,26 @@
 {
   "data_analysis_list": [
     {
-      "analysis_type": "plot_duration_curve",
+      "analysis_type": "extract",
       "data_type": "net_demand",
       "countries": "france",
       "years": 2025,
       "climatic_years": 1985,
       "period_start": "1900/1/15",
       "period_end": "1900/1/29",
-      "extra_params": {
-        "label": "res_low",
-        "values": {
-          "capas_aggreg_pt_with_cf": {
-            "wind_onshore": 10000,
-            "wind_offshore": 500,
-            "solar_pv": 10000
+      "extra_params": [
+        null,
+        {
+          "label": "res_low",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
+              "wind_onshore": 10000,
+              "wind_offshore": 500,
+              "solar_pv": 10000
+            }
           }
         }
-      }
+      ]
     }
   ]
 }

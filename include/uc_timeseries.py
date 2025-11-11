@@ -158,7 +158,13 @@ class UCTimeseries:
             output_vals = self.values
         return output_vals
 
-    def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray, float]] = None):
+    def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray, float]] = None,
+               extra_params_labels: Dict[int, str] = None):
+        """
+        :param output_dir: in which csv must be saved
+        :param complem_columns: to be added to saved csv
+        :param extra_params_labels: {idx: label} corresp. for extra-parameters (no corresp. for None extra-params)
+        """
         with_temp_period_suffix = True
         output_dates = self.set_output_dates(is_plot=False)
         date_col = set_date_col(first_date=output_dates[0])
@@ -168,11 +174,17 @@ class UCTimeseries:
             for col_name, col_vals in complem_columns.items():
                 values_dict[col_name] = col_vals
         df_to_csv = pd.DataFrame(values_dict)
-        # add "key" columns corresp. to the (country, ty, cy) tuples
+        # add "key" columns corresp. to the (country, ty, cy, extra-params) tuples
         if isinstance(self.dates, dict):
-            all_keys = list(self.dates)
+            all_keys = []
+            # tuple keys of dates dict, replacing last component by label, if not None
+            for elt_tuple in self.dates:
+                if elt_tuple[-1] is None:
+                    all_keys.append(elt_tuple)
+                else:
+                    all_keys.append(elt_tuple[:-1] + (extra_params_labels[elt_tuple[-1]],))
             n_dates = len(self.dates[all_keys[0]])
-            df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year'],
+            df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year', 'extra_params'],
                                       tuple_values=all_keys, n_repeat=n_dates)
             df_to_csv = pd.concat([df_keys, df_to_csv], axis=1)
         if with_temp_period_suffix:
@@ -184,6 +196,7 @@ class UCTimeseries:
         else:
             temp_period_suffix = ''
         output_file = os.path.join(output_dir, f'{self.name.lower()}{temp_period_suffix}.csv')
+        # TODO: remove extra-params column if unique value is None (i.e., no extra-params applied)
         df_to_csv.to_csv(output_file, index=None)
 
     def set_plot_ylabel(self) -> str:

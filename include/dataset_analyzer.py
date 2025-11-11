@@ -329,6 +329,6 @@ class DataAnalysis:
                                               per_dim_plot_params=per_dim_plot_params,
                                               extra_params_labels=extra_params_labels)
         elif self.analysis_type in [ANALYSIS_TYPES.extract, ANALYSIS_TYPES.extract_to_mat]:
-            to_matrix = True if self.analysis_type == ANALYSIS_TYPES.extract_to_mat else False
             # TODO[debug]: to_matrix_format not an arg of this method..., complem_columns missing...
-            uc_timeseries.to_csv(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER)
+            to_matrix = True if self.analysis_type == ANALYSIS_TYPES.extract_to_mat else False
+            uc_timeseries.to_csv(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, extra_params_labels=extra_params_labels)
