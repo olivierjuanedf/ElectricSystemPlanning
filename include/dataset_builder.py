@@ -1,4 +1,5 @@
 import os
+from itertools import product
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
@@ -208,24 +209,6 @@ class PypsaModel:
         storage_unit_names = self.get_storage_unit_names()
         logging.info(f'Considered storage units ({len(storage_unit_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=storage_unit_names)}')
-
-    # def add_generators(network, generators_data: Dict[str, List[GenerationUnitData]]):
-    #     print("Add generators - associated to their respective buses")
-    #     for country, gen_units_data in generators_data.items():
-    #         country_bus_name = get_country_bus_name(country=country)
-    #         for gen_unit_data in gen_units_data:
-    #             pypsa_gen_unit_dict = gen_unit_data.__dict__
-    #             print(country, pypsa_gen_unit_dict)
-    #             if pypsa_gen_unit_dict.get('max_hours', None) is not None:
-    #                 network.add("StorageUnit", bus=f"{country_bus_name}", **pypsa_gen_unit_dict,
-    #                             state_of_charge_initial=pypsa_gen_unit_dict['p_nom'] * pypsa_gen_unit_dict[
-    #                                 'max_hours'] * 0.8
-    #                             )
-    #             else:
-    #                 network.add("Generator", bus=f"{country_bus_name}", **pypsa_gen_unit_dict)
-    #     print("Considered generators", network.generators)
-    #     print("Considered storage units", network.storage_units)
-    #     return network
 
     def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
         if carrier_name is None:
@@ -510,9 +493,6 @@ def add_loads(network, demand: Dict[str, pd.DataFrame]):
     return network
 
 
-from itertools import product
-
-
 def get_current_interco_capa(interco_capas: Dict[Tuple[str, str], float], country_origin: str,
                              country_dest: str) -> Tuple[Optional[float], Optional[bool]]:
     link_tuple = (country_origin, country_dest)
@@ -568,33 +548,3 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
     lp_filepath = f'{output_folder_data}/model_{file_suffix}.lp'
     logging.info(f'Save model in .lp file: {lp_filepath}')
     m.to_file(Path(lp_filepath))
-
-
-def get_stationary_batt_opt_dec(network: pypsa.Network, countries: List[str]):
-    stationary_batt_opt_dec = {}
-    # for all but storages
-    # network.generators_t.p
-    # for storages
-    # network.storage_units_t.p_dispatch
-    # network.generators.loc['fra_coal'] -> info given asset
-    # network.generators_t.p_set
-    for generator in network.generators:
-        if generator.carrier == 'flexibility':
-            bus_name = generator.bus
-            current_country = [country for country in countries if country.startswith(bus_name)][0]
-            stationary_batt_opt_dec[current_country] = generator.p_nom_opt
-
-
-def plot_uc_run_figs(network: pypsa.Network, countries: List[str], year: int, uc_period_start: datetime):
-    # TODO: use this function
-    import matplotlib.pyplot as plt
-    logging.info('Plot generation and prices figures')
-
-    # p_nom_opt is the optimized capacity (that can be also a variable in PyPSA...
-    # but here not optimized -> values in input data plotted)
-    for country in countries:
-        country_bus_name = get_country_bus_name(country=country)
-        network.generators.p_nom_opt.drop(f'Failure_{country_bus_name}').div(1e3).plot.bar(ylabel='GW', figsize=(8, 3))
-    # [Coding trick] Matplotlib can directly adapt size of figure to fit with values plotted
-    plt.tight_layout()
-    plt.close()
