@@ -168,6 +168,7 @@ class UCTimeseries:
         with_temp_period_suffix = True
         output_dates = self.set_output_dates(is_plot=False)
         date_col = set_date_col(first_date=output_dates[0])
+        extra_params_col = 'extra_params'
         output_vals = self.set_output_values(is_plot=False)
         values_dict = {date_col: output_dates, 'value': output_vals}
         if complem_columns is not None:
@@ -184,7 +185,7 @@ class UCTimeseries:
                 else:
                     all_keys.append(elt_tuple[:-1] + (extra_params_labels[elt_tuple[-1]],))
             n_dates = len(self.dates[all_keys[0]])
-            df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year', 'extra_params'],
+            df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year', extra_params_col],
                                       tuple_values=all_keys, n_repeat=n_dates)
             df_to_csv = pd.concat([df_keys, df_to_csv], axis=1)
         if with_temp_period_suffix:
@@ -196,7 +197,9 @@ class UCTimeseries:
         else:
             temp_period_suffix = ''
         output_file = os.path.join(output_dir, f'{self.name.lower()}{temp_period_suffix}.csv')
-        # TODO: remove extra-params column if unique value is None (i.e., no extra-params applied)
+        # remove extra-params column if unique value is None (i.e., no extra-params applied)
+        if df_to_csv[extra_params_col].isna().all():
+            del df_to_csv[extra_params_col]
         df_to_csv.to_csv(output_file, index=None)
 
     def set_plot_ylabel(self) -> str:
