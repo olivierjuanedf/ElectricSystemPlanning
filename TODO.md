@@ -3,68 +3,67 @@ TODO
 
 MAIN actions (M)
 M0) Pb with lfsolarpv data
-M0bis) CLean function get_generation_units_data!!!
-MOter) Check marginal cost/efficiency values in elec-europe_params_fixed.json
+MObis) Check marginal cost/efficiency values in elec-europe_params_fixed.json
 M1) See "TODO[debug]"
 M2) [CR] Voir "TODO[CR]"
 M4) Prévoir appui (doc/mini-script ?) pour aider les étudiants à gérer les infaisabilités ? (bcp au début... surtout si on leur fait passer les embûches pédagos - ne pas mettre d'actif défaillance par ex !)
-M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
 M7) Tester avec des dates start/end sans hh:mm
 M8) Sortir/tracer les émissions CO2
 M11) Version de Python ok?
-M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
--> needs Python >= 3.10...
 M13) Vérif cohérence FuelNames avec ProdTypeNames -> utilité des 2 ?
 M14) Virer les gitignore qui traînent...
-M15) Corriger warning carriers undefined (sur les links _ac a priori)
 M16) Tests is_stress_test case...
+M19) Ajouter graphe camembert à la DJ -> to show congestion of intercos in an "aggreg. view"
+M20) Save output graphs in html to allow interactive discussions
+#################### LATER  ################
+M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
+M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
+-> needs Python >= 3.10...
 M17 (later)) Introduce aggreg. prod types -> "all_res". To avoid typing lists of all RES types for selection...
 M18) Reformat data files description with file objects (folder, separators, column names...)
-M19) AJouter graphe camembert à la DJ
-M20) SOrtir les graphes en html pour pouvoir en discuter de manière interactive
 
 DATA (D)
 D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
-DA1) Rendre fonctionnel cas avec subdt
+DA0) Debug...
+DA1) Make case with subdt functional
+DA4) Check extract with list of selected cases ok -> concat in output csv files ok?
+#################### LATER  ################
 DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
--> LATER
+DA5) Allow capacity plot/extract - over multiple years and dts?
 
 TOY EX (TE) - my_toy_ex_italy.py
-TE1) voir "XXX" (notamment les coding tricks)
-TE2) conserver FUEL_SOURCES ou bien trop compliqué pour les étudiants ?
-TE3) voir si certains warning sont de notre fait... même si en ligne il semble que PyPSA en génère pas mal - notamment en lien avec Linopy
-TE4) doc/toy-model_tutorial.md to be completed/improved + commentaires dans le code à garder/MAJ ?
-TE5) Remplir long_term_uc/toy_model_params/ex_italy-complem_parameters.py avec des exs complémentaires au cas italien (hydrau, batteries)
-TE7) Ne pas mentionner diff clé PV entre les données de capa et de CF -> embrouille...
-TE8) Donner un ex. d'ajout d'un stock/batterie dans le cas italien/ou pointeur sur Internet
+TE5) Fullfill long_term_uc/toy_model_params/ex_italy-complem_parameters.py with complem exs in Ita case (hydro, batteries)
+TE7) Do NOT mention diff of PV key between capa and CF data -> confusing for the students...
+#################### LATER  ################
+TE2) Keep FUEL_SOURCES or too complex for the students?
 
 MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
-MAS1) Doc doc/... pour clarifier les choses et permettre utilisation autonome
--> 1 doc par jour (session) pour ne pas "faire peur" au début avec un doc trop conséquent ?
-MAS2) Integrate hydraulic storages... cf. CS student code
+MAS2) Integrate hydraulic storages... with inflows/min SOC data from ERAA
 MAS3) Usage param auto fulfill interco capa missing -> ??
 MAS4) Add possibility to set Stock (additional to ERAA data) in JSON tb modif input file
+MAS7) Automatically generate some graphs/ppt(s) when launching the runner
+-> automatically over multiple projects cloned?
+#################### LATER  ################
 MAS5) Add possibility to provide additional fatal demand -> for iterations between UC and imperfect disaggreg of an aggregate DSR flex (EV for ex) modeled as a Stock for ex! (cf. OMCEP course)
-MAS6) Reformat/simplify JSON params file (in input/long_term_uc/)
-* elec-europe_params_to-be-modif.json -> suppress "selec" prefix implicit for some params?
-MAS7) Automatically generate some graphs when launching the runner
+MAS6) Reformat/simplify JSON params file (in input/long_term_uc/elec-europe_params_to-be-modif.json 
+-> suppress "selec" prefix implicit for some params?
 
 PLOTS
 P1) Eco2mix colors TB completed -> coal; and markets to distinguish agg_prod_type with same colors
-P2) Add plot functions to get demand/cf/capas values for the selected values of params (and selected period) -> useful for 1st stage of data analysis (better with some graphs easy tb obtained)
 P3) Check case with unique curve -> plot_dims obtained from UC ts name (call of def get_dims_from_uc_ts_name)
 
 OTHERS
-O1) Doc b.a.-ba utilisation codespace en dehors du repot ?
-O2) Scripts avec qques exemples de base Python ? "[coding tricks]"
+O1) Doc basic use of codespace out of the repot?
 O3) / by efficiency in FuelSources and not * for primary cost?
 O4) Iberian-peninsula -> Iberia
-O5) Sous-partie git avec accès différencié élèves / TA pour docs et données diff ?
-(pour éviter conflits ; chgts menant à des bogues "non-nécessaires")
+O7) Check multiple links between two zones possible. Cf. ger-scandinavia AC+DC in CentraleSupélec students hypothesis. 
+And interco types (hvdc/hvac) ok? Q2Emmanuel NEAU and Jean-Yves BOURMAUD
+#################### LATER  ################
+O2) Scripts avec qques exemples de base Python ? "[coding tricks]"
+O5) Subpart of git with distinguished access-rights between students / TA for docs and data available?
+(to avoid conflicts; changes leading to "un-necessary" bugs)
 O6) Finish and connect type checker for JSON file values -> using map(func, [val]) and all([true])
 -> OK excepting UsageParameters
-O7) Check multiple links between two zones possible. Cf. ger-scandinavia AC+DC in CentraleSupélec students hypothesis. And interco types (hvdc/hvac) ok? Q2Emmanuel NEAU and Jean-Yves BOURMAUD
-O8) See with OJ if regular runner possible (run all github with current state of code and plot current scores) -> script to calculate scores and plot results
