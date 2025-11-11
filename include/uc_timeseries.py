@@ -1,4 +1,5 @@
 import os
+import warnings
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Union, Tuple, Optional
@@ -279,8 +280,11 @@ class UCTimeseries:
         curve_labels = list(y) if isinstance(y, dict) else None
         curve_style_attrs = self.set_curve_style_attrs(fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,
                                                        curve_labels=curve_labels)
-        simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(), xlabel=xlabel,
-                    ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
+        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            simple_plot(x=x, y=y, fig_file=fig_file, title=self.set_plot_title(), xlabel=xlabel,
+                        ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
 
     def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None,
                             per_dim_plot_params: Dict[str, PlotParams] = None,
@@ -324,9 +328,12 @@ class UCTimeseries:
         curve_labels = list(y_desc_order) if isinstance(y_desc_order, dict) else None
         curve_style_attrs = self.set_curve_style_attrs(fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,
                                                        curve_labels=curve_labels)
-        simple_plot(x=duration_curve, y=y_desc_order, fig_file=fig_file,
-                    title=f'{self.set_plot_title(dt_suffix="duration curve")}', xlabel=xlabel,
-                    ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
+        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            simple_plot(x=duration_curve, y=y_desc_order, fig_file=fig_file,
+                        title=f'{self.set_plot_title(dt_suffix="duration curve")}', xlabel=xlabel,
+                        ylabel=self.set_plot_ylabel(), fig_style=fig_style, curve_style_attrs=curve_style_attrs)
 
     def plot_rolling_horizon_avg(self):
         bob = 1
