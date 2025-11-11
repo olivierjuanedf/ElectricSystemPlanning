@@ -65,7 +65,7 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
 
 def check_min_pypsa_params_provided(eraa_dataset: Dataset):
     logging.info('Check that "minimal" PyPSA parameters for unit creation have been provided '
-                 '(in JSON files)/read (from ERAA data)')
+                 '(in JSON files) / read (from ERAA data)')
     pypsa_static_params = read_and_check_pypsa_static_params()
     eraa_dataset.control_min_pypsa_params_per_gen_units(
         pypsa_min_unit_params_per_agg_pt=pypsa_static_params.min_unit_params_per_agg_pt)
@@ -255,4 +255,5 @@ if __name__ == '__main__':
                                 'uc_period_start': '1900/1/1'}
     fixed_uc_run_params = UCRunParams(**fixed_uc_run_params_data)
     fixed_run_params_fields = list(fixed_uc_run_params_data)
-    run(solver_name='highs', fixed_uc_run_params=None, fixed_run_params_fields=None, extra_params={'debug_mode': True})
+    extra_params = {'debug_mode': True}
+    run(solver_name='highs', fixed_uc_run_params=None, fixed_run_params_fields=None, extra_params=None)

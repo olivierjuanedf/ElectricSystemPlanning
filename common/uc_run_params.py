@@ -50,7 +50,7 @@ class UCRunParams:
         n_countries = len(self.selected_countries)
         repr_str += f'\n- {n_countries} country(ies): {self.selected_countries}'
         period_str = get_period_str(period_start=self.uc_period_start, period_end=self.uc_period_end)
-        repr_str += f'\n- year: {self.selected_target_year}, on period {period_str}'
+        repr_str += f'\n- year: {self.selected_target_year}, on period {period_str} (last time-slot excluded)'
         repr_str += f'\n- climatic year: {self.selected_climatic_year}'
         return repr_str
 
@@ -214,7 +214,7 @@ class UCRunParams:
             uncoherent_param_stop(param_errors=errors_list)
         else:
             logging.info('Modified LONG-TERM UC PARAMETERS ARE COHERENT!')
-            logging.info(f'RUN CAN START with parameters: {str(self)}')
+            logging.info(f'SIMULATION CAN START on {str(self)}')
 
     def set_countries(self, countries: List[str]):
         self.selected_countries = countries
