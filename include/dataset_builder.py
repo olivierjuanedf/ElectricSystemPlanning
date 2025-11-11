@@ -22,6 +22,7 @@ from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val, rm_elts_
 from utils.df_utils import rename_df_columns
 from utils.dir_utils import make_dir
 from utils.pypsa_utils import get_network_obj_value
+from utils.serializer import array_serializer
 
 
 @dataclass
@@ -44,7 +45,8 @@ class GenerationUnitData:
     def serialize(self) -> dict:
         unit_data_dict = self.__dict__
         # (1d) nd array to list
-        unit_data_dict = {key: list(val) if isinstance(val, np.ndarray) else val for key, val in unit_data_dict.items()}
+        unit_data_dict = {key: array_serializer(my_array=val, stat_repres=True) if isinstance(val, np.ndarray) else val
+                          for key, val in unit_data_dict.items()}
         return unit_data_dict
 
 
