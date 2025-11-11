@@ -22,6 +22,7 @@ from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_lis
     create_dict_from_df_row
 from utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
     set_aggreg_cf_prod_types_data
+from utils.write import json_dump
 
 N_SPACES_MSG = 2
 PROD_TYPE_AGG_COL = f'{COLUMN_NAMES.production_type}_agg'
@@ -502,6 +503,12 @@ class Dataset:
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
         self.generation_units_data = gen_units_data
+
+    def dump_gen_units_data_to_json(self, filepath: str):
+        logging.info(f'Save PyPSA generation units data into JSON file: {filepath}')
+        data_dict = {country: [unit_data.serialize() for unit_data in gen_units_data]
+                     for country, gen_units_data in self.generation_units_data.items()}
+        json_dump(data=data_dict, filepath=filepath)
 
     def set_committable_param(self):
         for country, val in self.generation_units_data.items():

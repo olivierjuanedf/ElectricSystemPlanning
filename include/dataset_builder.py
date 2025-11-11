@@ -13,7 +13,7 @@ from common.constants.countries import set_country_trigram
 from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from common.error_msgs import print_errors_list
-from common.fuel_sources import FuelSource, DummyFuelNames
+from common.fuel_sources import FuelSource
 from common.long_term_uc_io import (get_marginal_prices_file, get_network_figure, get_opt_power_file,
                                     get_storage_opt_dec_file, get_figure_file_named, FigNamesPrefix, get_output_figure)
 from common.plot_params import PlotParams
@@ -28,9 +28,9 @@ class GenerationUnitData:
     name: str
     type: str
     carrier: str = None
-    p_nom: float = None
-    p_min_pu: float = None
-    p_max_pu: float = None
+    p_nom: Union[float, np.ndarray] = None
+    p_min_pu: Union[float, np.ndarray] = None
+    p_max_pu: Union[float, np.ndarray] = None
     efficiency: float = None
     marginal_cost: float = None
     committable: bool = False
@@ -39,6 +39,12 @@ class GenerationUnitData:
 
     def get_non_none_attr_names(self):
         return [key for key, val in self.__dict__.items() if val is not None]
+
+    def serialize(self) -> dict:
+        unit_data_dict = self.__dict__
+        # (1d) nd array to list
+        unit_data_dict = {key: list(val) if isinstance(val, np.ndarray) else val for key, val in unit_data_dict.items()}
+        return unit_data_dict
 
 
 UNIT_NAME_SEP = '_'
@@ -202,6 +208,24 @@ class PypsaModel:
         storage_unit_names = self.get_storage_unit_names()
         logging.info(f'Considered storage units ({len(storage_unit_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=storage_unit_names)}')
+
+    # def add_generators(network, generators_data: Dict[str, List[GenerationUnitData]]):
+    #     print("Add generators - associated to their respective buses")
+    #     for country, gen_units_data in generators_data.items():
+    #         country_bus_name = get_country_bus_name(country=country)
+    #         for gen_unit_data in gen_units_data:
+    #             pypsa_gen_unit_dict = gen_unit_data.__dict__
+    #             print(country, pypsa_gen_unit_dict)
+    #             if pypsa_gen_unit_dict.get('max_hours', None) is not None:
+    #                 network.add("StorageUnit", bus=f"{country_bus_name}", **pypsa_gen_unit_dict,
+    #                             state_of_charge_initial=pypsa_gen_unit_dict['p_nom'] * pypsa_gen_unit_dict[
+    #                                 'max_hours'] * 0.8
+    #                             )
+    #             else:
+    #                 network.add("Generator", bus=f"{country_bus_name}", **pypsa_gen_unit_dict)
+    #     print("Considered generators", network.generators)
+    #     print("Considered storage units", network.storage_units)
+    #     return network
 
     def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
         if carrier_name is None:
@@ -453,20 +477,20 @@ class PypsaModel:
         df_sde_dual_var_opt.to_csv(marginal_prices_csv_file)
 
 
-def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
-    str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
-    for _, units_data in generation_units_data.items():
-        # loop over all units in current country
-        for indiv_unit_data in units_data:
-            current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
-            if current_prod_type in updated_fuel_sources_params:
-                # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
-                if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
-                    indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
-                        GEN_UNITS_PYPSA_PARAMS.marginal_cost]
-
-        # TODO: from units data info on fuel source extract and apply updated params values
-        updated_fuel_sources_params = None
+# def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
+#     str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
+#     for _, units_data in generation_units_data.items():
+#         # loop over all units in current country
+#         for indiv_unit_data in units_data:
+#             current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
+#             if current_prod_type in updated_fuel_sources_params:
+#                 # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
+#                 if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
+#                     indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
+#                         GEN_UNITS_PYPSA_PARAMS.marginal_cost]
+#
+#         # TODO: from units data info on fuel source extract and apply updated params values
+#         updated_fuel_sources_params = None
 
 
 def get_country_bus_name(country: str) -> str:
@@ -474,46 +498,6 @@ def get_country_bus_name(country: str) -> str:
 
 
 STORAGE_LIKE_UNITS = ['batteries', 'flexibility', 'hydro']
-
-
-# def init_pypsa_network(df_demand_first_country: pd.DataFrame):
-#     print("Initialize PyPSA network")
-#     network = pypsa.Network(snapshots=df_demand_first_country.index)
-#     return network
-
-
-# def add_gps_coordinates(network, countries_gps_coords: Dict[str, Tuple[float, float]]):
-#     print("Add GPS coordinates") 
-#     for country, gps_coords in countries_gps_coords.items():
-#         country_bus_name = get_country_bus_name(country=country)
-#         network.add("Bus", name=f"{country_bus_name}", x=gps_coords[0], y=gps_coords[1])
-#     return network
-
-
-# def add_energy_carrier(network, fuel_sources: Dict[str, FuelSources]):
-#     print("Add energy carriers")
-#     for carrier in list(fuel_sources.keys()):
-#         network.add("Carrier", name=carrier, co2_emissions=fuel_sources[carrier].co2_emissions/1000)
-#     return network
-
-
-def add_generators(network, generators_data: Dict[str, List[GenerationUnitData]]):
-    print("Add generators - associated to their respective buses")
-    for country, gen_units_data in generators_data.items():
-        country_bus_name = get_country_bus_name(country=country)
-        for gen_unit_data in gen_units_data:
-            pypsa_gen_unit_dict = gen_unit_data.__dict__
-            print(country, pypsa_gen_unit_dict)
-            if pypsa_gen_unit_dict.get('max_hours', None) is not None:
-                network.add("StorageUnit", bus=f"{country_bus_name}", **pypsa_gen_unit_dict,
-                            state_of_charge_initial=pypsa_gen_unit_dict['p_nom'] * pypsa_gen_unit_dict[
-                                'max_hours'] * 0.8
-                            )
-            else:
-                network.add("Generator", bus=f"{country_bus_name}", **pypsa_gen_unit_dict)
-    print("Considered generators", network.generators)
-    print("Considered storage units", network.storage_units)
-    return network
 
 
 def add_loads(network, demand: Dict[str, pd.DataFrame]):

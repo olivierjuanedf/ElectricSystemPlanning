@@ -1,4 +1,5 @@
 import logging
+import os.path
 from typing import Dict, Tuple, List
 
 import pandas as pd
@@ -22,9 +23,14 @@ from utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_stati
                         read_plot_params)
 
 
-def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr) -> Dataset:
+def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr,
+                         debug_mode: bool = False, debug_output_folder: str = None) -> Dataset:
     """
     Get ERAA data which is needed for current UC simulation; extracted from the data folder of this project
+    :param uc_run_params
+    :param eraa_data_descr
+    :param debug_mode: to save some intermediate data in (JSON) files to more easily debug
+    :param debug_output_folder: in which intermediate data must be saved
     """
     logging.info(f'{TITLE_LOG_SEP} I)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data {TITLE_LOG_SEP}')
     uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
@@ -46,6 +52,10 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
                                            pypsa_unit_params_per_agg_pt=eraa_data_descr.pypsa_unit_params_per_agg_pt,
                                            units_complem_params_per_agg_pt=
                                            eraa_data_descr.units_complem_params_per_agg_pt)
+    if debug_mode:
+        gen_units_data_json = os.path.join(debug_output_folder, 'pypsa_gen_units_data.json')
+        eraa_dataset.dump_gen_units_data_to_json(filepath=gen_units_data_json)
+
     # set 'committable' attribute to False, i.e. no 'dynamic constraints' modeled in the considered modeled
     eraa_dataset.set_committable_param()
     return eraa_dataset
@@ -153,7 +163,7 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
 
 def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM_SOLVER,
         solver_licence_file: str = None, fixed_uc_run_params: UCRunParams = None,
-        fixed_run_params_fields: List[str] = None, log_level: str = None):
+        fixed_run_params_fields: List[str] = None, extra_params: dict = None):
     """
     Run N-zones European Unit Commitment model
     :param network_name: just to set associated attribute in PyPSA network
@@ -162,8 +172,13 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     :param fixed_uc_run_params: to impose some values of UCRunParams attributes when running this function;
     it will overwrite the values in input JSON files
     :param fixed_run_params_fields: list of fields to be overwritten
-    :param log_level: it will overwrite the one defined in usage parameters JSON file
+    :param extra_params: dict to gather some additional parameters for dev. usage / debug
+        - log_level: it will overwrite the one defined in usage parameters JSON file
+        - debug_mode: activated to save some intermediate data/results in (JSON) output files
+    to more easily debug the code
     """
+    if extra_params is None:
+        extra_params = {}
 
     run_start = time.time()
     output_folder = set_full_lt_uc_output_folder()
@@ -177,8 +192,10 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(
         phase_name=EnvPhaseNames.multizones_uc_model)
 
-    if log_level is None:
+    if 'log_level' not in extra_params:
         log_level = usage_params.log_level
+    else:
+        log_level = extra_params['log_level']
 
     logger = init_logger(logger_dir=output_folder, logger_name='eraa_lt_uc_pb.log', log_level=log_level)
 
@@ -191,7 +208,12 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation for network: {network_name}')
 
     # Get needed data (demand, RES Capa. Factors, installed generation capacities)
-    eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr)
+    if 'debug_mode' in extra_params:
+        debug_mode = extra_params['debug_mode']
+    else:
+        debug_mode = False
+    eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr,
+                                        debug_mode=debug_mode, debug_output_folder=output_folder)
     # and check that minimal parameters needed for model creation have been provided
     # -> to avoid 'obscure crash' hereafter
     check_min_pypsa_params_provided(eraa_dataset=eraa_dataset)
@@ -226,4 +248,4 @@ if __name__ == '__main__':
                                 'uc_period_start': '1900/1/1'}
     fixed_uc_run_params = UCRunParams(**fixed_uc_run_params_data)
     fixed_run_params_fields = list(fixed_uc_run_params_data)
-    run(solver_name='highs', fixed_uc_run_params=None, fixed_run_params_fields=None)
+    run(solver_name='highs', fixed_uc_run_params=None, fixed_run_params_fields=None, extra_params={'debug_mode': True})
