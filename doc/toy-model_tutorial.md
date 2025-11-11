@@ -1,11 +1,9 @@
-<span style="color:#257cbd; font-weight:bold">N.B.</span> The planning associated to this tutorial (and references to the theoretical sessions) was dedicated to a course in 2024; it can be modified according to the usage of this code environment
-
-# Monday afternoon session tutorial: start simple, with a "toy model" (of a unique country Unit Commitment model)
+# Start simple, with a "toy model" (of a unique country Unit Commitment model)
 
 This **session exercise consists in**:
 * **Adapting both scripts** [my_toy_ex_italy.py](../my_toy_ex_italy.py) and associated [toy_model_params/italy_parameters.py](../toy_model_params/italy_parameters.py)
 * **Modeling a simple 1-country (the one you are responsible for) *Unit Commitment* (UC) problem in PyPSA**.  
-    <span style="color:#257cbd; font-weight:bold">N.B.</span> Tuesday's theoretical session will explain this UC problem in more details; for now take it as answering to the question "How can electricity demand be satisfied at the lowest possible cost by optimising the production decisions of the available generation assets?"
+    <span style="color:#257cbd; font-weight:bold">N.B.</span> Monday's theoretical session by Cécile ROTTNER has explained this UC - optimisation - problem in details... summarized in one sentence, it could be: "How can electricity demand be satisfied at the lowest possible cost by optimising the production decisions of the available generation assets?"
 
 You can **proceed in order**:
 1. **Read the two example scripts above**, following comments in them to understand the main stages when writing a PyPSA model
@@ -29,7 +27,7 @@ Based on the **two following websites**:
 * PyPSA documentation: https://pypsa.readthedocs.io/en/latest/
 * ERAA documentation (2023.2 will be used): https://www.entsoe.eu/outlooks/eraa/
 
-and an **"extract" of PyPSA documentation regarding generator objects given below** you could be able to build your own country "Unit Commitment" model/modify provided piece of code.
+and an **"extract" of PyPSA documentation regarding generator objects given below**, you could be able to build your own country "Unit Commitment" model/modify provided piece of code.
 
 **Main parameters to define PyPSA generator objects** - that could be sufficient in this course:
 * (required) **bus** -> to which the generator is attached. 
