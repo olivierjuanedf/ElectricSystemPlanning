@@ -249,10 +249,13 @@
     },
     "hydro_pump_storage_open_loop": {
       "power_capa": "from_eraa_data",
+      "energy_capa": "from_eraa_data",
       "init_soc_pu": "from_json_tb_modif"
     },
     "hydro_reservoir": {
-      "power_capa": "from_eraa_data"
+      "power_capa": "from_eraa_data",
+      "energy_capa": "from_eraa_data",
+      "init_soc_pu": "from_json_tb_modif"
     },
     "nuclear": {
       "power_capa": "from_eraa_data"
@@ -261,18 +264,22 @@
       "power_capa": "from_eraa_data"
     },
     "solar_pv": {
+      "power_capa": "from_eraa_data",
       "p_max_pu": "from_eraa_data",
       "capa_factors": "from_eraa_data"
     },
     "solar_thermal": {
+      "power_capa": "from_eraa_data",
       "p_max_pu": "from_eraa_data",
       "capa_factors": "from_eraa_data"
     },
     "wind_offshore": {
+      "power_capa": "from_eraa_data",
       "p_max_pu": "from_eraa_data",
       "capa_factors": "from_eraa_data"
     },
     "wind_onshore": {
+      "power_capa": "from_eraa_data",
       "p_max_pu": "from_eraa_data",
       "capa_factors": "from_eraa_data"
     }

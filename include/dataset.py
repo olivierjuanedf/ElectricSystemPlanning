@@ -451,8 +451,9 @@ class Dataset:
             for agg_pt in agg_prod_types:
                 logging.debug(N_SPACES_MSG * ' ' + f'* for aggreg. prod. type {agg_pt}')
                 # set and add asset name
-                gen_unit_name = set_gen_unit_name(country=country, agg_prod_type=agg_pt)
-                current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.name] = gen_unit_name
+                current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.name] = (
+                    set_gen_unit_name(country=country, agg_prod_type=agg_pt)
+                )
                 # and 'type' (the aggreg. prod types used here, with a direct corresp. to PyPSA generators; 
                 # made explicit in JSON fixed params files)
                 current_assets_data[agg_pt]['type'] = agg_pt
