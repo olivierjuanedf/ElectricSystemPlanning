@@ -96,7 +96,7 @@ def get_json_fuel_sources_tb_modif_file() -> str:
 
 def get_json_params_modif_country_files() -> List[str]:
     return map(
-        lambda x: os.path.join(INPUT_LT_UC_COUNTRY_SUBFOLDER, x),
+        lambda x: uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_COUNTRY_SUBFOLDER, x)),
         filter(lambda x: x.endswith('.json'),
                os.listdir(INPUT_LT_UC_COUNTRY_SUBFOLDER)))
 

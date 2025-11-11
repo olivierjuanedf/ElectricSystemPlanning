@@ -20,7 +20,7 @@ from include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
 from utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_static_params, read_given_phase_plot_params,
-                        read_plot_params)
+                        read_plot_params, read_usage_params)
 
 
 def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr,
@@ -32,7 +32,7 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     :param debug_mode: to save some intermediate data in (JSON) files to more easily debug
     :param debug_output_folder: in which intermediate data must be saved
     """
-    logging.info(f'{TITLE_LOG_SEP} I)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data {TITLE_LOG_SEP}')
+    logging.info(f'{TITLE_LOG_SEP} II)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data {TITLE_LOG_SEP}')
     uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
                                    period_end=uc_run_params.uc_period_end)
     logging.info(f'For year (resp. climatic year) {uc_run_params.selected_target_year} '
@@ -45,7 +45,7 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                     aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
     eraa_dataset.complete_data()
-    logging.info(f'{TITLE_LOG_SEP} I)2) Check data coherence {TITLE_LOG_SEP}')
+    logging.info(f'{TITLE_LOG_SEP} II)2) Check data coherence {TITLE_LOG_SEP}')
     logging.info('Get generation units data, from both ERAA data - read just before '
                  '- and complementary JSON parameter files')
     eraa_dataset.get_generation_units_data(uc_run_params=uc_run_params,
@@ -74,7 +74,7 @@ def check_min_pypsa_params_provided(eraa_dataset: Dataset):
 def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_dataset: Dataset,
                                zones_gps_coords: Dict[str, Tuple[float, float]],
                                fuel_sources: Dict[str, FuelSource]) -> PypsaModel:
-    logging.info(f'{TITLE_LOG_SEP} II) Create PyPSA UC model {TITLE_LOG_SEP}')
+    logging.info(f'{TITLE_LOG_SEP} III) Create PyPSA UC model {TITLE_LOG_SEP}')
     pypsa_model = PypsaModel(name=name)
     date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
     horizon = pd.date_range(
@@ -116,7 +116,7 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
     :param solver_name: name of optim. solver to be used
     :param solver_licence_file: name of .lic file, if not default solver (highs) used
     """
-    logging.info(f'{TITLE_LOG_SEP} III) Get a solution for European UC model {TITLE_LOG_SEP}')
+    logging.info(f'{TITLE_LOG_SEP} IV) Get a solution for European UC model {TITLE_LOG_SEP}')
     # use alternatively set_optim_solver(name='gurobi', licence_file='gurobi.lic') to use Gurobi,
     # with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
     pypsa_model.set_optim_solver(name=solver_name, licence_file=solver_licence_file)
@@ -188,26 +188,31 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     # deactivate some annoying and useless warnings in pypsa/pandas
     deactivate_verbose_warnings()
 
-    # set fuel sources objects from JSON
-    fuel_sources = set_fuel_sources_from_json()
-
-    usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(
-        phase_name=EnvPhaseNames.multizones_uc_model)
-
+    # read env. "usage" parameters
+    usage_params = read_usage_params()
     if 'log_level' not in extra_params:
         log_level = usage_params.log_level
     else:
         log_level = extra_params['log_level']
 
     logger = init_logger(logger_dir=output_folder, logger_name='eraa_lt_uc_pb.log', log_level=log_level)
+    logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation for network: {network_name}')
+
+    logging.info(f'{TITLE_LOG_SEP} I) Read UC run parameters - from European and per-countries JSON input '
+                 f'files {TITLE_LOG_SEP}')
+
+    # set fuel sources objects from JSON
+    fuel_sources = set_fuel_sources_from_json()
+
+    eraa_data_descr, uc_run_params = (
+        read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model, usage_params=usage_params)
+    )
 
     if fixed_uc_run_params is not None:
         uc_run_params = (
             apply_fixed_uc_run_params(uc_run_params=uc_run_params, fixed_uc_run_params=fixed_uc_run_params,
                                       eraa_data_descr=eraa_data_descr, fixed_run_params_fields=fixed_run_params_fields)
         )
-
-    logging.info(f'Start ERAA-PyPSA long-term European Unit Commitment (UC) simulation for network: {network_name}')
 
     # Get needed data (demand, RES Capa. Factors, installed generation capacities)
     if 'debug_mode' in extra_params:

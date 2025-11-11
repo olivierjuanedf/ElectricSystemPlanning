@@ -46,7 +46,7 @@ def apply_per_country_json_file_params(countries_data: dict, available_countries
             # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
             if mode_name == 'solo':
                 for c, _ in json_country[k].items():
-                    logging.info(f'Updating {k} for country {c} from file {file}')
+                    logging.info(f'Updating {k} for {c} from file {file}')
                     countries_data[k][c] = json_country[k][c]
             else:
                 logging.info(f'Updating {k} for {country} from file {file}')
@@ -65,7 +65,8 @@ def update_country_json_params(countries_data: dict, json_params_tb_modif: dict)
     selected_pt_param_name = CountryJsonParamNames.selected_prod_types
     if len(countries_data[selected_pt_param_name]) > 0:
         for elt_country, new_prod_types in countries_data[selected_pt_param_name].items():
-            logging.info(f'Selected production type overwritten (not all the ones from ERAA) for {elt_country}')
+            logging.info(f'Selected production type(s) overwritten for {elt_country}: {new_prod_types} '
+                         f'(and not all the ones from ERAA)')
             json_params_tb_modif[selected_pt_param_name][elt_country] = new_prod_types
     # suppress pt selection key in countries data dict, not to have multiple values for same attr.
     # when creating UCRunParams object hereafter
@@ -156,13 +157,20 @@ def set_countries_data(usage_params: UsageParameters, phase_name: str, available
     return countries_data, json_params_tb_modif
 
 
-def read_and_check_uc_run_params(phase_name: str, get_only_eraa_data_descr: bool = False) \
-        -> tuple[Optional[UsageParameters], ERAADatasetDescr, Optional[UCRunParams]]:
+def read_usage_params() -> UsageParameters:
+    # Get JSON usage params, the ones to control the behaviour of the UC run -> UsageParameters object
+    return set_usage_params(json_usage_params_data=set_json_usage_params_data())
+
+
+def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
+                                 get_only_eraa_data_descr: bool = False) \
+        -> tuple[ERAADatasetDescr, Optional[UCRunParams]]:
     """
     Read and check parameters for UC run - based on different JSON files (with only part of them that can be modified
     by the users/students in this environment)
     :param phase_name: name of the phase for which this function is run (data analysis, 1-zone UC toy model, X-zones
     Eur. UC model)
+    :param usage_params
     :param get_only_eraa_data_descr: used for the runner
     """
     if get_only_eraa_data_descr:
@@ -171,14 +179,6 @@ def read_and_check_uc_run_params(phase_name: str, get_only_eraa_data_descr: bool
         json_params_tb_modif_file = get_json_params_tb_modif_file()
         info_msg = f'Read and check long-term UC parameters; the ones modified in file {json_params_tb_modif_file}'
     logging.info(info_msg)
-
-    # check that modifications in JSON in which it is allowed are allowed/coherent
-    logging.info('... and check that modifications done are coherent with available ERAA data')
-    if not get_only_eraa_data_descr:
-        # Get JSON usage params, the ones to control the behaviour of the UC run -> UsageParameters object
-        usage_params = set_usage_params(json_usage_params_data=set_json_usage_params_data())
-    else:
-        usage_params = None
 
     # get JSON fixed parameters -> ERAA data description object - including in particular the set of
     # available values for countries, (climatic) years, etc.
@@ -203,7 +203,7 @@ def read_and_check_uc_run_params(phase_name: str, get_only_eraa_data_descr: bool
     else:
         uc_run_params = None
 
-    return usage_params, eraa_data_descr, uc_run_params
+    return eraa_data_descr, uc_run_params
 
 
 def read_and_check_pypsa_static_params() -> PypsaStaticParams:
