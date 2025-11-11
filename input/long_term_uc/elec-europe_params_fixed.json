@@ -126,7 +126,9 @@
       "carrier": "coal",
       "p_min_pu": 0,
       "p_max_pu": 1,
-      "committable": "false"
+      "efficiency": 0.9,
+      "marginal_cost": 50,
+      "committable": "true"
     },
     "dsr": {
       "carrier": "ac",
@@ -147,6 +149,7 @@
       "p_min_pu": 0,
       "p_max_pu": 1,
       "efficiency": 0.5,
+      "marginal_cost": 70,
       "committable": "true"
     },
     "hydro_pondage": {
@@ -191,13 +194,13 @@
       "p_max_pu": 1,
       "efficiency": 0.33,
       "marginal_cost": 9,
-      "committable": "false"
+      "committable": "true"
     },
     "oil": {
       "carrier": "oil",
       "p_min_pu": 0,
       "p_max_pu": 1,
-      "committable": "false"
+      "committable": "true"
     },
     "others_fatal": {
       "carrier": "other_renew",

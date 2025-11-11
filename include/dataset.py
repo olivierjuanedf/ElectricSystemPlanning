@@ -515,10 +515,17 @@ class Dataset:
                      for country, gen_units_data in self.generation_units_data.items()}
         json_dump(data=data_dict, filepath=filepath)
 
-    def set_committable_param(self):
-        for country, val in self.generation_units_data.items():
-            for i in range(len(val)):
-                val[i].committable = False
+    def set_committable_param_to_false(self):
+        per_country_modif_values = {}
+        for country, units_data in self.generation_units_data.items():
+            for unit_data in units_data:
+                if unit_data.committable:
+                    if country not in per_country_modif_values:
+                        per_country_modif_values[country] = []
+                    per_country_modif_values[country].append(unit_data.name)
+                unit_data.committable = False
+        logging.info(f'Set committable PyPSA parameter to False, i.e. run without dynamic constraints; '
+                     f'modified values (True -> False) for units: {per_country_modif_values}')
 
     def control_min_pypsa_params_per_gen_units(self, pypsa_min_unit_params_per_agg_pt: Dict[str, List[str]]):
         """

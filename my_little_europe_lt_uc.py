@@ -52,12 +52,14 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
                                            pypsa_unit_params_per_agg_pt=eraa_data_descr.pypsa_unit_params_per_agg_pt,
                                            units_complem_params_per_agg_pt=
                                            eraa_data_descr.units_complem_params_per_agg_pt)
+
+    # set 'committable' attribute to False, i.e. no 'dynamic constraints' modeled in the considered modeled
+    eraa_dataset.set_committable_param_to_false()
+
     if debug_mode:
         gen_units_data_json = os.path.join(debug_output_folder, 'pypsa_gen_units_data.json')
         eraa_dataset.dump_gen_units_data_to_json(filepath=gen_units_data_json)
 
-    # set 'committable' attribute to False, i.e. no 'dynamic constraints' modeled in the considered modeled
-    eraa_dataset.set_committable_param()
     return eraa_dataset
 
 
