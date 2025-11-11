@@ -177,8 +177,14 @@ def capa_info_log(df_gen_capa: pd.DataFrame):
 def calc_net_demand(df_demand: pd.DataFrame, df_gen_capa: pd.DataFrame, df_agg_cf: pd.DataFrame,
                     cf_agg_prod_types_tb_read: List[str], capas_aggreg_pt_with_cf: Dict[str, int]) \
         -> (pd.DataFrame, List[str]):
+    """
+    Calculate net demand
+    :returns df with net demand, and list of prod types for which (RES) capacity values have been set from data
+    provided in Python arg, and not from ERAA data (in data folder of this project)
+    """
     value_col = COLUMN_NAMES.value
-    pts_with_capa_from_arg = []
+    pts_with_capa_from_arg = []  # prod types with capacity value taken from arg. (not ERAA data)
+    pts_wo_cf_data = []  # prod types without CF data obtained...
     # TODO: directly in pd to avoid creation of np arrays?
     # convert to float so that subtraction of CF can be done hereafter
     current_np_net_demand = np.array(df_demand[value_col]).astype(np.float64)
@@ -190,9 +196,15 @@ def calc_net_demand(df_demand: pd.DataFrame, df_gen_capa: pd.DataFrame, df_agg_c
         else:  # or from (ERAA) dataset data
             current_capa = df_gen_capa.loc[df_gen_capa[PROD_TYPE_AGG_COL] == agg_prod_type, 'power_capacity'].values[0]
         current_cf_data = df_agg_cf[df_agg_cf[PROD_TYPE_AGG_COL] == agg_prod_type]
-        current_np_net_demand -= current_capa * np.array(current_cf_data[value_col])
+        if len(current_cf_data) > 0:
+            current_np_net_demand -= current_capa * np.array(current_cf_data[value_col])
+        else:
+            pts_wo_cf_data.append(agg_prod_type)
     df_net_demand = deepcopy(df_demand)
     df_net_demand[value_col] = current_np_net_demand
+    # warning if prod. types without CF data obtained -> not taken into account here...
+    if len(pts_wo_cf_data) > 0:
+        logging.warning(f'No capa. factor data available to account for {pts_wo_cf_data} in net demand calculation')
     return df_net_demand, pts_with_capa_from_arg
 
 
