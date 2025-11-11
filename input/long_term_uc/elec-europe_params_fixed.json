@@ -239,7 +239,19 @@
       "power_capa": "from_eraa_data",
       "init_soc_pu": "from_json_tb_modif"
     },
+    "biofuel": {
+      "power_capa": "from_eraa_data"
+    },
     "coal": {
+      "power_capa": "from_eraa_data"
+    },
+    "dsr": {
+      "power_capa": "from_eraa_data"
+    },
+    "gas": {
+      "power_capa": "from_eraa_data"
+    },
+    "hydro_pondage": {
       "power_capa": "from_eraa_data"
     },
     "hydro_pump_storage_closed_loop": {
@@ -261,6 +273,9 @@
       "power_capa": "from_eraa_data"
     },
     "oil": {
+      "power_capa": "from_eraa_data"
+    },
+    "others_fatal": {
       "power_capa": "from_eraa_data"
     },
     "solar_pv": {
