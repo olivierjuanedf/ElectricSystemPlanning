@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import Iterator
 
 from common.constants.countries import set_country_trigram
 from utils.dir_utils import make_dir, uniformize_path_os
@@ -98,7 +98,7 @@ def get_json_fuel_sources_tb_modif_file() -> str:
     return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'fuel_sources_to-be_modif.json'))
 
 
-def get_json_params_modif_country_files() -> List[str]:
+def get_json_params_modif_country_files() -> Iterator[str]:
     return map(
         lambda x: uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_COUNTRY_SUBFOLDER, x)),
         filter(lambda x: x.endswith('.json'),
