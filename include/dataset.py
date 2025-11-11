@@ -158,7 +158,7 @@ def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[st
 def add_failure_asset_to_capas_data(df_gen_capa: pd.DataFrame, failure_power_capa: float) -> pd.DataFrame:
     failure_df = pd.DataFrame.from_dict({
         PROD_TYPE_AGG_COL: [ProdTypeNames.failure],
-        ERAAParamNames.power_capacity: [failure_power_capa],
+        ERAAParamNames.power_capacity: [int(failure_power_capa)],  # cast to int if float in JSON input file
         ERAAParamNames.power_capacity_turbine: [0.0],
         ERAAParamNames.power_capacity_pumping: [0.0],
         ERAAParamNames.power_capacity_injection: [0.0],
@@ -421,6 +421,9 @@ class Dataset:
         self.agg_cf_data = complete_country_data(per_country_data=self.agg_cf_data)
         self.agg_gen_capa_data = complete_country_data(per_country_data=self.agg_gen_capa_data)
 
+    def get_agg_prod_types(self, country: str) -> List[str]:
+        return list(set(self.agg_gen_capa_data[country][PROD_TYPE_AGG_COL]))
+
     def get_generation_units_data(self, uc_run_params: UCRunParams, pypsa_unit_params_per_agg_pt: Dict[str, dict],
                                   units_complem_params_per_agg_pt: Dict[str, Dict[str, str]]):
         """
@@ -440,8 +443,9 @@ class Dataset:
             logging.debug(f'- for country {country}')
             self.generation_units_data[country] = []
             # get list of assets to be treated from capa. data
-            agg_prod_types = list(set(self.agg_gen_capa_data[country][PROD_TYPE_AGG_COL]))
+            agg_prod_types = self.get_agg_prod_types(country=country)
             # initialize set of params for each unit by using pypsa default values
+            # TODO: introduce function with explicit name for this init stage
             current_assets_data = {agg_pt: pypsa_unit_params_per_agg_pt[agg_pt] for agg_pt in agg_prod_types}
             # and loop over pt to add complementary params
             for agg_pt in agg_prod_types:
@@ -458,13 +462,14 @@ class Dataset:
                                             col_and_val_for_selec=(PROD_TYPE_AGG_COL, agg_pt))
                 )
                 # power capacity, for all assets
-                power_capacity = current_pt_capa_data_dict[ERAAParamNames.power_capacity]
+                # TODO: see why int cast not ok before that... because of failure with possibly float power capa
+                #  data in JSON input params file?
+                power_capacity = int(current_pt_capa_data_dict[ERAAParamNames.power_capacity])
                 power_capacity_turbine = current_pt_capa_data_dict[ERAAParamNames.power_capacity_turbine]
                 energy_capacity = current_pt_capa_data_dict[ERAAParamNames.energy_capacity]
                 is_storage_like = energy_capacity > 0
                 if agg_pt in units_complem_params_per_agg_pt and len(units_complem_params_per_agg_pt[agg_pt]) > 0:
                     # add pnom attribute if needed
-                    # TODO: useful? Or redundant with preceding extract of pnom...
                     if power_capa_key in units_complem_params_per_agg_pt[agg_pt]:
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {power_capa_key}')
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = int(power_capacity)
