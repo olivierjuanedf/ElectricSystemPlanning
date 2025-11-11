@@ -1,19 +1,22 @@
-N.B. The planning associated to this tutorial (and references to the theoretical sessions) was dedicated to a course in 2024; it can be modified according to the usage of this code environment
+<span style="color:#257cbd; font-weight:bold">N.B.</span> The planning associated to this tutorial (and references to the theoretical sessions) was dedicated to a course in 2024; it can be modified according to the usage of this code environment
 
 # Monday afternoon session tutorial: start simple, with a "toy model" (of a unique country Unit Commitment model)
 
 This **session exercise consists in**:
-* **Adapting both scripts** *my_toy_ex_italy.py* and associated *long_term_uc/toy_model_params/italy_parameters.py*
-* **To model in PyPSA a simple 1-country (the one you are responsible for) *Unit Commitment* (UC) problem**. N.B. Tuesday's theoretical session will explain this UC problem in more details; for now take it as answering to the question "how to satisfy electricity demand at minimal cost by optimizing production decisions of available generation assets?"
+* **Adapting both scripts** [my_toy_ex_italy.py](../my_toy_ex_italy.py) and associated [toy_model_params/italy_parameters.py](../toy_model_params/italy_parameters.py)
+* **Modeling a simple 1-country (the one you are responsible for) *Unit Commitment* (UC) problem in PyPSA**.  
+    <span style="color:#257cbd; font-weight:bold">N.B.</span> Tuesday's theoretical session will explain this UC problem in more details; for now take it as answering to the question "How can electricity demand be satisfied at the lowest possible cost by optimising the production decisions of the available generation assets?"
 
 You can **proceed in order**:
 1. **Read the two example scripts above**, following comments in them to understand the main stages when writing a PyPSA model
-2. **Copy/paste the two following scripts and rename them** *my_toy_ex_{country}.py* and *toy_model_params/{country}_parameters.py* - with "country" the name of your country (or create two new ones with same names)
-3. **Considering installed generation assets data from file** *data/ERAA_2023-2/generation_capas/generation-capa_{year}_{country}.csv* - with "year" the one considered in this simulation, update values list of generator (dictionaries) in list of function *get_generators* in script *{country}_parameters.py*. This mainly consists in: (i) Extracting from Italy case the assets that are also present in your country, and only adapt "p_nom" value based on *generation-capa_{year}_{country}.csv* file; (ii) Complement the obtained list with assets in *generation-capa_{year}_{country}.csv* for the ones not present in Italy ex. - looking at file *toy_model_params/ex_italy-complem_parameters.py* - again setting "p_nom" based on values in generation capas csv file.
+2. **Copy/paste the two following scripts and rename them** *my_toy_ex_{**country**}.py* and *toy_model_params/{**country**}_parameters.py* - with "***country***" the name of your country (or create two new ones with same names)
+3. **Considering installed generation assets data from file** *data/ERAA_2023-2/generation_capas/generation-capa_{**year**}_{**country**}.csv* - with "***year***" the one considered in this simulation, update values list of generator (dictionaries) in list of function *get_generators* in script *{**country**}_parameters.py*. This mainly consists in:  
+    - (i) Extracting from Italy case the assets that are also present in your country, and only adapt "**p_nom**" value based on *generation-capa_{**year**}_{**country**}.csv* file;  
+    - (ii) Complement the obtained list with assets in *generation-capa_{**year**}_{**country**}.csv* for the ones not present in Italy. Ex: looking at file [toy_model_params/ex_italy-complem_parameters.py](../toy_model_params/ex_italy-complem_parameters.py) - again setting "**p_nom**" based on values in generation capas csv file.
 
-Note that **technology names do not directly coincide between the "level" used in this exercise** (see e.g., the production types infos in *input/long_term_uc/countries/france.json*) **and data found in csv files** (here, the one with generation capacities). For some cases an aggregation from names in csv files to the ones in PyPSA will be needed; the correspondence to be used for that is provided at the very beginning of *my_toy_ex_italy.py" script (see global constant AGG_PROD_TYPES_DEF).
+Note that **technology names do not directly coincide between the "level" used in this exercise** (see e.g., the production types infos in [input/long_term_uc/countries/france.json](../input/long_term_uc/countries/france.json)) **and data found in csv files** (here, the one with generation capacities). For some cases an aggregation from names in csv files to the ones in PyPSA will be needed; the correspondence to be used for that is provided at the very beginning of [my_toy_ex_italy.py](../my_toy_ex_italy.py) script (see global constant <span style="color:#32B032; font-weight:bold">AGG_PROD_TYPES_DEF</span>).
 
-Note also that **available values in data** (years, climatic years, aggregate production types, etc.) **can be found in file** *input/long_term_uc/elec-europe_eraa-available-values.json*
+Note also that **available values in data** (years, climatic years, aggregate production types, etc.) **can be found in file** [input/long_term_uc/elec-europe_eraa-available-values.json](../input/long_term_uc/elec-europe_eraa-available-values.json)
 
 4. **Run your script** to optimise your single-country Unit Commitment model
 5. **Observe/analyse** the obtained solution in folders *output/long_term_uc/monozone_{country}/data* and *.../figures*
@@ -29,12 +32,26 @@ Based on the **two following websites**:
 and an **"extract" of PyPSA documentation regarding generator objects given below** you could be able to build your own country "Unit Commitment" model/modify provided piece of code.
 
 **Main parameters to define PyPSA generator objects** - that could be sufficient in this course:
-* (required) **bus** -> to which the generator is attached. **Format**: str
-* (required) **name** -> of your generation asset (used as id). In the proposed piece of code format {technology type}_{country name} is used (ex: "coal_poland"). **Format**: str
-* (optional) **carrier** -> mainly primary energy carriers. Can be also used to model CO2eq. emissions. **Format**: str
-* (optional) **committable** -> with "dynamics constraints" accounted for? **Format**: boolean. **Default**: False
-* (optional) **efficiency** -> of your generator - as a % (related to losses in "generation process"). **Format**: float. **Default**: 1
-* (optional) **marginal_cost**. **Format**: float
-* (optional) **"p_nom"** -> capacity (a power, in MW). **Format**: int. **Default**: 0
-* (optional) **p_min_pu** -> minimal power level - as % of capacity ("pu" stands for "per unit"), set to 0 to start simple. **Format**: float or vector (list or NumPy array). **Default**: 0
-* (optional) **p_max_pu** -> idem, maximal power. Can integrate "Capacity Factors" (or maintenance); in this case it can be variable in time. **Format**: float or vector (list or NumPy array). **Default**: 1
+* (required) **bus** -> to which the generator is attached. 
+    * **Format**: <span style="color:#257cbd; font-weight:bold">str</span>
+* (required) **name** -> of your generation asset (used as id). In the proposed piece of code format {technology type}_{country name} is used (ex: "coal_poland"). 
+    * **Format**: <span style="color:#257cbd; font-weight:bold">str</span>
+* (optional) **carrier** -> mainly primary energy carriers. Can be also used to model CO2eq. emissions. 
+    * **Format**: <span style="color:#257cbd; font-weight:bold">str</span>
+* (optional) **committable** -> with "dynamics constraints" accounted for?
+    * **Format**: <span style="color:#257cbd; font-weight:bold">boolean</span>
+    * **Default**: <span style="color:#ff2c1c; font-weight:bold">False</span>
+* (optional) **efficiency** -> of your generator - as a % (related to losses in "generation process"). 
+    * **Format**: <span style="color:#257cbd; font-weight:bold">float</span>
+    * **Default**: <span style="color:#ff2c1c; font-weight:bold">1</span>
+* (optional) **marginal_cost**. 
+    * **Format**: <span style="color:#257cbd; font-weight:bold">float</span>
+* (optional) **"p_nom"** -> capacity (a power, in MW). 
+    * **Format**: <span style="color:#257cbd; font-weight:bold">int</span> 
+    * **Default**: <span style="color:#ff2c1c; font-weight:bold">0</span>
+* (optional) **p_min_pu** -> minimal power level - as % of capacity ("pu" stands for "per unit"), set to 0 to start simple.                 
+    * **Format**: <span style="color:#257cbd; font-weight:bold">float</span> or <span style="color:#257cbd; font-weight:bold">vector</span> (list or NumPy array).  
+    * **Default**: <span style="color:#ff2c1c; font-weight:bold">0</span>
+* (optional) **p_max_pu** → idem, maximal power. Can integrate "Capacity Factors" (or maintenance); in this case it can be variable in time.  
+  * **Format**: <span style="color:#257cbd; font-weight:bold">float</span> or <span style="color:#257cbd; font-weight:bold">vector</span> (list or NumPy array).  
+  * **Default**: <span style="color:#ff2c1c; font-weight:bold">1</span>
