@@ -10,16 +10,20 @@ from include.dataset import Dataset
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
 from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
-    read_given_phase_plot_params, read_plot_params
+    read_given_phase_plot_params, read_plot_params, read_usage_params
 
 phase_name = EnvPhaseNames.data_analysis
 
-usage_params, eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=phase_name)
-data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
-
+# read code environment "usage" parameters
+usage_params = read_usage_params()
 logger = init_logger(logger_dir=OUTPUT_DATA_ANALYSIS_FOLDER, logger_name='eraa_input_data_analysis.log',
                      log_level=usage_params.log_level)
 logging.info('START ERAA (input) data analysis')
+
+# read ERAA data description (JSON) file, and UC run parameters
+eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=phase_name, usage_params=usage_params)
+data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
+
 
 # set params and figure style for plots
 per_dim_plot_params = read_plot_params()

@@ -188,7 +188,7 @@ def run(network_name: str = 'my little europe', solver_name: str = DEFAULT_OPTIM
     # deactivate some annoying and useless warnings in pypsa/pandas
     deactivate_verbose_warnings()
 
-    # read env. "usage" parameters
+    # read code environment "usage" parameters
     usage_params = read_usage_params()
     if 'log_level' not in extra_params:
         log_level = usage_params.log_level
