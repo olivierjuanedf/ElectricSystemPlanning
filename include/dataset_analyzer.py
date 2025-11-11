@@ -127,7 +127,7 @@ class DataAnalExtraParams:
     def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
         errors_list = []
         # check that names of extra-params values are coherent
-        all_extra_param_names = set([ExtraParamNames.capas_aggreg_pt_with_cf])
+        all_extra_param_names = set(ExtraParamNames.capas_aggreg_pt_with_cf)
         current_param_names = set(self.values)
         unknown_param_names = list(current_param_names - all_extra_param_names)
         if len(unknown_param_names) > 0:

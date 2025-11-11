@@ -4,13 +4,12 @@ from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Union, Dict, List, Tuple
+from typing import Union, Dict, List, Tuple, Optional
 
 from common.constants.datadims import DataDimensions
 from common.constants.temporal import DAY_OF_WEEK
-from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER, N_LETTERS_ZONE, XtickDateFormat, \
-    DEFAULT_DATE_XTICK_FMT, \
-    CurveStyles, FigureStyle, N_MAX_CHARS_FLAT_LABEL
+from common.plot_params import PlotParams, N_LETTERS_ZONE, XtickDateFormat, \
+    DEFAULT_DATE_XTICK_FMT, CurveStyles, FigureStyle, N_MAX_CHARS_FLAT_LABEL
 from utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals, endswith_in_list
 from utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
 
@@ -72,18 +71,19 @@ def rm_all_zeros_hours(xtick_labels: List[str], re_linebreak: bool = False) -> L
     return xtick_labels
 
 
-def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format: str, short_months: bool = True,
-                          add_day_exp: bool = False, rm_useless_zeros: bool = True,
+def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], date_xtick_fmt: str,
+                          short_months: bool = True, add_day_exp: bool = False, rm_useless_zeros: bool = True,
                           flatten_labels: bool = True, rm_all_zero_hours: bool = True) -> List[str]:
     """
     Set date xtick labels
     :param idx_xticks: idx of xtick labels that will be used in plot
     :param x_dates: all dates associated to points plotted
-    :param format: format to be used for xtick labels, cf. XtickDateFormat
+    :param date_xtick_fmt: format to be used for xtick labels, cf. XtickDateFormat
     :param short_months: use short names for months (Jan. i.o. January, etc.), only for 'in_letter' format
     :param add_day_exp: add exponent on day nber, only for 'in_letter' format
     :param rm_useless_zeros: remove useless zeros in dates nbers?
     :param flatten_labels: put labels on unique line if of length <= given value?
+    :param rm_all_zero_hours
     """
     with_year_in_xticks = x_dates[-1].year > x_dates[0].year  # only used for format 'in_letter'
     new_date = None
@@ -96,10 +96,10 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], format
 
         # add dow/(year, month, day) only for first tick of this dow/(year, month, day)
         if new_date is None or not current_day_date == new_date:
-            if format == XtickDateFormat.dow:
+            if date_xtick_fmt == XtickDateFormat.dow:
                 current_dow = DAY_OF_WEEK[current_day_date.isoweekday() - 1]
                 current_label = f"{current_dow}\n{x_dates[idx_xticks[i]]:%H:}"
-            elif format == XtickDateFormat.in_letter:
+            elif date_xtick_fmt == XtickDateFormat.in_letter:
                 # new year
                 if with_year_in_xticks and (new_date is None or current_day_date.year > new_date.year):
                     current_date_fmt = '%Y %B %d'
@@ -169,7 +169,7 @@ def set_date_xtick_idx_and_labels(x_dates: List[datetime], min_delta_xticks_h: i
                                min_delta_xticks_h=min_delta_xticks_h, n_max_xticks=n_max_xticks)
     if xtick_date_fmt is None:
         xtick_date_fmt = DEFAULT_DATE_XTICK_FMT
-    xtick_labels = set_date_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates, format=xtick_date_fmt,
+    xtick_labels = set_date_xtick_labels(idx_xticks=idx_xticks, x_dates=x_dates, date_xtick_fmt=xtick_date_fmt,
                                          add_day_exp=add_day_exp, rm_useless_zeros=rm_useless_zeros)
     return idx_xticks, xtick_labels
 
@@ -201,7 +201,7 @@ def set_specific_keys_to_get_style_attr(key: Union[str, int], attr_level: int, z
 
 def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], plot_dims_order: List[str],
                           per_dim_plot_params: Dict[str, PlotParams], curve_style: str) \
-        -> Dict[Tuple[str, int, int], CurveStyleAttrs]:
+        -> Optional[Dict[Tuple[str, int, int], CurveStyleAttrs]]:
     """
     returns {(zone, year, clim. year): (color, linestyle, marker)}
     """

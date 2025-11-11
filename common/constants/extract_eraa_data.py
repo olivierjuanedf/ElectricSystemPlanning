@@ -6,42 +6,39 @@ from utils.basic_utils import is_str_bool, cast_str_to_bool
 from utils.eraa_utils import set_interco_to_tuples
 from utils.type_checker import apply_params_type_check
 
-
 FICTIVE_CALENDAR_YEAR = 1900
 INTERCO_STR_SEP = '2'
 
-
 Mode = Literal['solo', 'europe']
 
-
-# raw types (just after reading) of the following attributes 
+# raw types (just after reading) of the following attributes
 # -> for 'direct' check to stop asap if erroneous values
 # TODO: define complex types in a dataclass (centralized)
-RAW_TYPES_FOR_CHECK = {'eraa_dataset_descr': 
-                       {'aggreg_prod_types_def': 'two_level_dict_str_str_list-of-str',
-                        'agg_prod_types_with_cf_data': 'list_of_str',
-                        'available_climatic_years': 'list_of_int',
-                        'available_countries': 'list_of_str',
-                        'available_aggreg_prod_types': 'two_level_dict_str_str_list-of-str',
-                        'available_intercos': 'list_of_str',
-                        'available_target_years': 'list_of_int',
-                        'eraa_edition': 'str',
-                        'gps_coordinates': 'dict_str_list_of_float',
-                        'pypsa_unit_params_per_agg_pt': 'dict_str_dict',
-                        'units_complem_params_per_agg_pt': 'two_level_dict_str_str_str'
-                        },
-                        'pypsa_static_params':
-                        {
-                            'min_unit_params_per_agg_pt': 'dict_str_list_of_str'
-                        },
-                        'plot_params': 
-                        {
-                            'zone_palette_choice': 'str',
-                            'agg_prod_type_palette_choice': 'str',
-                            'zone_palettes_def': 'two_level_dict_str_str_str',
-                            'agg_prod_type_palettes_def': 'two_level_dict_str_str_str'
-                            }
-}
+RAW_TYPES_FOR_CHECK = {'eraa_dataset_descr':
+                           {'aggreg_prod_types_def': 'two_level_dict_str_str_list-of-str',
+                            'agg_prod_types_with_cf_data': 'list_of_str',
+                            'available_climatic_years': 'list_of_int',
+                            'available_countries': 'list_of_str',
+                            'available_aggreg_prod_types': 'two_level_dict_str_str_list-of-str',
+                            'available_intercos': 'list_of_str',
+                            'available_target_years': 'list_of_int',
+                            'eraa_edition': 'str',
+                            'gps_coordinates': 'dict_str_list_of_float',
+                            'pypsa_unit_params_per_agg_pt': 'dict_str_dict',
+                            'units_complem_params_per_agg_pt': 'two_level_dict_str_str_str'
+                            },
+                       'pypsa_static_params':
+                           {
+                               'min_unit_params_per_agg_pt': 'dict_str_list_of_str'
+                           },
+                       'plot_params':
+                           {
+                               'zone_palette_choice': 'str',
+                               'agg_prod_type_palette_choice': 'str',
+                               'zone_palettes_def': 'two_level_dict_str_str_str',
+                               'agg_prod_type_palettes_def': 'two_level_dict_str_str_str'
+                           }
+                       }
 
 
 @dataclass
@@ -50,7 +47,7 @@ class UsageParameters:
     # apply per country JSON file data selection/overwriting params?
     # N.B. {str: str} in JSON file; {str: bool} after parsing
     apply_per_country_json_file_params: Union[Dict[str, str], Dict[str, bool]] = None
-    overwriting_eraa_interco_capa_vals: bool = False 
+    overwriting_eraa_interco_capa_vals: bool = False
     manually_adding_demand: bool = False
     manually_adding_generators: bool = False
     mode: Mode = 'solo'
@@ -80,7 +77,7 @@ class UsageParameters:
 
 # TODO: "failure" as global constant
 FAILURE_ASSET = 'failure'
-        
+
 
 @dataclass
 class ERAADatasetDescr:
@@ -105,8 +102,8 @@ class ERAADatasetDescr:
         """
         Check coherence of types
         """
-        apply_params_type_check(param_obj_dict=self.__dict__, 
-                                types_for_check=RAW_TYPES_FOR_CHECK['eraa_dataset_descr'], 
+        apply_params_type_check(param_obj_dict=self.__dict__,
+                                types_for_check=RAW_TYPES_FOR_CHECK['eraa_dataset_descr'],
                                 param_name='ERAA description data - fixed ones -')
 
     # TODO: get auto_add_failure_pu from global usage params
@@ -129,7 +126,7 @@ class ERAADatasetDescr:
                 for elt_year in new_avail_aggreg_pt_dict[country]:
                     if FAILURE_ASSET not in new_avail_aggreg_pt_dict[country][elt_year]:
                         new_avail_aggreg_pt_dict[country][elt_year].append(FAILURE_ASSET)
-             
+
         self.available_aggreg_prod_types = new_avail_aggreg_pt_dict
         # replace '.' by '-' in edition
         self.eraa_edition = self.eraa_edition.replace('.', '-')
@@ -148,8 +145,8 @@ class PypsaStaticParams:
         """
         Check coherence of types
         """
-        apply_params_type_check(param_obj_dict=self.__dict__, 
-                                types_for_check=RAW_TYPES_FOR_CHECK['pypsa_static_params'], 
+        apply_params_type_check(param_obj_dict=self.__dict__,
+                                types_for_check=RAW_TYPES_FOR_CHECK['pypsa_static_params'],
                                 param_name='PyPSA static params - to set objects main infos')
 
     def process(self):
@@ -159,4 +156,3 @@ class PypsaStaticParams:
             self.min_unit_params_per_agg_pt.pop(ALL_UNITS_KEY)
             for agg_pt in self.min_unit_params_per_agg_pt:
                 self.min_unit_params_per_agg_pt[agg_pt].extend(common_min_params)
-                

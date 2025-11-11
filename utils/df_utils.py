@@ -1,4 +1,3 @@
-import logging
 import warnings
 
 import numpy as np
@@ -34,8 +33,7 @@ def set_aggreg_col_based_on_corresp(df: pd.DataFrame, col_name: str, created_agg
     df[created_agg_col_name] = df[col_name].apply(get_key_of_val, args=(agg_corresp,))
     agg_operations = {col: common_aggreg_ope for col in val_cols}
     if other_col_for_agg is not None:
-        gpby_cols = [created_agg_col_name]
-        gpby_cols.append(other_col_for_agg)
+        gpby_cols = [created_agg_col_name, other_col_for_agg]
     else:
         gpby_cols = created_agg_col_name
     df = df.groupby(gpby_cols).agg(agg_operations).reset_index()
@@ -56,7 +54,8 @@ def create_dict_from_cols_in_df(df: pd.DataFrame, key_col, val_col) -> dict:
 
 
 def create_dict_from_df_row(df: pd.DataFrame, col_and_val_for_selec: tuple = None, key_cols: list = None,
-                            rm_col_for_selec: bool=True) -> dict:
+                            rm_col_for_selec: bool = True) -> dict:
+    col_for_selec = None
     if col_and_val_for_selec is not None:
         col_for_selec = col_and_val_for_selec[0]
         val_for_selec = col_and_val_for_selec[1]
