@@ -28,8 +28,19 @@ def concatenate_dfs(dfs: List[pd.DataFrame], reset_index: bool = True) -> pd.Dat
 
 
 def set_aggreg_col_based_on_corresp(df: pd.DataFrame, col_name: str, created_agg_col_name: str, val_cols: List[str],
-                                    agg_corresp: Dict[str, List[str]], common_aggreg_ope,
+                                    agg_corresp: Dict[str, List[str]], common_aggreg_ope: str,
                                     other_col_for_agg: str = None) -> pd.DataFrame:
+    """
+    Set aggreg. column based on a correspondence {aggreg. value: list of corresp. (indiv.) values}
+    :param df
+    :param col_name: of the (indiv.) keys
+    :param created_agg_col_name: of the aggreg. keys
+    :param val_cols: list of value columns
+    :param agg_corresp
+    :param common_aggreg_ope: name of aggreg. operation to be applied on value columns in considered df
+    :param other_col_for_agg
+    :returns: df after having applied aggreg. operation
+    """
     df[created_agg_col_name] = df[col_name].apply(get_key_of_val, args=(agg_corresp,))
     agg_operations = {col: common_aggreg_ope for col in val_cols}
     if other_col_for_agg is not None:

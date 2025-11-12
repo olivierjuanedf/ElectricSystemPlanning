@@ -79,7 +79,7 @@ uc_period_start = datetime(year=1900, month=1, day=1)
 uc_period_end = uc_period_start + timedelta(days=14)
 # TODO: used?
 from common.constants.prod_types import ProdTypeNames
-agg_prod_types_selec = [ProdTypeNames.wind_offshore, ProdTypeNames.wind_offshore, ProdTypeNames.solar_pv]
+agg_prod_types_selec = [ProdTypeNames.wind_onshore, ProdTypeNames.wind_offshore, ProdTypeNames.solar_pv]
 
 """
   II) Initialize two objects - used hereafter to have clean and 'robust' code operations/functions

@@ -21,7 +21,7 @@ class ProdTypeNames:  # by alpha. order
     oil: str = 'oil'
     others_non_renewable: str = 'others_non-renewable'
     others_renewable: str = 'others_renewable'
-    solar_pv: str = 'solar_photovoltaic'
+    solar_pv: str = 'solar_pv'
     solar_thermal: str = 'solar_thermal'
     wind_offshore: str = 'wind_offshore'
     wind_onshore: str = 'wind_onshore'
