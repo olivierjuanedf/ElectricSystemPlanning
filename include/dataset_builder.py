@@ -378,14 +378,14 @@ class PypsaModel:
 
     def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False):
         country_trigram = set_country_trigram(country=country)
-        # N.B. p_nom_opt is the optimized capacity (that can be also a variable in PyPSA but here...
-        # not optimized - only UC problem -> values plotted correspond to the ones that can be found in input data)
-        # all but failure asset capacity will be used in plot
-        self.network.generators.p_nom_opt.drop(f'{country_trigram}_failure').div(1e3).plot.bar(ylabel='GW',
-                                                                                               figsize=(8, 3))
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            # N.B. p_nom_opt is the optimized capacity (that can be also a variable in PyPSA but here...
+            # not optimized - only UC problem -> values plotted correspond to the ones that can be found in input data)
+            # all but failure asset capacity will be used in plot
+            self.network.generators.p_nom_opt.drop(f'{country_trigram}_failure').div(1e3).plot.bar(ylabel='GW',
+                                                                                                   figsize=(8, 3))
             plt.tight_layout()
             plt.savefig(get_output_figure(fig_name=FigNamesPrefix.capacity, country=country, year=year,
                                           toy_model_output=toy_model_output))
