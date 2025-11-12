@@ -19,8 +19,7 @@ def init(runner_output_folder: str, log_level: str = 'info'):
     # deactivate some annoying and useless warnings in pypsa/pandas
     deactivate_verbose_warnings()
 
-    logger = init_logger(logger_dir=runner_output_folder, logger_name='eraa_lt_uc_runner.log',
-                         log_level=log_level)
+    logger = init_logger(logger_dir=runner_output_folder, logger_name='eraa_lt_uc_runner.log', log_level=log_level)
 
 
 def copy_results_to_runner_folder(uc_output_folder: str, runner_output_folder: str, climatic_year: int):
