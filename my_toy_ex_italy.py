@@ -230,7 +230,7 @@ print(pypsa_model.network.generators)
 """
 # (V.1) Set solver to be used
 # -> default is to use "highs", that must be largely sufficient to solve this 1-zone UC toy model
-# -> alternatively pypsa_model.set_optim_solver(name='gurobi', licence_file='gurobi.lic') can be used,
+# -> alternatively pypsa_model.set_optim_solver(name='gurobi', license_file='gurobi.lic') can be used,
 # with gurobi.lic file provided at root of this project (see readme.md for procedure to obtain such a .lic file)
 pypsa_model.set_optim_solver()
 # (V.2) Save lp model, then solve optimisation model (using either highs/gurobi)

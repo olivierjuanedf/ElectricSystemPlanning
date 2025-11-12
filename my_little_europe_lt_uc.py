@@ -113,10 +113,10 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
     :param year: of considered UC pb
     :param n_countries: in the considered network
     :param uc_period_start: date of the beginning of UC pb
-    :param solver_params: name/licence file, if not default solver (highs) used
+    :param solver_params: name/license file, if not default solver (highs) used
     """
     logging.info(f'{TITLE_LOG_SEP} IV) Get a solution for European UC model {TITLE_LOG_SEP}')
-    # use alternatively set_optim_solver(name='gurobi', licence_file='gurobi.lic') to use Gurobi,
+    # use alternatively set_optim_solver(name='gurobi', license_file='gurobi.lic') to use Gurobi,
     # with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
     pypsa_model.set_optim_solver(solver_params=solver_params)
     result = pypsa_model.optimize_network(year=year, n_countries=n_countries, period_start=uc_period_start)
@@ -167,7 +167,7 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     """
     Run N-zones European Unit Commitment model
     :param network_name: just to set associated attribute in PyPSA network
-    :param solver_params: optimisation solver name/licence_file; the latter must be at root of this project
+    :param solver_params: optimisation solver name/license_file; the latter must be at root of this project
     :param fixed_uc_run_params: to impose some values of UCRunParams attributes when running this function;
     it will overwrite the values in input JSON files
     :param fixed_run_params_fields: list of fields to be overwritten

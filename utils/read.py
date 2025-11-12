@@ -243,7 +243,7 @@ def read_solver_params() -> SolverParams:
     solver_params_data = set_json_solver_params()
     # a few tests on read JSON file
     name_key = 'name'
-    lic_file_key = 'licence_file'
+    lic_file_key = 'license_file'
     known_keys = [name_key, lic_file_key]
     solver_params_file = get_json_solver_params_file()
     if name_key not in solver_params_data:

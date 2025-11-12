@@ -331,18 +331,18 @@ class PypsaModel:
             else:
                 self.optim_solver_params = solver_params
             if not self.optim_solver_params.name == DEFAULT_OPTIM_SOLVER_PARAMS.name:
-                # check that licence file param is defined
-                solver_licence_file = self.optim_solver_params.licence_file
-                if solver_licence_file is None:
+                # check that license file param is defined
+                solver_license_file = self.optim_solver_params.license_file
+                if solver_license_file is None:
                     warning_msg = f'Licence file for optim. solver {self.optim_solver_params.name} not provided'
                     self.set_default_optim_solver(warning_msg=warning_msg)
                 else:
-                    # licence file must be at root of the project
-                    if not os.path.exists(path=solver_licence_file):
-                        warning_msg = f'Licence file {solver_licence_file} does not exist (at root of project)'
+                    # license file must be at root of the project
+                    if not os.path.exists(path=solver_license_file):
+                        warning_msg = f'Licence file {solver_license_file} does not exist (at root of project)'
                         self.set_default_optim_solver(warning_msg=warning_msg)
                     else:
-                        os.environ[f'{self.optim_solver_params.name.upper()}_LICENSE_FILE'] = solver_licence_file
+                        os.environ[f'{self.optim_solver_params.name.upper()}_LICENSE_FILE'] = solver_license_file
 
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
                          toy_model_output: bool = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
