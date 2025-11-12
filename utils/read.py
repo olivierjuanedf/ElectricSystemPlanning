@@ -267,7 +267,7 @@ def read_given_phase_plot_params(phase_name: str) -> FigureStyle:
 
 def read_plot_params() -> Dict[str, PlotParams]:
     json_plot_params_file = get_json_plot_params_file()
-    logging.info(f'Read and check plot parameters file: {json_plot_params_file}')
+    logging.debug(f'Read and check plot parameters file: {json_plot_params_file}')
 
     json_plot_params = check_and_load_json_file(json_file=json_plot_params_file, file_descr='JSON plot params')
     # remove elt used only for FigureStyle of data analysis
