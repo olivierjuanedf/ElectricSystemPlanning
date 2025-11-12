@@ -2,7 +2,7 @@
   "aggreg_prod_types_def": {
     "res_capa-factors": {
       "solar_pv": [
-        "solar_photovoltaic"
+        "solar_pv"
       ],
       "solar_thermal": [
         "csp_nostorage"
@@ -58,7 +58,7 @@
         "others_renewable"
       ],
       "solar_pv": [
-        "solar_photovoltaic"
+        "solar_pv"
       ],
       "solar_thermal": [
         "solar_thermal"
