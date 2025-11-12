@@ -445,6 +445,7 @@ class Dataset:
         :param units_complem_params_per_agg_pt: # for each aggreg. prod type, a dict. {complem. param name: source
         - "from_json_tb_modif"/"from_eraa_data"}
         """
+        # TODO: make subcases per type of generator below to have a more explicit code
         # TODO: marginal costs/efficiency, from FuelSources??
         countries = list(self.agg_gen_capa_data)
         # TODO: set as global constants/unify...

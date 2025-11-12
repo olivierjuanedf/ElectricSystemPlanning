@@ -140,6 +140,7 @@ def set_per_origin_bus_links_msg(link_names: List[str]) -> str:
 
 @dataclass
 class PypsaModel:
+    # TODO: json dump to have an aggreg. view of such a model in saved files (and check stress test effect rapidly)
     name: str
     network: pypsa.Network = None
     prod_var_opt: pd.DataFrame = None  # prod opt value that will be obtained after optim.
