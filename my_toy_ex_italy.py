@@ -121,15 +121,15 @@ from utils.df_utils import selec_in_df_based_on_list
 # use global constant names of different production types to be sure of extracting data without any pb
 from common.constants.prod_types import ProdTypeNames
 prod_type_col = 'production_type_agg'
-solar_pv = {
+solar_pv_cf_data = {
     country: selec_in_df_based_on_list(df=eraa_dataset.agg_cf_data[country], selec_col=prod_type_col,
                                        selec_vals=[ProdTypeNames.solar_pv], rm_selec_col=True)
 }
-wind_on_shore = {
+wind_on_shore_cf_data = {
     country: selec_in_df_based_on_list(df=eraa_dataset.agg_cf_data[country], selec_col=prod_type_col,
                                        selec_vals=[ProdTypeNames.wind_onshore], rm_selec_col=True)
 }
-wind_off_shore = {
+wind_off_shore_cf_data = {
     country: selec_in_df_based_on_list(df=eraa_dataset.agg_cf_data[country], selec_col=prod_type_col,
                                        selec_vals=[ProdTypeNames.wind_offshore], rm_selec_col=True)
 }
@@ -194,8 +194,9 @@ fuel_sources = set_fuel_sources_from_json()
 # get properties of generators to be set on the unique considered bus here
 # -> from toy_model_params/italy_parameters.py script
 generators = get_generators(country_trigram=country_trigram, fuel_sources=fuel_sources,
-                            wind_on_shore_data=wind_on_shore[country], wind_off_shore_data=wind_off_shore[country],
-                            solar_pv_data=solar_pv[country])
+                            wind_on_shore_cf_data=wind_on_shore_cf_data[country],
+                            wind_off_shore_cf_data=wind_off_shore_cf_data[country],
+                            solar_pv_cf_data=solar_pv_cf_data[country])
 # set generation units data from this list
 generation_units_data = set_gen_as_list_of_gen_units_data(generators=generators)
 # [N-countries] Add country (key), generation units data (values) to the gen_units_data argument

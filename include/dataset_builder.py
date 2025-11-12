@@ -382,11 +382,13 @@ class PypsaModel:
         # all but failure asset capacity will be used in plot
         self.network.generators.p_nom_opt.drop(f'{country_trigram}_failure').div(1e3).plot.bar(ylabel='GW',
                                                                                                figsize=(8, 3))
-        # [Coding trick] Matplotlib can directly adapt size of figure to fit with values plotted
-        plt.tight_layout()
-        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.capacity, country=country, year=year,
-                                      toy_model_output=toy_model_output))
-        plt.close()
+        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            plt.tight_layout()
+            plt.savefig(get_output_figure(fig_name=FigNamesPrefix.capacity, country=country, year=year,
+                                          toy_model_output=toy_model_output))
+            plt.close()
 
     def plot_opt_prod_var(self, plot_params_agg_pt: PlotParams, country: str, year: int,
                           climatic_year: int, start_horizon: datetime, toy_model_output: bool = False):
