@@ -5,7 +5,7 @@
 # Stages of the practical session:
 
 ## Discovering the code environment
-1. Read [doc/PracticalSession3-European-System-Planning/European-system_tutorial.md](../doc/PracticalSession3-European-System-Planning/European-system_tutorial.md)
+1. Read [doc/PracticalSession3-European-System-Planning/European-system_tutorial.md](../PracticalSession3-European-System-Planning/European-system_tutorial.md)
 
 2. Check parameters in [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country 
 
