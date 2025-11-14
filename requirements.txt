@@ -5,7 +5,7 @@ numpy
 pandas
 matplotlib
 matplotlib-inline
-pypsa==0.32.2
+pypsa==0.35.1
 cartopy
 Requests
 gurobipy
