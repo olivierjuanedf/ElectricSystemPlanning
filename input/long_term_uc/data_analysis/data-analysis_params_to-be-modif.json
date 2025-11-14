@@ -2,7 +2,8 @@
   "data_analysis_list": [
     {
       "analysis_type": "extract",
-      "data_type": "net_demand",
+      "data_type": "res_capa-factors",
+      "data_subtype": "solar_pv",
       "countries": "france",
       "years": [
         2025,
