@@ -1,5 +1,5 @@
 ipykernel
-linopy
+linopy==0.5.5
 highspy
 numpy
 pandas
