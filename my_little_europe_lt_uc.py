@@ -244,16 +244,4 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
 
 
 if __name__ == '__main__':
-    from common.uc_run_params import UCRunParams
-    from common.constants.prod_types import ProdTypeNames
-
-    pt_selec = {'france': [ProdTypeNames.nuclear, ProdTypeNames.wind_offshore, ProdTypeNames.wind_onshore],
-                'germany': [ProdTypeNames.oil, ProdTypeNames.wind_onshore, ProdTypeNames.wind_offshore]}
-    fixed_uc_run_params_data = {'selected_countries': list(pt_selec), 'selected_target_year': 2025,
-                                'selected_climatic_year': 1985, 'selected_prod_types': pt_selec,
-                                'uc_period_start': '1900/1/1'}
-    fixed_uc_run_params = UCRunParams(**fixed_uc_run_params_data)
-    fixed_run_params_fields = list(fixed_uc_run_params_data)
-    solver_params_run = SolverParams(name='highs')
-    extra_params = {'debug_mode': True}
-    run(solver_params=solver_params_run, fixed_uc_run_params=None, fixed_run_params_fields=None, extra_params=None)
+    run()

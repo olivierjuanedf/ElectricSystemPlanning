@@ -2,7 +2,7 @@
 TODO
 
 MAIN actions (M)
-M0) Pb with lfsolarpv data
+M0) Update readme.md with new names for project etc...
 MObis) Check marginal cost/efficiency values in elec-europe_params_fixed.json
 M1) See "TODO[debug]"
 M2) [CR] Voir "TODO[CR]"

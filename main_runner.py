@@ -77,3 +77,13 @@ if __name__ == '__main__':
                   climatic_year_selec_rule=ClimYearsSelecRules.random, runner_output_folder=output_folder, run_idx=1,
                   eur_team_name='eu_1')
     # TODO: coherent logs in this case (redundant/confusing with the ones of my_little_lt_uc.py)
+    # TODO: see if this code tested in my_little_europe_lt_uc.py is useful here
+    # pt_selec = {'france': [ProdTypeNames.nuclear, ProdTypeNames.wind_offshore, ProdTypeNames.wind_onshore],
+    #             'germany': [ProdTypeNames.oil, ProdTypeNames.wind_onshore, ProdTypeNames.wind_offshore]}
+    # fixed_uc_run_params_data = {'selected_countries': list(pt_selec), 'selected_target_year': 2025,
+    #                             'selected_climatic_year': 1985, 'selected_prod_types': pt_selec,
+    #                             'uc_period_start': '1900/1/1'}
+    # fixed_uc_run_params = UCRunParams(**fixed_uc_run_params_data)
+    # fixed_run_params_fields = list(fixed_uc_run_params_data)
+    # solver_params_run = SolverParams(name='highs')
+    # extra_params = {'debug_mode': True}
