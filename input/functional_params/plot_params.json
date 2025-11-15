@@ -214,7 +214,8 @@
       "climatic_year",
       "extra_args",
       "agg_prod_type"
-    ]
+    ],
+    "n_curves_max": 6
   },
   "fig_style_monozone_toy_uc_model": {
     "curve_style": "relative",

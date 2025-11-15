@@ -28,7 +28,6 @@ RAW_TYPES_FOR_CHECK = {'analysis_type': CheckerNames.is_str, 'data_type': Checke
                        AGG_PROD_TYPE_KEY: CheckerNames.is_str_or_list_of_str,
                        'country': CheckerNames.is_str_or_list_of_str,
                        'year': CheckerNames.is_int_or_list_of_int, 'climatic_year': CheckerNames.is_int_or_list_of_int}
-N_CURVES_MAX = 6
 DEFAULT_CY = 'first'
 
 
@@ -244,7 +243,7 @@ class DataAnalysis:
         else:
             self.extra_params = [None]
 
-    def coherence_check(self, eraa_data_descr: ERAADatasetDescr):
+    def coherence_check(self, eraa_data_descr: ERAADatasetDescr, n_curves_max: int):
         errors_list = []
         # check that analysis type is in the list of allowed values
         if self.analysis_type not in AVAILABLE_ANALYSIS_TYPES:
@@ -266,10 +265,15 @@ class DataAnalysis:
 
         # check maximal nber of curves
         if self.analysis_type in ANALYSIS_TYPES_PLOT:
+            # TODO: include specific case of None agg pt with RES CF plot (in which all pts will be included
+            #  -> after in the code)
             n_curves = len(self.countries) * len(self.years) * len(self.climatic_years)
-            if n_curves > N_CURVES_MAX:
+            for optional_elt in [self.extra_params, self.aggreg_prod_types]:
+                if optional_elt is not None:
+                    n_curves *= len(optional_elt)
+            if n_curves > n_curves_max:
                 errors_list.append(f'Too many curves for {self.analysis_type}: {n_curves} '
-                                   f'(vs. max allowed {N_CURVES_MAX})')
+                                   f'(vs. max allowed {n_curves_max})')
 
         # coherence of start and end period
         if self.period_end <= self.period_start:

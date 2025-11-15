@@ -22,13 +22,14 @@ logging.info('START ERAA (input) data analysis')
 
 # read ERAA data description (JSON) file, and UC run parameters
 eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=phase_name, usage_params=usage_params)
-data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
-
 
 # set params and figure style for plots
 per_dim_plot_params = read_plot_params()
 fig_style = read_given_phase_plot_params(phase_name=phase_name)
 print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
+
+# read and check data analyses params
+data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
 
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:

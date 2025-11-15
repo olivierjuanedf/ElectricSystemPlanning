@@ -222,7 +222,16 @@ def read_and_check_pypsa_static_params() -> PypsaStaticParams:
     return pypsa_static_params
 
 
-def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> List[DataAnalysis]:
+def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr, n_curves_max: int = 6) -> List[DataAnalysis]:
+    """
+
+    Args:
+        eraa_data_descr:
+        n_curves_max: maximal number of curves on a plot done during DA
+
+    Returns:
+
+    """
     json_data_analysis_params_file = get_json_data_analysis_params_file()
     logging.info(f'Read and check data analysis parameters file; '
                  f'the ones modified in file {json_data_analysis_params_file}')
@@ -235,7 +244,7 @@ def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr) -> Li
     for elt_analysis in data_analyses:
         elt_analysis.check_types()
         elt_analysis.process(eraa_data_descr=eraa_data_descr)
-        elt_analysis.coherence_check(eraa_data_descr=eraa_data_descr)
+        elt_analysis.coherence_check(eraa_data_descr=eraa_data_descr, n_curves_max=n_curves_max)
     return data_analyses
 
 

@@ -119,6 +119,7 @@ class FigureStyle:
     rm_useless_zeros_in_date_xtick: bool = True
     date_xtick_fontsize: int = 12
     date_xtick_rotation: int = 45
+    n_curves_max: int = 6
 
     def process(self):
         if self.plot_dims_order is None:
