@@ -187,12 +187,18 @@ class UCTimeseries:
             output_vals = self.values
         return output_vals
 
+    def get_name_with_added_dt_suffix(self, data_type_suffix: str) -> str:
+        len_dt = len(self.data_type)
+        # + 1 for last term not to have repetition of separator '_'
+        return '_'.join([self.name[:len_dt], data_type_suffix, self.name[len_dt + 1:]])
+
     def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray, float]] = None,
-               extra_params_labels: Dict[int, str] = None):
+               extra_params_labels: Dict[int, str] = None, dt_suffix_for_output: str = None):
         """
         :param output_dir: in which csv must be saved
         :param complem_columns: to be added to saved csv
         :param extra_params_labels: {idx: label} corresp. for extra-parameters (no corresp. for None extra-params)
+        :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
         """
         with_temp_period_suffix = True
         output_dates = self.set_output_dates(is_plot=False)
@@ -227,7 +233,9 @@ class UCTimeseries:
             temp_period_suffix = f'_{temp_period_str}'
         else:
             temp_period_suffix = ''
-        output_file = os.path.join(output_dir, f'{self.name.lower()}{temp_period_suffix}.csv')
+        # get name with added suffix to identify this specific file
+        name_with_added_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        output_file = os.path.join(output_dir, f'{name_with_added_suffix.lower()}{temp_period_suffix}.csv')
         # remove extra-params/aggreg. prod. type column if unique value is None (i.e., no extra-params applied)
         for col in [extra_params_col, agg_prod_type_col]:
             if df_to_csv[col].isna().all():
@@ -313,7 +321,7 @@ class UCTimeseries:
         return curve_style_attrs
 
     def plot(self, output_dir: str, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None,
-             extra_params_labels: Dict[int, str] = None):
+             extra_params_labels: Dict[int, str] = None, dt_suffix_for_output: str = None):
         """
         Plot (UC) timeseries
         :param output_dir: in which figure will be saved
@@ -321,9 +329,11 @@ class UCTimeseries:
         :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
         defined in plot_params.json file)
         :param extra_params_labels: corresp. between extra. parameters index and labels
+        :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
         """
-        name_label = self.name.capitalize()
-        fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
+        # get name with added suffix to identify this specific file
+        name_with_added_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        fig_file = os.path.join(output_dir, f'{name_with_added_suffix.lower()}.png')
         x = self.set_output_dates(is_plot=True)
         y = self.set_output_values(is_plot=True)
         xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
@@ -344,7 +354,7 @@ class UCTimeseries:
 
     def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None,
                             per_dim_plot_params: Dict[str, PlotParams] = None,
-                            extra_params_labels: Dict[int, str] = None):
+                            extra_params_labels: Dict[int, str] = None, dt_suffix_for_output: str = None):
         """
         Plot (UC) timeseries duration curve(s)
         :param output_dir: in which figure will be saved
@@ -353,6 +363,7 @@ class UCTimeseries:
         :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
         defined in plot_params.json file)
         :param extra_params_labels: corresp. between extra. parameters index and labels
+        :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
         """
         y = self.set_output_values(is_plot=True)
         # sort values in descending order
@@ -374,7 +385,9 @@ class UCTimeseries:
             xlabel = 'Duration (%)'
         else:
             xlabel = 'Duration (nber of time-slots - hours)'
-        fig_file = os.path.join(output_dir, f'{self.name.lower()}_duration_curve.png')
+        # get name with added suffix to identify this specific file
+        name_with_added_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        fig_file = os.path.join(output_dir, f'{name_with_added_suffix.lower()}_duration_curve.png')
         if fig_style is None:
             fig_style = FigureStyle()
             fig_style.process()

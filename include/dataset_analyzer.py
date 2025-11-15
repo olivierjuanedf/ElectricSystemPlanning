@@ -307,11 +307,15 @@ class DataAnalysis:
         # stop if any error
         stop_if_coherence_check_error(obj_checked=self, errors_list=errors_list)
 
+    def set_agg_prod_types_to_default_val(self):
+        self.aggreg_prod_types = [None]
+
     def get_extra_args_idx_to_label_corresp(self) -> Dict[int, str]:
         return {elt.index: elt.label for elt in self.extra_params if elt is not None}
 
     def apply_analysis(self, per_case_data: Dict[Tuple[str, int, int], pd.DataFrame], fig_style: FigureStyle = None,
-                       per_dim_plot_params: Dict[str, PlotParams] = None, extra_params_labels: Dict[int, str] = None):
+                       per_dim_plot_params: Dict[str, PlotParams] = None, extra_params_labels: Dict[int, str] = None,
+                       dt_suffix_for_output: str = None):
         """
         Apply 'analysis', either saving data to csv, or plotting it
         :param per_case_data: per tuple (country, year, climatic year) data in a dict. {tuple: df},
@@ -319,6 +323,9 @@ class DataAnalysis:
         :param fig_style: FigureStyle params, in case a plot be applied
         :param per_dim_plot_params: {plot dimension eg 'zone': parameters to be used for plot color/linestyle/marker}
         :param extra_params_labels: {idx: label} corresp. for extra-parameters (no corresp. for None extra-params)
+        :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
+        (currently only for net demand case with aggreg. prod. type selection for data selection + calc. but not leading
+        to different curves/blocks of data in saved .png/.csv)
         """
         date_col = 'date'
         value_col = 'value'
@@ -366,12 +373,15 @@ class DataAnalysis:
             logging.warning(f'No data obtained for type {self.data_type} -> analysis (plot/save to .csv) not done')
         elif self.analysis_type == ANALYSIS_TYPES.plot:
             uc_timeseries.plot(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style,
-                               per_dim_plot_params=per_dim_plot_params, extra_params_labels=extra_params_labels)
+                               per_dim_plot_params=per_dim_plot_params, extra_params_labels=extra_params_labels,
+                               dt_suffix_for_output=dt_suffix_for_output)
         elif self.analysis_type == ANALYSIS_TYPES.plot_duration_curve:
             uc_timeseries.plot_duration_curve(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, fig_style=fig_style,
                                               per_dim_plot_params=per_dim_plot_params,
-                                              extra_params_labels=extra_params_labels)
+                                              extra_params_labels=extra_params_labels,
+                                              dt_suffix_for_output=dt_suffix_for_output)
         elif self.analysis_type in [ANALYSIS_TYPES.extract, ANALYSIS_TYPES.extract_to_mat]:
             # TODO[debug]: to_matrix_format not an arg of this method..., complem_columns missing...
             to_matrix = True if self.analysis_type == ANALYSIS_TYPES.extract_to_mat else False
-            uc_timeseries.to_csv(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, extra_params_labels=extra_params_labels)
+            uc_timeseries.to_csv(output_dir=OUTPUT_DATA_ANALYSIS_FOLDER, extra_params_labels=extra_params_labels,
+                                 dt_suffix_for_output=dt_suffix_for_output)

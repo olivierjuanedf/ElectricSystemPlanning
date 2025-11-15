@@ -43,6 +43,7 @@ for elt_analysis in data_analyses:
     # currently loop over year, climatic_year; given that UC run params made for a unique (year, climatic year) couple
     # init. dict. to save data for each (country, year, clim_year) tuple
     current_df = {}
+    dt_suffix_for_output = None  # suffix to be added to datatype in output files to identify them in specific cases
     for year, clim_year, current_extra_params in (
             product(elt_analysis.years, elt_analysis.climatic_years, elt_analysis.extra_params)):
         uc_run_params.set_target_year(year=year)
@@ -88,9 +89,21 @@ for elt_analysis in data_analyses:
         else:
             for country in current_countries:
                 current_df[(country, year, clim_year, extra_params_idx)] = None
+    # ATTENTION TRICKY ASPECT: agg. prod. types only used for net demand calculation,
+    # not to have 1 curve/block of data per case -> set this attr. to [None] after data selection
+    if elt_analysis.data_type == DATATYPE_NAMES.net_demand and not elt_analysis.aggreg_prod_types == [None]:
+        logging.debug('Aggreg. prod. types attr. set to None after data selection for net demand analysis')
+        # save first a "datatype-suffix" to identify this case in filename saved
+        n_agg_pt = len(elt_analysis.aggreg_prod_types)
+        if n_agg_pt == 1:
+            dt_suffix_for_output = f'incl_{elt_analysis.aggreg_prod_types[0]}'
+        else:
+            dt_suffix_for_output = f'incl_{n_agg_pt}-aggpts'
+        elt_analysis.set_agg_prod_types_to_default_val()
+
     extra_params_labels = elt_analysis.get_extra_args_idx_to_label_corresp()
-    elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style,
-                                per_dim_plot_params=per_dim_plot_params, extra_params_labels=extra_params_labels)
+    elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,
+                                extra_params_labels=extra_params_labels, dt_suffix_for_output=dt_suffix_for_output)
 
 logging.info('THE END of ERAA (input) data analysis!')
 stop_logger()
