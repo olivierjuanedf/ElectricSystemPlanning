@@ -15,16 +15,15 @@ from common.error_msgs import uncoherent_param_stop
 from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
 from common.plot_params import PlotParams
 from include.uc_timeseries import set_uc_ts_name, UCTimeseries
-from utils.basic_utils import random_draw_in_list
+from utils.basic_utils import random_draw_in_list, check_all_values_equal
 from utils.dates import robust_date_parser, set_year_in_date, set_temporal_period_str
 from utils.df_utils import selec_in_df_based_on_list
 from utils.plot import FigureStyle
 from utils.type_checker import CheckerNames, apply_params_type_check
 
-
 AVAILABLE_DATA_TYPES = list(DatatypesNames.__annotations__.values())
 AGG_PROD_TYPE_KEY = 'aggreg_prod_types'  # TODO[Q2OJ]: cleaner way to set/get it?
-RAW_TYPES_FOR_CHECK = {'analysis_type': CheckerNames.is_str, 'data_type': CheckerNames.is_str, 
+RAW_TYPES_FOR_CHECK = {'analysis_type': CheckerNames.is_str, 'data_type': CheckerNames.is_str,
                        AGG_PROD_TYPE_KEY: CheckerNames.is_str_or_list_of_str,
                        'country': CheckerNames.is_str_or_list_of_str,
                        'year': CheckerNames.is_int_or_list_of_int, 'climatic_year': CheckerNames.is_int_or_list_of_int}
@@ -191,25 +190,11 @@ class DataAnalysis:
         dict_for_check = self.__dict__
         if self.aggreg_prod_types is None:
             del dict_for_check[AGG_PROD_TYPE_KEY]
-        apply_params_type_check(dict_for_check, types_for_check=RAW_TYPES_FOR_CHECK, 
+        apply_params_type_check(dict_for_check, types_for_check=RAW_TYPES_FOR_CHECK,
                                 param_name='Data analysis params - to set the calc./plot to be done')
 
-    def set_agg_pt_based_on_read_data(self, first_case_df: pd.DataFrame) -> List[Optional[str]]:
-        # TEMPORARY: AGG PROD TYPE SELECTION ONLY FOR RES CF DATA ANALYSIS -> IF NONE FOR THIS DT
-        # CONSIDER ALL PTS AVAILABLE IN DATA
-        # TODO: extend/clean this
-        if self.data_type == DatatypesNames.capa_factor:
-            if self.aggreg_prod_types is None:
-                return list(set(first_case_df['production_type_agg']))
-            else:
-                return self.aggreg_prod_types
-        else:
-            return [None]
-
     def process(self, eraa_data_descr: ERAADatasetDescr):
-        # (subdt), country, year, climatic year attrs all to List[.]
-        if self.aggreg_prod_types is not None and isinstance(self.aggreg_prod_types, str):
-            self.aggreg_prod_types = [self.aggreg_prod_types]
+        # country, year, climatic year, aggreg. prod. types attrs all to List[.]
         if isinstance(self.countries, str):
             self.countries = [self.countries]
         if isinstance(self.years, int):
@@ -221,6 +206,33 @@ class DataAnalysis:
             self.climatic_years = [default_cy]
         elif isinstance(self.climatic_years, int):
             self.climatic_years = [self.climatic_years]
+        if self.aggreg_prod_types is not None and isinstance(self.aggreg_prod_types, str):
+            self.aggreg_prod_types = [self.aggreg_prod_types]
+        elif self.aggreg_prod_types is None:
+            # in the case of RES capa factors include all prod. types (if no selection in input JSON file)
+            if self.data_type == DatatypesNames.capa_factor:
+                # get per country and year agg. prod types with CF data (available in ERAA)
+                per_country_and_yr_agg_pt_with_cf = \
+                    {country:
+                         {year:
+                              set([prod_type for prod_type in eraa_data_descr.available_aggreg_prod_types[country][year]
+                                   if prod_type in eraa_data_descr.agg_prod_types_with_cf_data])
+                          for year in self.years
+                          }
+                     for country in self.countries
+                     }
+                # check that all sets coincide
+                unique_agg_pt_set = check_all_values_equal(d=per_country_and_yr_agg_pt_with_cf)
+                if not unique_agg_pt_set:
+                    raise Exception(f'Not possible to analyse capa factors data without aggreg. prod. type(s) '
+                                    f'selection for multiple countrie(s)*year(s) with different sets of available agg. '
+                                    f'prod types with CF data (as product of cases considered): see available '
+                                    f'ERAA data {per_country_and_yr_agg_pt_with_cf}')
+                first_country = self.countries[0]
+                first_year = self.years[0]
+                self.aggreg_prod_types = per_country_and_yr_agg_pt_with_cf[first_country][first_year]
+            else:
+                self.aggreg_prod_types = [None]
 
         self.period_start, self.period_end = (
             set_period_for_analysis(period_start=self.period_start, period_end=self.period_end)
@@ -265,15 +277,19 @@ class DataAnalysis:
 
         # check maximal nber of curves
         if self.analysis_type in ANALYSIS_TYPES_PLOT:
-            # TODO: include specific case of None agg pt with RES CF plot (in which all pts will be included
-            #  -> after in the code)
             n_curves = len(self.countries) * len(self.years) * len(self.climatic_years)
+            attr_sep = ', '
+            elts_error_msg = [attr_sep.join(self.countries), attr_sep.join([str(year) for year in self.years]),
+                              attr_sep.join([str(cy) for cy in self.climatic_years])]
             for optional_elt in [self.extra_params, self.aggreg_prod_types]:
-                if optional_elt is not None:
+                if not optional_elt == [None]:
                     n_curves *= len(optional_elt)
+                    elts_error_msg.append(attr_sep.join([elt if isinstance(elt, str) else str(elt)
+                                                         for elt in optional_elt]))
             if n_curves > n_curves_max:
+                msg_suffix = '\n* '.join(elts_error_msg)
                 errors_list.append(f'Too many curves for {self.analysis_type}: {n_curves} '
-                                   f'(vs. max allowed {n_curves_max})')
+                                   f'(vs. max allowed {n_curves_max}) - with product of cases:\n* {msg_suffix}')
 
         # coherence of start and end period
         if self.period_end <= self.period_start:
@@ -316,9 +332,8 @@ class DataAnalysis:
         # get agg. prod. types obtained in data if RES capa factors analysed and no selection requested
         # in input JSON file
         first_case = list(per_case_data)[0]
-        agg_prod_types = self.set_agg_pt_based_on_read_data(first_case_df=per_case_data[first_case])
         for country, year, clim_year, current_extra_params, agg_pt in (
-                product(self.countries, self.years, self.climatic_years, self.extra_params, agg_prod_types)):
+                product(self.countries, self.years, self.climatic_years, self.extra_params, self.aggreg_prod_types)):
             try:
                 extra_params_idx = current_extra_params.index if current_extra_params is not None else None
                 # if no sub-datatypes, i.e. unique one equal to dt data is directly the obtained df from reading phase

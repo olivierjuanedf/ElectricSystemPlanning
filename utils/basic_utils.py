@@ -185,3 +185,25 @@ def rm_elts_in_str(my_str: str, elts_tb_removed: List[str]) -> str:
 
 def sort_lexicographically(strings: list[str]) -> list[str]:
     return sorted(strings)
+
+
+def check_all_values_equal(d: dict) -> bool:
+    """
+    Check that all values in a nested dict. are equal
+    Args:
+        d:
+
+    Returns:
+
+    """
+    values = []
+
+    def traverse(obj):
+        if isinstance(obj, dict):
+            for v in obj.values():
+                traverse(v)
+        else:
+            values.append(obj)
+
+    traverse(d)
+    return all([elt == values[0] for elt in values])
