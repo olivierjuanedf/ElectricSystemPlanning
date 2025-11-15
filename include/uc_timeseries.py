@@ -17,23 +17,21 @@ NAME_SEP = '_'
 SUBNAME_SEP = '-'
 
 
-def set_uc_ts_name(full_data_type: Tuple[str, List[str]], countries: List[str], years: List[int],
-                   climatic_years: List[int], n_extra_params: int = None):
+def set_uc_ts_name(data_type: Tuple[str, List[str]], countries: List[str], years: List[int],
+                   climatic_years: List[int], extra_params: List[Optional[int]], aggreg_prod_types: List[str] = None):
     """
-
+    Set UC timeseries names, based on the different characteristics of UC model
     Args:
-        full_data_type: (datatype, optionally list of subdt - only for RES CF currently)
+        data_type:
         countries:
         years:
         climatic_years:
-        n_extra_params:
+        extra_params:
+        aggreg_prod_types:
 
     Returns:
 
     """
-    # use only datatype for prefix
-    full_dt_for_prefix = (full_data_type[0], )
-    data_type_prefix = SUBNAME_SEP.join(list(full_dt_for_prefix))
     n_countries = len(countries)
     n_countries_max_in_suffix = 2
     n_countries_min_with_trigram = 2
@@ -45,12 +43,20 @@ def set_uc_ts_name(full_data_type: Tuple[str, List[str]], countries: List[str], 
     clim_years_suffix = set_years_suffix(years=climatic_years, sep=SUBNAME_SEP, is_climatic_year=True)
     if CLIM_YEARS_SUFFIX not in clim_years_suffix:
         clim_years_suffix = f'cy{clim_years_suffix}'
-    if n_extra_params is not None:
-        extra_params_suffix = SUBNAME_SEP.join([str(n_extra_params), 'extraparams'])
-    else:
+    if extra_params == [None]:  # only null extra-params
         extra_params_suffix = ''
+    else:
+        n_extra_params = len(extra_params)
+        if None in extra_params:
+            n_extra_params -= 1
+        extra_params_suffix = SUBNAME_SEP.join([str(n_extra_params), 'extraparams'])
+    if aggreg_prod_types is not None:
+        n_agg_pt = len(aggreg_prod_types)
+        agg_pt_suffix = SUBNAME_SEP.join([str(n_agg_pt), 'aggpts'])
+    else:
+        agg_pt_suffix = ''
     # remove empty str
-    suffix_lst = [data_type_prefix, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix]
+    suffix_lst = [data_type, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix, agg_pt_suffix]
     suffix_lst = [elt for elt in suffix_lst if len(elt) > 0]
     return NAME_SEP.join(suffix_lst)
 
@@ -110,7 +116,7 @@ def set_y_with_label_as_key(y: Dict[tuple, Union[np.ndarray, list]], extra_param
 @dataclass
 class UCTimeseries:
     name: str = None
-    data_type: Tuple[str, List[str]] = None  # (datatype, list of sub-dts)
+    data_type: str = None
     # can be a dict. {(country, year, clim year): vector of values}, in case multiple
     # (country, year, climatic year) be considered
     values: Union[np.ndarray, Dict[Tuple[str, int, int], np.ndarray]] = None
@@ -246,9 +252,9 @@ class UCTimeseries:
         if not isinstance(self.values, dict):
             return []
         all_tuples_in_vals = list(self.values)
-        pot_attrs_for_plot_legend = {'country': 0, 'year': 1, 'climatic_year': 2, 'extra_args': 3}
+        plot_attrs_for_plot_legend = {'country': 0, 'year': 1, 'climatic_year': 2, 'extra_args': 3, 'sub_datatype': 4}
         attrs_in_plot_legend = []
-        for attr_name, attr_idx in pot_attrs_for_plot_legend.items():
+        for attr_name, attr_idx in plot_attrs_for_plot_legend.items():
             all_vals = set([elt[attr_idx] for elt in all_tuples_in_vals])
             if len(all_vals) > 1:
                 attrs_in_plot_legend.append(attr_name)

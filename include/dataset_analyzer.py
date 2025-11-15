@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import product
-from typing import List, Union, Dict, Tuple
+from typing import List, Union, Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -23,9 +23,10 @@ from utils.type_checker import CheckerNames, apply_params_type_check
 
 
 AVAILABLE_DATA_TYPES = list(DatatypesNames.__annotations__.values())
-DATA_SUBTYPE_KEY = 'data_subtype'  # TODO[Q2OJ]: cleaner way to set/get it?
+AGG_PROD_TYPE_KEY = 'aggreg_prod_types'  # TODO[Q2OJ]: cleaner way to set/get it?
 RAW_TYPES_FOR_CHECK = {'analysis_type': CheckerNames.is_str, 'data_type': CheckerNames.is_str, 
-                       'data_subtype': CheckerNames.is_str_or_list_of_str, 'country': CheckerNames.is_str_or_list_of_str,
+                       AGG_PROD_TYPE_KEY: CheckerNames.is_str_or_list_of_str,
+                       'country': CheckerNames.is_str_or_list_of_str,
                        'year': CheckerNames.is_int_or_list_of_int, 'climatic_year': CheckerNames.is_int_or_list_of_int}
 N_CURVES_MAX = 6
 DEFAULT_CY = 'first'
@@ -153,7 +154,7 @@ class DataAnalysis:
     countries: Union[str, List[str]]  # in JSON can be str or list of str; when reading convert all to List[str]
     years: Union[int, List[int]]  # idem above with int or List[int]
     climatic_years: Union[int, List[int]]
-    data_subtypes: Union[str, List[str]] = None  # idem above with str or List[str]
+    aggreg_prod_types: Union[str, List[str]] = None  # idem above with str or List[str]
     period_start: Union[str, datetime] = None  # in JSON str, then datetime after parsing data
     period_end: Union[str, datetime] = None  # idem
     # Extra parameters to be used for data analysis, e.g. RES installed capacities - that can be used for
@@ -165,8 +166,8 @@ class DataAnalysis:
         sep_in_str = '\n- '
         repr_str = 'ERAA data analysis with params:'
         repr_str += f'{sep_in_str}of type {self.analysis_type}'
-        if self.data_subtypes is not None:
-            data_type_suffix = f', and sub-datatype {self.data_subtypes}'
+        if self.aggreg_prod_types is not None:
+            data_type_suffix = f', and sub-datatype {self.aggreg_prod_types}'
         else:
             data_type_suffix = ''
         repr_str += f'{sep_in_str}for data type: {self.data_type}{data_type_suffix}'
@@ -189,15 +190,27 @@ class DataAnalysis:
         Check coherence of types
         """
         dict_for_check = self.__dict__
-        if self.data_subtypes is None:
-            del dict_for_check[DATA_SUBTYPE_KEY]
+        if self.aggreg_prod_types is None:
+            del dict_for_check[AGG_PROD_TYPE_KEY]
         apply_params_type_check(dict_for_check, types_for_check=RAW_TYPES_FOR_CHECK, 
                                 param_name='Data analysis params - to set the calc./plot to be done')
-    
+
+    def set_agg_pt_based_on_read_data(self, first_case_df: pd.DataFrame) -> List[Optional[str]]:
+        # TEMPORARY: AGG PROD TYPE SELECTION ONLY FOR RES CF DATA ANALYSIS -> IF NONE FOR THIS DT
+        # CONSIDER ALL PTS AVAILABLE IN DATA
+        # TODO: extend/clean this
+        if self.data_type == DatatypesNames.capa_factor:
+            if self.aggreg_prod_types is None:
+                return list(set(first_case_df['production_type_agg']))
+            else:
+                return self.aggreg_prod_types
+        else:
+            return [None]
+
     def process(self, eraa_data_descr: ERAADatasetDescr):
         # (subdt), country, year, climatic year attrs all to List[.]
-        if self.data_subtypes is not None and isinstance(self.data_subtypes, str):
-            self.data_subtypes = [self.data_subtypes]
+        if self.aggreg_prod_types is not None and isinstance(self.aggreg_prod_types, str):
+            self.aggreg_prod_types = [self.aggreg_prod_types]
         if isinstance(self.countries, str):
             self.countries = [self.countries]
         if isinstance(self.years, int):
@@ -275,12 +288,6 @@ class DataAnalysis:
         # stop if any error
         stop_if_coherence_check_error(obj_checked=self, errors_list=errors_list)
 
-    def get_full_datatype(self) -> tuple:
-        if self.data_subtypes is None:
-            return (self.data_type,)
-        else:
-            return self.data_type, self.data_subtypes
-
     def get_extra_args_idx_to_label_corresp(self) -> Dict[int, str]:
         return {elt.index: elt.label for elt in self.extra_params if elt is not None}
 
@@ -294,18 +301,20 @@ class DataAnalysis:
         :param per_dim_plot_params: {plot dimension eg 'zone': parameters to be used for plot color/linestyle/marker}
         :param extra_params_labels: {idx: label} corresp. for extra-parameters (no corresp. for None extra-params)
         """
-        current_full_dt = self.get_full_datatype()
         date_col = 'date'
         value_col = 'value'
-        n_extra_params = len(self.extra_params) if self.extra_params is not None else None
-        uc_ts_name = set_uc_ts_name(full_data_type=current_full_dt, countries=self.countries, years=self.years,
-                                    climatic_years=self.climatic_years, n_extra_params=n_extra_params)
+        uc_ts_name = set_uc_ts_name(data_type=self.data_type, countries=self.countries, years=self.years,
+                                    climatic_years=self.climatic_years, extra_params=self.extra_params,
+                                    aggreg_prod_types=self.aggreg_prod_types)
         # loop over (country, year, clim_year) of this analysis
         dates = {}
         values = {}
-        sub_datatypes = [self.data_type] if self.data_subtypes is None else self.data_subtypes
-        for country, year, clim_year, current_extra_params, sub_dt in (
-                product(self.countries, self.years, self.climatic_years, self.extra_params, sub_datatypes)):
+        # get agg. prod. types obtained in data if RES capa factors analysed and no selection requested
+        # in input JSON file
+        first_case = list(per_case_data)[0]
+        agg_prod_types = self.set_agg_pt_based_on_read_data(first_case_df=per_case_data[first_case])
+        for country, year, clim_year, current_extra_params, agg_pt in (
+                product(self.countries, self.years, self.climatic_years, self.extra_params, agg_prod_types)):
             try:
                 extra_params_idx = current_extra_params.index if current_extra_params is not None else None
                 # N.B. dates are the same for all sub-datatypes
@@ -316,19 +325,19 @@ class DataAnalysis:
                               f'-> not integrated in this data analysis')
                 continue
             # if data available continue analysis (and plot)
-            dates[(country, year, clim_year, extra_params_idx, sub_dt)] = \
+            dates[(country, year, clim_year, extra_params_idx, agg_pt)] = \
                 [elt_date.replace(year=year) for elt_date in current_dates]
             # if no sub-datatypes, i.e. unique one equal to dt data is directly the obtained df from reading phase
-            if sub_dt == self.data_type:
+            if agg_pt == self.data_type:
                 current_subdt_data = per_case_data[(country, year, clim_year, extra_params_idx)]
             else:  # multiple sub-dts data concatenated in same df -> select only data for current sub-dt
                 current_subdt_data = (
                     selec_in_df_based_on_list(df=per_case_data[(country, year, clim_year, extra_params_idx)],
-                                              selec_col='production_type_agg', selec_vals=[sub_dt], rm_selec_col=True)
+                                              selec_col='production_type_agg', selec_vals=[agg_pt], rm_selec_col=True)
                 )
-            values[(country, year, clim_year, extra_params_idx, sub_dt)] = np.array(current_subdt_data[value_col])
+            values[(country, year, clim_year, extra_params_idx, agg_pt)] = np.array(current_subdt_data[value_col])
 
-        uc_timeseries = UCTimeseries(name=uc_ts_name, data_type=current_full_dt, dates=dates,
+        uc_timeseries = UCTimeseries(name=uc_ts_name, data_type=self.data_type, dates=dates,
                                      values=values, unit=UNITS_PER_DT[self.data_type])
         # And apply calc./plot... and other operations
         if len(values) == 0:

@@ -37,8 +37,7 @@ for elt_analysis in data_analyses:
     current_countries = elt_analysis.countries
     uc_run_params.set_countries(countries=current_countries)
     uc_run_params.set_uc_period(start=elt_analysis.period_start, end=elt_analysis.period_end)
-    uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
-                                   period_end=uc_run_params.uc_period_end)
+    uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start, period_end=uc_run_params.uc_period_end)
     # currently loop over year, climatic_year; given that UC run params made for a unique (year, climatic year) couple
     # init. dict. to save data for each (country, year, clim_year) tuple
     current_df = {}
@@ -67,7 +66,7 @@ for elt_analysis in data_analyses:
         eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
                                         datatypes_selec=[elt_analysis.data_type],
-                                        subdt_selec=elt_analysis.data_subtypes,
+                                        subdt_selec=elt_analysis.aggreg_prod_types,
                                         **extra_params_vals)
         eraa_dataset.complete_data()
         # create Unit Commitment Timeseries object from data read
