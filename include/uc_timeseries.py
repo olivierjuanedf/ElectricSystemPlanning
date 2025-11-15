@@ -198,6 +198,7 @@ class UCTimeseries:
         output_dates = self.set_output_dates(is_plot=False)
         date_col = set_date_col(first_date=output_dates[0])
         extra_params_col = 'extra_params'
+        agg_prod_type_col = 'aggreg_prod_type'
         output_vals = self.set_output_values(is_plot=False)
         values_dict = {date_col: output_dates, 'value': output_vals}
         if complem_columns is not None:
@@ -207,15 +208,16 @@ class UCTimeseries:
         # add "key" columns corresp. to the (country, ty, cy, extra-params) tuples
         if isinstance(self.dates, dict):
             all_keys = []
-            # tuple keys of dates dict, replacing last component by label, if not None
+            # tuple keys of dates dict, replacing last but one component (extra-params) by label, if not None
             for elt_tuple in self.dates:
-                if elt_tuple[-1] is None:
+                # TODO: make this -2 adaptative to order of key names in tuple?
+                if elt_tuple[-2] is None:
                     all_keys.append(elt_tuple)
                 else:
                     all_keys.append(elt_tuple[:-1] + (extra_params_labels[elt_tuple[-1]],))
             n_dates = len(self.dates[all_keys[0]])
-            df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year', extra_params_col],
-                                      tuple_values=all_keys, n_repeat=n_dates)
+            column_names = ['country', 'year', 'climatic_year', extra_params_col, agg_prod_type_col]
+            df_keys = set_key_columns(col_names=column_names, tuple_values=all_keys, n_repeat=n_dates)
             df_to_csv = pd.concat([df_keys, df_to_csv], axis=1)
         if with_temp_period_suffix:
             min_date = min(output_dates)
@@ -226,9 +228,10 @@ class UCTimeseries:
         else:
             temp_period_suffix = ''
         output_file = os.path.join(output_dir, f'{self.name.lower()}{temp_period_suffix}.csv')
-        # remove extra-params column if unique value is None (i.e., no extra-params applied)
-        if df_to_csv[extra_params_col].isna().all():
-            del df_to_csv[extra_params_col]
+        # remove extra-params/aggreg. prod. type column if unique value is None (i.e., no extra-params applied)
+        for col in [extra_params_col, agg_prod_type_col]:
+            if df_to_csv[col].isna().all():
+                del df_to_csv[col]
         df_to_csv.to_csv(output_file, index=None)
 
     def set_plot_ylabel(self) -> str:

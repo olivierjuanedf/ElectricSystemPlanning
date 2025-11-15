@@ -10,10 +10,10 @@
     {
       "analysis_type": "plot",
       "data_type": "res_capa-factors",
-      "data_subtype": "solar_pv",
       "countries": "italy",
       "years": 2025,
-      "climatic_years": 1989
+      "climatic_years": 1989,
+      "aggreg_prod_types": "solar_pv"
     },
     {
       "analysis_type": "plot",
@@ -105,6 +105,46 @@
           }
         }
       ]
+    },
+    {
+      "analysis_type": "plot",
+      "data_type": "res_capa-factors",
+      "aggreg_prod_types": [
+        "solar_pv",
+        "wind_offshore"
+      ],
+      "countries": "france",
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": [
+        1985,
+        1987
+      ],
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29",
+      "extra_params": null
+    },
+    {
+      "analysis_type": "extract",
+      "data_type": "res_capa-factors",
+      "aggreg_prod_types": [
+        "solar_pv",
+        "wind_offshore"
+      ],
+      "countries": "france",
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": [
+        1985,
+        1987
+      ],
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29",
+      "extra_params": null
     }
   ]
 }

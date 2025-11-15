@@ -164,21 +164,20 @@ class DataAnalysis:
         sep_in_str = '\n- '
         repr_str = 'ERAA data analysis with params:'
         repr_str += f'{sep_in_str}of type {self.analysis_type}'
-        if self.aggreg_prod_types is not None:
-            data_type_suffix = f', and sub-datatype {self.aggreg_prod_types}'
-        else:
-            data_type_suffix = ''
-        repr_str += f'{sep_in_str}for data type: {self.data_type}{data_type_suffix}'
+        repr_str += f'{sep_in_str}for data type: {self.data_type}'
         repr_str += f'{sep_in_str}countries: {self.countries}'
         repr_str += f'{sep_in_str}years: {self.years}'
         repr_str += f'{sep_in_str}climatic years: {self.climatic_years}'
+        if not self.aggreg_prod_types == [None]:
+            repr_str += f'{sep_in_str}aggreg. prod. types: {self.aggreg_prod_types}'
+
         if self.period_start is not None and self.period_end is not None:
             temp_period_str = (
                 set_temporal_period_str(min_date=self.period_start, max_date=self.period_end,
                                         print_year=False, in_letter=True)
             )
             repr_str += f'{sep_in_str}period: {temp_period_str}'
-        if self.extra_params is not None:
+        if not self.extra_params == [None]:
             repr_str += f'{sep_in_str}extra-params: {str(self.extra_params)}'
 
         return repr_str
@@ -331,7 +330,6 @@ class DataAnalysis:
         values = {}
         # get agg. prod. types obtained in data if RES capa factors analysed and no selection requested
         # in input JSON file
-        first_case = list(per_case_data)[0]
         for country, year, clim_year, current_extra_params, agg_pt in (
                 product(self.countries, self.years, self.climatic_years, self.extra_params, self.aggreg_prod_types)):
             try:

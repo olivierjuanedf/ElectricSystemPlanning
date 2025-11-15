@@ -29,7 +29,8 @@ fig_style = read_given_phase_plot_params(phase_name=phase_name)
 print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
 
 # read and check data analyses params
-data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
+data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr,
+                                                    n_curves_max=fig_style.n_curves_max)
 
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:
