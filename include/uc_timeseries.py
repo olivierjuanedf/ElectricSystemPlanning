@@ -1,3 +1,4 @@
+import logging
 import os
 import warnings
 from dataclasses import dataclass
@@ -166,14 +167,21 @@ class UCTimeseries:
     def set_output_values(self, is_plot: bool) -> Union[list, dict]:
         # per (country, year, clim year) values
         if isinstance(self.values, dict):
-            # saving to csv file -> concatenate the values of all (country, year, clim year) cases
+            # saving to csv file -> concatenate the values of all (country, year, clim year, ...) cases
             if not is_plot:
                 output_vals = []
                 for key, vals in self.values.items():
                     output_vals.extend(vals)
-            # plot -> dict.
+            # plot -> dict. except if of length 1 and not treated before...
+            # TODO: manage it more properly before (normally should be the case for RES CF plot
+            #  with unique agg prod type selected)
             else:
-                output_vals = self.values
+                if len(self.values) == 1:
+                    logging.debug(f'Dict of data of length 1 converte to list for plot: {self.values}')
+                    first_key = list(self.values)[0]
+                    output_vals = self.values[first_key]
+                else:
+                    output_vals = self.values
         else:
             output_vals = self.values
         return output_vals
@@ -229,7 +237,7 @@ class UCTimeseries:
         return ylabel
 
     def set_plot_title(self, dt_suffix: str = None) -> str:
-        plot_title = '-'.join(list(self.data_type)).capitalize()
+        plot_title = self.data_type.capitalize()
         if dt_suffix is not None:
             plot_title += f' {dt_suffix}'
         # add suffix to indicate temporal period
@@ -308,7 +316,8 @@ class UCTimeseries:
         x = self.set_output_dates(is_plot=True)
         y = self.set_output_values(is_plot=True)
         xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
-        # replace (country, year, clim year, possibly extra-args label) keys by labels to be used for plot
+        # replace (country, year, clim year, possibly extra-args label, agg. prod type) keys by labels
+        # to be used for plot
         if isinstance(y, dict):
             attrs_in_legend = self.set_attrs_in_plot_legend()
             y = set_y_with_label_as_key(y=y, extra_params_labels=extra_params_labels, attrs_in_legend=attrs_in_legend)
