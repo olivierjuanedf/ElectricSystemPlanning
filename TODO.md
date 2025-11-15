@@ -27,13 +27,11 @@ D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv"
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
 DA0) Debug...
-DA1) Make case with subdt functional
-DA4) Check extract with list of selected cases ok -> concat in output csv files ok?
 #################### LATER  ################
 DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
 DA5) Allow capacity plot/extract - over multiple years and dts?
-DA6) Allow agg prod types selection for datatype=net_demand
+DA6) Take into account fatal prod (ror) for net demand case
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE5) Fullfill long_term_uc/toy_model_params/ex_italy-complem_parameters.py with complem exs in Ita case (hydro, batteries)
