@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from common.constants.data_analysis_types import COMMON_PLOT_YEAR
+from common.constants.datatypes import PLOT_YLABEL_PER_DT
 from common.plot_params import PlotParams
 from utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
 from utils.dates import set_year_in_date, set_temporal_period_str
@@ -231,15 +232,16 @@ class UCTimeseries:
         df_to_csv.to_csv(output_file, index=None)
 
     def set_plot_ylabel(self) -> str:
-        ylabel = self.data_type[0].capitalize()
+        ylabel = PLOT_YLABEL_PER_DT[self.data_type]
         if self.unit is not None:
             ylabel += f' ({self.unit.upper()})'
         return ylabel
 
     def set_plot_title(self, dt_suffix: str = None) -> str:
-        plot_title = self.data_type.capitalize()
         if dt_suffix is not None:
-            plot_title += f' {dt_suffix}'
+            plot_title = dt_suffix.capitalize()
+        else:
+            plot_title = ''
         # add suffix to indicate temporal period
         if isinstance(self.dates, list):
             dates_for_title = self.dates
@@ -249,7 +251,13 @@ class UCTimeseries:
 
         min_date = min(dates_for_title)
         max_date = max(dates_for_title)
-        plot_title += f', period {set_temporal_period_title(min_date=min_date, max_date=max_date)}'
+        date_in_title = f'period {set_temporal_period_title(min_date=min_date, max_date=max_date)}'
+        if len(plot_title) == 0:
+            date_in_title = date_in_title.capitalize()
+            sep = ''
+        else:
+            sep = ', '
+        plot_title += f'{sep}{date_in_title}'
         return plot_title
 
     def set_attrs_in_plot_legend(self) -> List[str]:

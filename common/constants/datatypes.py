@@ -26,3 +26,6 @@ PROD_TYPES_PER_DT = {DATATYPE_NAMES.capa_factor:
                       ProdTypeNames.wind_offshore, ProdTypeNames.wind_onshore]
                       }
 UNITS_PER_DT = {DATATYPE_NAMES.demand: 'mw', DATATYPE_NAMES.net_demand: 'mw', DATATYPE_NAMES.capa_factor: '%'}
+PLOT_YLABEL_PER_DT = {DATATYPE_NAMES.demand: 'Demand', DATATYPE_NAMES.net_demand: 'Net demand',
+                      DATATYPE_NAMES.capa_factor: 'RES capa-factors', DATATYPE_NAMES.installed_capa: 'Generation capas',
+                      DATATYPE_NAMES.interco_capa: 'Intercos capas'}
