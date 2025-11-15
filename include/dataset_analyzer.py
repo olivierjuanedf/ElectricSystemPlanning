@@ -328,7 +328,7 @@ class DataAnalysis:
             dates[(country, year, clim_year, extra_params_idx, agg_pt)] = \
                 [elt_date.replace(year=year) for elt_date in current_dates]
             # if no sub-datatypes, i.e. unique one equal to dt data is directly the obtained df from reading phase
-            if agg_pt == self.data_type:
+            if agg_pt is None:
                 current_subdt_data = per_case_data[(country, year, clim_year, extra_params_idx)]
             else:  # multiple sub-dts data concatenated in same df -> select only data for current sub-dt
                 current_subdt_data = (

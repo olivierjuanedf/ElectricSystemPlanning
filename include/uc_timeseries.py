@@ -76,7 +76,7 @@ def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
 
 
 def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int = None,
-                    climatic_year: int = None, extra_args_label: str = None) -> str:
+                    climatic_year: int = None, extra_args_label: str = None, agg_prod_type: str = None) -> str:
     sep = ', '
     label = ''
     if 'country' in attrs_in_legend and country is not None:
@@ -91,6 +91,8 @@ def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int =
             label += f'{label_name}={label_val}'
     if 'extra_args' in attrs_in_legend:
         label += extra_args_label if extra_args_label is not None else 'no extra-args'
+    if 'agg_prod_type' in attrs_in_legend and agg_prod_type is not None:
+        label += 'bob'
     return label
 
 
@@ -106,9 +108,9 @@ def set_y_with_label_as_key(y: Dict[tuple, Union[np.ndarray, list]], extra_param
     y_with_label = {}
     for key, vals in y.items():
         current_key = list(key)
-        # replace last element of (tuple) key - the extra arg idx - by its label
-        if current_key[-1] is not None:
-            current_key[-1] = extra_params_labels[current_key[-1]]
+        # replace before-last element of (tuple) key - the extra arg idx - by its label (last element is agg. prod type)
+        if current_key[-2] is not None:
+            current_key[-2] = extra_params_labels[current_key[-2]]
         y_with_label[set_curve_label(attrs_in_legend, *current_key)] = vals
     return y_with_label
 
@@ -252,7 +254,7 @@ class UCTimeseries:
         if not isinstance(self.values, dict):
             return []
         all_tuples_in_vals = list(self.values)
-        plot_attrs_for_plot_legend = {'country': 0, 'year': 1, 'climatic_year': 2, 'extra_args': 3, 'sub_datatype': 4}
+        plot_attrs_for_plot_legend = {'country': 0, 'year': 1, 'climatic_year': 2, 'extra_args': 3, 'agg_prod_type': 4}
         attrs_in_plot_legend = []
         for attr_name, attr_idx in plot_attrs_for_plot_legend.items():
             all_vals = set([elt[attr_idx] for elt in all_tuples_in_vals])
