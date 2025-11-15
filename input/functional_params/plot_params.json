@@ -45,11 +45,23 @@
     },
     "markers_def": {
       "own": {
-        "solar_thermal": null,
-        "hydro_pump_storage_closed_loop": null,
-        "hydro_pump_storage_open_loop": null,
-        "hydro_reservoir": null,
-        "hydro_run_of_river": null
+        "batteries": ".",
+        "biofuel": "o",
+        "coal": "v",
+        "dsr": "^",
+        "gas": "<",
+        "hydro_pondage": ">",
+        "hydro_pump_storage_closed_loop": "8",
+        "hydro_pump_storage_open_loop": "s",
+        "hydro_reservoir": "p",
+        "hydro_run_of_river": "*",
+        "nuclear": "d",
+        "oil": "D",
+        "others_fatal": "P",
+        "solar_pv": "^",
+        "solar_thermal": "<",
+        "wind_offshore": "s",
+        "wind_onshore": "8"
       }
     },
     "order": [
@@ -200,7 +212,8 @@
       "zone",
       "year",
       "climatic_year",
-      "extra_args"
+      "extra_args",
+      "agg_prod_type"
     ]
   },
   "fig_style_monozone_toy_uc_model": {

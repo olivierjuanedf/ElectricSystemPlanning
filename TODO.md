@@ -33,7 +33,7 @@ DA4) Check extract with list of selected cases ok -> concat in output csv files 
 DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
 DA5) Allow capacity plot/extract - over multiple years and dts?
-DA6) Suppress "1-extraparams" in suffix if only null extraparams value
+DA6) Allow agg prod types selection for datatype=net_demand
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE5) Fullfill long_term_uc/toy_model_params/ex_italy-complem_parameters.py with complem exs in Ita case (hydro, batteries)

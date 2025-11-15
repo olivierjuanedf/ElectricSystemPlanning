@@ -67,7 +67,7 @@ def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
     """
     name_split = name.split(NAME_SEP)
     dims = []
-    for i in range(4):
+    for i in range(5):
         if SUBNAME_SEP in name_split[i]:
             return None
         current_dim = int(name_split[i]) if name_split[i].isdigit() else name_split[i]
@@ -77,22 +77,20 @@ def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
 
 def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int = None,
                     climatic_year: int = None, extra_args_label: str = None, agg_prod_type: str = None) -> str:
-    sep = ', '
-    label = ''
+    label_elts = []
     if 'country' in attrs_in_legend and country is not None:
-        label += country[:3]
+        label_elts.append(country[:3])
     yr_labels = {'year': ('TY', year), 'climatic_year': ('CY', climatic_year)}
     for key, val in yr_labels.items():
         label_name = val[0]
         label_val = val[1]
         if key in attrs_in_legend and label_val is not None:
-            if len(label) > 0:
-                label += sep
-            label += f'{label_name}={label_val}'
+            label_elts.append(f'{label_name}={label_val}')
+    if 'agg_prod_type' in attrs_in_legend and agg_prod_type is not None:
+        label_elts.append(agg_prod_type)
+    label = ', '.join(label_elts)
     if 'extra_args' in attrs_in_legend:
         label += extra_args_label if extra_args_label is not None else 'no extra-args'
-    if 'agg_prod_type' in attrs_in_legend and agg_prod_type is not None:
-        label += 'bob'
     return label
 
 
