@@ -3,7 +3,7 @@
     {
       "analysis_type": "plot",
       "data_type": "res_capa-factors",
-      "data_subtype": "solar_pv",
+      "data_subtypes": ["solar_pv", "wind_onshore"],
       "countries": "france",
       "years": [
         2025,

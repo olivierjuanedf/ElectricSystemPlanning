@@ -17,9 +17,23 @@ NAME_SEP = '_'
 SUBNAME_SEP = '-'
 
 
-def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int], climatic_years: List[int],
-                   n_extra_params: int = None):
-    data_type_prefix = SUBNAME_SEP.join(list(full_data_type))
+def set_uc_ts_name(full_data_type: Tuple[str, List[str]], countries: List[str], years: List[int],
+                   climatic_years: List[int], n_extra_params: int = None):
+    """
+
+    Args:
+        full_data_type: (datatype, optionally list of subdt - only for RES CF currently)
+        countries:
+        years:
+        climatic_years:
+        n_extra_params:
+
+    Returns:
+
+    """
+    # use only datatype for prefix
+    full_dt_for_prefix = (full_data_type[0], )
+    data_type_prefix = SUBNAME_SEP.join(list(full_dt_for_prefix))
     n_countries = len(countries)
     n_countries_max_in_suffix = 2
     n_countries_min_with_trigram = 2
@@ -96,7 +110,7 @@ def set_y_with_label_as_key(y: Dict[tuple, Union[np.ndarray, list]], extra_param
 @dataclass
 class UCTimeseries:
     name: str = None
-    data_type: tuple = None
+    data_type: Tuple[str, List[str]] = None  # (datatype, list of sub-dts)
     # can be a dict. {(country, year, clim year): vector of values}, in case multiple
     # (country, year, climatic year) be considered
     values: Union[np.ndarray, Dict[Tuple[str, int, int], np.ndarray]] = None

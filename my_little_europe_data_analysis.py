@@ -57,10 +57,6 @@ for elt_analysis in data_analyses:
                                agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data,
                                is_stress_test=uc_run_params.is_stress_test)
 
-        if elt_analysis.data_subtype is not None:
-            subdt_selec = [elt_analysis.data_subtype]
-        else:
-            subdt_selec = None
         if current_extra_params is None:
             extra_params_vals = {}
             extra_params_idx = None
@@ -70,7 +66,8 @@ for elt_analysis in data_analyses:
         # get data to be analyzed/plotted hereafter - using extra-parameters if provided
         eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
-                                        datatypes_selec=[elt_analysis.data_type], subdt_selec=subdt_selec,
+                                        datatypes_selec=[elt_analysis.data_type],
+                                        subdt_selec=elt_analysis.data_subtypes,
                                         **extra_params_vals)
         eraa_dataset.complete_data()
         # create Unit Commitment Timeseries object from data read
