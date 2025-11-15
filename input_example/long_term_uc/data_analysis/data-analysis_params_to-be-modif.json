@@ -145,6 +145,39 @@
       "period_start": "1900/1/15",
       "period_end": "1900/1/29",
       "extra_params": null
+    },
+    {
+      "analysis_type": "plot_duration_curve",
+      "data_type": "net_demand",
+      "aggreg_prod_types": [
+        "solar_pv",
+        "wind_onshore"
+      ],
+      "countries": "france",
+      "years": 2025,
+      "climatic_years": [
+        1985,
+        1987
+      ],
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29",
+      "extra_params": null
+    },
+    {
+      "analysis_type": "extract",
+      "data_type": "net_demand",
+      "aggreg_prod_types": [
+        "solar_pv"
+      ],
+      "countries": "france",
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": 1985,
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29",
+      "extra_params": null
     }
   ]
 }

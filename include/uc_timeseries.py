@@ -187,7 +187,9 @@ class UCTimeseries:
             output_vals = self.values
         return output_vals
 
-    def get_name_with_added_dt_suffix(self, data_type_suffix: str) -> str:
+    def get_name_with_added_dt_suffix(self, data_type_suffix: str = None) -> str:
+        if data_type_suffix is None:
+            return self.name
         len_dt = len(self.data_type)
         # + 1 for last term not to have repetition of separator '_'
         return '_'.join([self.name[:len_dt], data_type_suffix, self.name[len_dt + 1:]])
@@ -332,8 +334,8 @@ class UCTimeseries:
         :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
         """
         # get name with added suffix to identify this specific file
-        name_with_added_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
-        fig_file = os.path.join(output_dir, f'{name_with_added_suffix.lower()}.png')
+        name_with_added_dt_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        fig_file = os.path.join(output_dir, f'{name_with_added_dt_suffix.lower()}.png')
         x = self.set_output_dates(is_plot=True)
         y = self.set_output_values(is_plot=True)
         xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
@@ -386,8 +388,8 @@ class UCTimeseries:
         else:
             xlabel = 'Duration (nber of time-slots - hours)'
         # get name with added suffix to identify this specific file
-        name_with_added_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
-        fig_file = os.path.join(output_dir, f'{name_with_added_suffix.lower()}_duration_curve.png')
+        name_with_added_dt_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        fig_file = os.path.join(output_dir, f'{name_with_added_dt_suffix.lower()}_duration_curve.png')
         if fig_style is None:
             fig_style = FigureStyle()
             fig_style.process()
