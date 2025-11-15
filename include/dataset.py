@@ -20,6 +20,7 @@ from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, 
 from utils.basic_utils import get_intersection_of_lists
 from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row
+from utils.dir_utils import uniformize_path_os
 from utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
     set_aggreg_cf_prod_types_data
 from utils.write import json_dump
@@ -82,7 +83,7 @@ def get_res_capa_factors_data(folder: str, file_suffix: str, climatic_year: int,
         current_agg_pt_df_res_cf_list = []
         for prod_type in aggreg_pt_cf_def[agg_prod_type]:
             cf_filename = f'{DT_FILE_PREFIX.res_capa_factors}_{prod_type}_{file_suffix}.csv'
-            cf_data_file = f'{res_cf_folder_full}/{cf_filename}'
+            cf_data_file = uniformize_path_os(path_str=f'{res_cf_folder_full}/{cf_filename}')
             if not os.path.exists(cf_data_file):
                 logging.warning(
                     2 * N_SPACES_MSG * ' ' + f'RES capa. factor data file does not exist: '
