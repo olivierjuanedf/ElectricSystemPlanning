@@ -3,10 +3,16 @@
     {
       "analysis_type": "plot",
       "data_type": "res_capa-factors",
-      "aggreg_prod_types": ["solar_pv"],
+      "aggreg_prod_types": null,
       "countries": "france",
-      "years": 2033,
-      "climatic_years": 1985,
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": [
+        1985,
+        1987
+      ],
       "period_start": "1900/1/15",
       "period_end": "1900/1/29",
       "extra_params": null

@@ -317,8 +317,21 @@ class DataAnalysis:
                 product(self.countries, self.years, self.climatic_years, self.extra_params, agg_prod_types)):
             try:
                 extra_params_idx = current_extra_params.index if current_extra_params is not None else None
-                # N.B. dates are the same for all sub-datatypes
-                current_dates = list(per_case_data[(country, year, clim_year, extra_params_idx)][date_col])
+                # if no sub-datatypes, i.e. unique one equal to dt data is directly the obtained df from reading phase
+                if agg_pt is None:
+                    current_subdt_data = per_case_data[(country, year, clim_year, extra_params_idx)]
+
+                # N.B. dates are the same for all agg. prod types - but copied for simplicity here
+                # if no agg. pt selection
+                if agg_pt is None:
+                    current_subdt_data = per_case_data[(country, year, clim_year, extra_params_idx)]
+                else:  # multiple sub-dts data concatenated in same df -> select only data for current sub-dt
+                    current_subdt_data = (
+                        selec_in_df_based_on_list(df=per_case_data[(country, year, clim_year, extra_params_idx)],
+                                                  selec_col='production_type_agg', selec_vals=[agg_pt],
+                                                  rm_selec_col=True)
+                    )
+                current_dates = list(current_subdt_data[date_col])
             except:
                 logging.error(f'No dates obtained from data {self.data_type}, for (country, year, clim. year, '
                               f'extra-params idx) = ({country}, {year}, {clim_year}, {extra_params_idx}) '
@@ -327,14 +340,6 @@ class DataAnalysis:
             # if data available continue analysis (and plot)
             dates[(country, year, clim_year, extra_params_idx, agg_pt)] = \
                 [elt_date.replace(year=year) for elt_date in current_dates]
-            # if no sub-datatypes, i.e. unique one equal to dt data is directly the obtained df from reading phase
-            if agg_pt is None:
-                current_subdt_data = per_case_data[(country, year, clim_year, extra_params_idx)]
-            else:  # multiple sub-dts data concatenated in same df -> select only data for current sub-dt
-                current_subdt_data = (
-                    selec_in_df_based_on_list(df=per_case_data[(country, year, clim_year, extra_params_idx)],
-                                              selec_col='production_type_agg', selec_vals=[agg_pt], rm_selec_col=True)
-                )
             values[(country, year, clim_year, extra_params_idx, agg_pt)] = np.array(current_subdt_data[value_col])
 
         uc_timeseries = UCTimeseries(name=uc_ts_name, data_type=self.data_type, dates=dates,

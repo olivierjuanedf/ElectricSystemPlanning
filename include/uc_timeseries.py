@@ -134,7 +134,7 @@ class UCTimeseries:
             self.unit = unit
 
     def set_output_dates(self, is_plot: bool) -> Union[List[int], List[datetime]]:
-        # per (country, year, clim year) values
+        # per (country, year, clim year, extra-params case, agg. pt) values
         if isinstance(self.values, dict):
             first_key = list(self.values)[0]
             # repeat these ts index when saving a csv file, not when plotting (common x-axis)
@@ -152,7 +152,7 @@ class UCTimeseries:
         # ... or dates (if provided)
         else:
             if first_key is not None:
-                # saving to csv file -> concatenate the dates of all (country, year, clim year) cases
+                # saving to csv file -> concatenate the dates of all (country, year, cy, extra-params, agg pt) cases
                 if not is_plot:
                     output_dates = []
                     for key, dates_val in self.dates.items():
