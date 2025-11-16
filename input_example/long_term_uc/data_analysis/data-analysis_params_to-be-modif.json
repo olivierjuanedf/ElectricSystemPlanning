@@ -12,8 +12,7 @@
       "data_type": "res_capa-factors",
       "countries": "italy",
       "years": 2025,
-      "climatic_years": 1989,
-      "aggreg_prod_types": "solar_pv"
+      "climatic_years": 1989
     },
     {
       "analysis_type": "plot",
@@ -32,9 +31,7 @@
         "germany"
       ],
       "years": 2025,
-      "climatic_years": 1985,
-      "period_start": "1900/1/15",
-      "period_end": "1900/1/29"
+      "climatic_years": 1985
     },
     {
       "analysis_type": "plot_duration_curve",
@@ -123,8 +120,7 @@
         1987
       ],
       "period_start": "1900/1/15",
-      "period_end": "1900/1/29",
-      "extra_params": null
+      "period_end": "1900/1/29"
     },
     {
       "analysis_type": "extract",
@@ -143,8 +139,7 @@
         1987
       ],
       "period_start": "1900/1/15",
-      "period_end": "1900/1/29",
-      "extra_params": null
+      "period_end": "1900/1/29"
     },
     {
       "analysis_type": "plot_duration_curve",
@@ -160,8 +155,7 @@
         1987
       ],
       "period_start": "1900/1/15",
-      "period_end": "1900/1/29",
-      "extra_params": null
+      "period_end": "1900/1/29"
     },
     {
       "analysis_type": "extract",
@@ -176,8 +170,7 @@
       ],
       "climatic_years": 1985,
       "period_start": "1900/1/15",
-      "period_end": "1900/1/29",
-      "extra_params": null
+      "period_end": "1900/1/29"
     },
     {
       "analysis_type": "plot_duration_curve",
