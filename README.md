@@ -5,7 +5,7 @@ Planning the European Electric System
 * A **Github account**: If not the case, go https://github.com/ and sign up
 * **Enroll the classroom** as a student: go [enroll](https://classroom.github.com/a/M_bX8C28)
 ![step 1n, enrolling](/.assets/img/enroll1.png)
-* Click to accept the assignment
+* **Click to accept** the assignment
 
 ## Setup
 
@@ -159,6 +159,6 @@ python .\my_little_europe_lt_uc.py
 * **Put your gurobi license at the root of your git project** using drag and drop
   ![license 3/3](/.assets/img/gurobi_license3.png)
 
-Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params) indicating your solver ('gurobi') and license file (normally 'gurobi.lic') names.  
+Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.json) indicating your solver ('gurobi') and license file (normally 'gurobi.lic') names.  
 
 </details>
