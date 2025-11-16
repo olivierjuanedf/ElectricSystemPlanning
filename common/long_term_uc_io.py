@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterator
+from typing import Iterator, List
 
 from common.constants.countries import set_country_trigram
 from utils.dir_utils import make_dir, uniformize_path_os
@@ -72,6 +72,19 @@ OUTPUT_FOLDER_LT = f'{OUTPUT_FOLDER}/long_term_uc'
 OUTPUT_SUBFOLDER_DATA = 'data'
 OUTPUT_SUBFOLDER_FIG = 'figures'
 OUTPUT_DATA_ANALYSIS_FOLDER = f'{OUTPUT_FOLDER}/data_analysis'
+
+
+def check_uc_input_folder_content(all_countries: List[str]):
+    uc_countries_folder = uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'countries'))
+    files = os.listdir(uc_countries_folder)
+    gitignore_file = '.gitignore'
+    if gitignore_file in files:
+        files.remove(gitignore_file)
+    allowed_files = set([f'{country}.json' for country in all_countries])
+    unknown_files = list(set(files) - allowed_files)
+    if len(unknown_files) > 0:
+        raise Exception(f'Unknown files in UC input folder {uc_countries_folder}: {unknown_files}. '
+                        f'Remove then and re-run')
 
 
 def get_json_usage_params_file() -> str:

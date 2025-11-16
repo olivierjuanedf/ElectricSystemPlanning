@@ -6,7 +6,8 @@ from common.constants.optimisation import SolverParams
 from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
     get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
-    get_json_data_analysis_params_file, get_json_plot_params_file, get_json_solver_params_file
+    get_json_data_analysis_params_file, get_json_plot_params_file, get_json_solver_params_file, \
+    check_uc_input_folder_content
 from common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
 from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
@@ -188,6 +189,9 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
     # get JSON fixed parameters -> ERAA data description object - including in particular the set of
     # available values for countries, (climatic) years, etc.
     eraa_data_descr = set_eraa_data_descr(json_params_fixed=set_json_params_fixed())
+
+    # check that the content of folders containing files to be modified by students is coherent
+    check_uc_input_folder_content(all_countries=eraa_data_descr.available_countries)
 
     # Set countries data, applying data selection/overwriting based on JSON file with values to be modified
     countries_data, json_params_tb_modif = None, None
