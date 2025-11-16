@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime
 
 from common.constants.aggreg_operations import AggregOpeNames
-from common.constants.datatypes import DATATYPE_NAMES
+from common.constants.datatypes import DATATYPE_NAMES, HYDRO_DTS
 from common.constants.eraa_data import ERAAParamNames
 from common.constants.prod_types import ProdTypeNames
 from common.error_msgs import print_errors_list
@@ -293,6 +293,10 @@ class Dataset:
     agg_cf_data: Dict[str, pd.DataFrame] = None
     agg_gen_capa_data: Dict[str, pd.DataFrame] = None
     interco_capas: Dict[Tuple[str, str], float] = None
+    hydro_ror_data: dict = None  # Run-of-River prod data # TODO: typing
+    hydro_inflows_data: dict = None  # TODO: typing
+    hydro_reservoir_levels_min_data: dict = None  # TODO: typing
+    hydro_reservoir_levels_max_data: dict = None  # TODO: typing
     # {country: list of associated generation units data}
     generation_units_data: Dict[str, List[GenerationUnitData]] = None
 
@@ -323,16 +327,22 @@ class Dataset:
         res_cf_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.res_capa_factors)
         gen_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.generation_capas)
         interco_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.interco_capas)
+        hydro_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.hydro)
 
         self.demand = {}
         self.net_demand = {}
         self.agg_cf_data = {}
         self.agg_gen_capa_data = {}
+        self.hydro_ror_data = {}
+        self.hydro_inflows_data = {}
+        self.hydro_reservoir_levels_min_data = {}
+        self.hydro_reservoir_levels_max_data = {}
 
         dts_tb_read = deepcopy(datatypes_selec)
         # datatypes to be added to list of read ones, to be able to obtain net demand
         if DATATYPE_NAMES.net_demand in datatypes_selec:
-            dts_tb_read.extend([DATATYPE_NAMES.demand, DATATYPE_NAMES.installed_capa, DATATYPE_NAMES.capa_factor])
+            dts_tb_read.extend([DATATYPE_NAMES.demand, DATATYPE_NAMES.installed_capa, DATATYPE_NAMES.capa_factor,
+                                DATATYPE_NAMES.hydro_ror])
             dts_tb_read = list(set(dts_tb_read))
 
         for country in uc_run_params.selected_countries:

@@ -13,6 +13,7 @@ class DtSubfolders:
     res_capa_factors: str = 'res_capa-factors'
     generation_capas: str = 'generation_capas'
     interco_capas: str = 'interco_capas'
+    hydro: str = 'hydro'
 
 
 @dataclass

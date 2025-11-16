@@ -10,9 +10,16 @@ class DatatypesNames:
     installed_capa: str = 'generation_capas'
     interco_capa: str = 'intercos_capas'
     net_demand: str = 'net_demand'
+    # different hydro (sub)datatypes
+    hydro_ror: str = 'hydro_ror'
+    hydro_inflows: str = 'hydro_inflows'
+    hydro_levels_min: str = 'hydro_levels_min'
+    hydro_levels_max: str = 'hydro_levels_max'
 
 
 DATATYPE_NAMES = DatatypesNames()
+HYDRO_DTS = [DatatypesNames.hydro_ror, DatatypesNames.hydro_inflows,
+             DatatypesNames.hydro_levels_min, DatatypesNames.hydro_levels_max]
 PROD_TYPES_PER_DT = {DATATYPE_NAMES.capa_factor: 
                      [ProdTypeNames.csp_no_storage, ProdTypeNames.solar_pv, ProdTypeNames.wind_offshore,
                       ProdTypeNames.wind_onshore],
