@@ -52,11 +52,11 @@ def set_uc_ts_name(data_type: Tuple[str, List[str]], countries: List[str], years
         if None in extra_params:
             n_extra_params -= 1
         extra_params_suffix = SUBNAME_SEP.join([str(n_extra_params), 'extraparams'])
-    if aggreg_prod_types is not None:
+    if aggreg_prod_types == [None]:
+        agg_pt_suffix = ''
+    else:
         n_agg_pt = len(aggreg_prod_types)
         agg_pt_suffix = SUBNAME_SEP.join([str(n_agg_pt), 'aggpts'])
-    else:
-        agg_pt_suffix = ''
     # remove empty str
     suffix_lst = [data_type, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix, agg_pt_suffix]
     suffix_lst = [elt for elt in suffix_lst if len(elt) > 0]

@@ -17,21 +17,19 @@ M19) Ajouter graphe camembert à la DJ -> to show congestion of intercos in an "
 M20) Save output graphs in html to allow interactive discussions
 #################### LATER  ################
 M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
-M12) Switch to PyPSA 0.35.2 (2025, July) - coherently with ppt doc -> normally not big effort
--> needs Python >= 3.10...
 M17 (later)) Introduce aggreg. prod types -> "all_res". To avoid typing lists of all RES types for selection...
 M18) Reformat data files description with file objects (folder, separators, column names...)
 
 DATA (D)
-D1) Solar pv key to be aligned in capacity ("solar_pv") and CF data ("lfsolarpv") to avoid troubles/confusions... Cf. TE7
+D1) Add ERAA ed. 2024, with climatic modelling...
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
-DA0) Debug...
 #################### LATER  ################
 DA3) (improve code quality) Avoid creating Dataset object once per data analysis - getting once all data needed (however it should be done 
 on the product of data needs -> more than needed in general)
 DA5) Allow capacity plot/extract - over multiple years and dts?
 DA6) Take into account fatal prod (ror) for net demand case
+DA7) Replace [-2] by an adaptive index to refer to extra-params idx at some stages
 
 TOY EX (TE) - my_toy_ex_italy.py
 TE5) Fullfill long_term_uc/toy_model_params/ex_italy-complem_parameters.py with complem exs in Ita case (hydro, batteries)
