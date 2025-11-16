@@ -1,6 +1,6 @@
 import logging
-from datetime import datetime
-from typing import List, Optional
+from datetime import datetime, date, timedelta
+from typing import List, Optional, Union
 
 from common.constants.temporal import DAY_OF_WEEK
 from common.long_term_uc_io import DATE_FORMAT_PRINT
@@ -120,3 +120,15 @@ def robust_date_parser(my_date: str, allowed_formats: List[str] = None,
         logging.warning(f'{my_date} cannot be cast as datetime with list of allowed formats {allowed_formats}'
                         f' -> None returned')
     return None
+
+
+def set_date_from_year_and_iso_idx(year: int, week_idx: int, day_idx: int = 1, to_datetime: bool = True) \
+        -> Union[datetime, date]:
+    iso_date = date.fromisocalendar(year, week_idx, day_idx)
+    if not to_datetime:
+        return iso_date
+    return datetime.combine(iso_date, datetime.min.time())
+
+
+def set_date_from_year_and_day_idx(year: int, day_idx: int) -> datetime:
+    return datetime(year, 1, 1) + timedelta(days=day_idx - 1)

@@ -1,4 +1,4 @@
-zone;week;climatic_year;min_generation;max_generation
+zone;week;climatic_year;min_value;max_value
 france;1;1982;na;8477.073
 france;1;1983;na;8477.073
 france;1;1984;na;8477.073

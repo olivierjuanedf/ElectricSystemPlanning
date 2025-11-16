@@ -1,23 +1,28 @@
-from typing import List
+import logging
+import os
+from typing import List, Optional
 import pandas as pd
 from datetime import datetime
 
 from common.constants.aggreg_operations import AggregOpeNames
-from common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT
-from utils.basic_utils import str_sanitizer
+from common.constants.datatypes import DATATYPE_NAMES
+from common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT, FILES_FORMAT, HYDRO_VALUE_COLUMNS, HYDRO_FILES
+from utils.basic_utils import str_sanitizer, robust_cast_str_to_float
+from utils.dates import set_date_from_year_and_iso_idx, set_date_from_year_and_day_idx
 from utils.df_utils import cast_df_col_as_date, concatenate_dfs, selec_in_df_based_on_list, \
     get_subdf_from_date_range
 
 
 def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, period_start: datetime, 
                       period_end: datetime, climatic_year: int) -> pd.DataFrame:
-    # ERAA date format not automatically cast by pd
-    df = cast_df_col_as_date(df=df, date_col=date_col, date_format=DATE_FORMAT)
+    # If ERAA date format not automatically cast by pd
+    first_date = df[date_col].iloc[0]
+    if not isinstance(first_date, datetime):
+        df = cast_df_col_as_date(df=df, date_col=date_col, date_format=DATE_FORMAT)
     # keep only wanted date range
     df_filtered = get_subdf_from_date_range(df=df, date_col=date_col, date_min=period_start, date_max=period_end)
     # then selected climatic year
-    df_filtered = selec_in_df_based_on_list(df=df_filtered, selec_col=climatic_year_col, 
-                                            selec_vals=[climatic_year])
+    df_filtered = selec_in_df_based_on_list(df=df_filtered, selec_col=climatic_year_col, selec_vals=[climatic_year])
     return df_filtered
 
 
@@ -52,3 +57,45 @@ def select_interco_capas(df_intercos_capa: pd.DataFrame, countries: List[str]) -
     all_cols.remove(selection_col)
     df_intercos_capa = df_intercos_capa[all_cols]
     return df_intercos_capa
+
+
+def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols: bool = True) \
+        -> Optional[pd.DataFrame]:
+    """
+    Read and process hydro data files -> that share some common structure (in particular with only week - and day - idx
+    values, i.o. dates)
+    Returns: df with read data
+    """
+    hydro_file = f'{folder}/{HYDRO_FILES[hydro_dt]}'
+    if not os.path.exists(hydro_file):
+        logging.warning(f'{hydro_dt.capitalize()} data file does not exist: not accounted for here')
+        return None
+
+    df_hydro = pd.read_csv(hydro_file, sep=FILES_FORMAT.column_sep, decimal=FILES_FORMAT.decimal_sep)
+    # robust cast to numeric values -> got some pbs with data... TODO: fix this more properly
+    value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
+    for col in value_cols:
+        df_hydro[col] = df_hydro[col].apply(robust_cast_str_to_float)
+    # specific treatment for hydro weekly/daily data -> set date column based on week(/and day) values
+    df_cols = list(df_hydro.columns)
+    week_col = COLUMN_NAMES.week
+    day_col = COLUMN_NAMES.day
+    if day_col not in df_cols:  # set date from week index only
+        # add day column with 1 for all (i.e. Monday)
+        df_hydro[day_col] = 1
+        # set date column based on week and day=1 index values
+        df_hydro[COLUMN_NAMES.date] = (
+            df_hydro.apply(lambda row:
+                           set_date_from_year_and_iso_idx(year=1900, week_idx=row[week_col], day_idx=row[day_col]),
+                           axis=1)
+        )
+    else:  # only from day index from 1 to 365
+        df_hydro[COLUMN_NAMES.date] = (df_hydro[day_col]
+                                       .apply(lambda x: set_date_from_year_and_day_idx(year=1900, day_idx=x))
+                                       )
+    if rm_week_and_day_cols:
+        cols_tb_rmed = [week_col]
+        if day_col in df_cols:
+            cols_tb_rmed.append(day_col)
+        df_hydro.drop(columns=cols_tb_rmed, inplace=True)
+    return df_hydro

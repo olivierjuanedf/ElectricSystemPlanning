@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Iterator, List
 
 from common.constants.countries import set_country_trigram
+from common.constants.datatypes import DATATYPE_NAMES
 from utils.dir_utils import make_dir, uniformize_path_os
 
 
@@ -27,10 +28,13 @@ class DtFilePrefix:
 @dataclass
 class ColumnNames:
     date: str = 'date'
+    day: str = 'day'
+    week: str = 'week'
     target_year: str = 'year'
     climatic_year: str = 'climatic_year'
     production_type: str = 'production_type'
     value: str = 'value'
+    zone: str = 'zone'
     zone_origin: str = 'zone_origin'
     zone_destination: str = 'zone_destination'
 
@@ -59,6 +63,21 @@ DT_SUBFOLDERS = DtSubfolders()
 FILES_FORMAT = FilesFormat()
 GEN_CAPA_SUBDT_COLS = ['power_capacity', 'power_capacity_turbine', 'power_capacity_pumping',
                        'power_capacity_injection', 'power_capacity_offtake', 'energy_capacity']
+# N.B. min/max hydro levels in a unique file -> share same constants below
+HYDRO_FILES = {DATATYPE_NAMES.hydro_ror: 'PECD-hydro-daily-ror-generation.csv',
+               DATATYPE_NAMES.hydro_inflows: 'PECD-hydro-weekly-inflows.csv',
+               DATATYPE_NAMES.hydro_levels_min: 'PECD-hydro-weekly-reservoir-min-max-levels.csv'}
+HYDRO_FILES[DATATYPE_NAMES.hydro_levels_max] = HYDRO_FILES[DATATYPE_NAMES.hydro_levels_min]
+HYDRO_KEY_COLUMNS = {DATATYPE_NAMES.hydro_ror:
+                         [COLUMN_NAMES.zone, COLUMN_NAMES.day, COLUMN_NAMES.week, COLUMN_NAMES.climatic_year],
+                     DATATYPE_NAMES.hydro_inflows: [COLUMN_NAMES.zone, COLUMN_NAMES.week, COLUMN_NAMES.climatic_year],
+                     DATATYPE_NAMES.hydro_levels_min: [COLUMN_NAMES.zone, COLUMN_NAMES.week]
+                     }
+HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_levels_min]
+HYDRO_VALUE_COLUMNS = {DATATYPE_NAMES.hydro_ror: [COLUMN_NAMES.value],
+                       DATATYPE_NAMES.hydro_inflows: [],
+                       DATATYPE_NAMES.hydro_levels_min: ['min_value', 'max_value']}
+HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_min]
 INPUT_ERAA_FOLDER = f'{DATA_FOLDER}/ERAA_2023-2'
 INPUT_FOLDER = 'input'
 INPUT_FUEL_SOURCES_FOLDER = f'{DATA_FOLDER}/fuel_sources'

@@ -19,9 +19,11 @@ M20) Save output graphs in html to allow interactive discussions
 M5) Trier/simplifier JSON visibles des élèves -> pour que cela soit facile pour eux de rentrer dedans (ne leur laisser voir que les params utilisateurs). Et adapter doc en fonction
 M17 (later)) Introduce aggreg. prod types -> "all_res". To avoid typing lists of all RES types for selection...
 M18) Reformat data files description with file objects (folder, separators, column names...)
-
+M19) Select only data of considered cys when reading data in dataset.py\get_countries_data (and other filtering...)
+-> seems not TB done for all dts
 DATA (D)
 D1) Add ERAA ed. 2024, with climatic modelling...
+D2) Pb with hydro data/week idx when both day and week given they seem equal...
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
 #################### LATER  ################

@@ -106,3 +106,59 @@ def set_key_columns(col_names: list, tuple_values: List[tuple], n_repeat: int = 
     concat_keys = np.concatenate([np.array(elt).reshape(1, n_keys) for elt in tuple_values], axis=0)
     concat_keys = np.repeat(concat_keys, n_repeat, axis=0)
     return pd.DataFrame(data=concat_keys, columns=col_names)
+
+
+def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, end_date: datetime = None,
+                            resample_divisor: float = None, key_cols: list = None, freq: str = 'h'):
+    """
+    Resample a DataFrame from daily to a finer frequency (e.g., hourly),
+    distribute numeric values proportionally, and repeat key columns.
+    Params:
+    end_date: of the resampling, to possibly include some time-slots after the last date value in df
+    Returns:
+    -------
+    pd.DataFrame
+        Resampled DataFrame with proportional distribution and reset index.
+    """
+    df.set_index(date_col, inplace=True)
+
+    # Determine the end date for resampling
+    last_date = df.index.max()
+    if end_date is not None:
+        if end_date < last_date:
+            raise ValueError("End date cannot be earlier than the last index date for df reasmpling")
+        last_date = end_date
+
+    full_range = pd.date_range(df.index.min(), last_date, freq=freq)
+
+    # Resample to target frequency
+    resampled = df.resample(freq).ffill()
+    resampled = resampled.reindex(full_range, method='ffill')
+    # Resample division?
+    if resample_divisor is not None:
+        for col in value_cols:
+            # TODO: proper data before this stage... (issue with hydro data reading)
+            resampled[col] = resampled[col].apply(lambda x: x / resample_divisor if x is not None else None)
+
+    # Forward-fill key columns if provided
+    if key_cols:
+        for col in key_cols:
+            resampled[col] = resampled[col].ffill()
+
+    # Reset index so date becomes a column
+    return resampled.reset_index().rename(columns={'index': date_col})
+
+
+if __name__ == '__main__':
+    data = {
+        'date': pd.date_range('2025-11-10', periods=3, freq='D'),
+        'region': ['Europe', 'Europe', 'Europe'],
+        'value': [240, 480, 720],
+        'value2': [24, 48, 72]
+    }
+    df = pd.DataFrame(data)
+
+    # Apply function
+    hourly_df = resample_and_distribute(df, date_col='date', value_cols=['value', 'value2'], key_cols=['region'],
+                                        freq='h', resample_divisor=24, end_date=datetime(2025,11,12,23))
+    bob = 1

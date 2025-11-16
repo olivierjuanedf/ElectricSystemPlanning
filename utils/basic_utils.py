@@ -63,6 +63,13 @@ def cast_str_to_bool(bool_str: str) -> Optional[bool]:
     return None
 
 
+def robust_cast_str_to_float(float_str: str) -> Optional[float]:
+    try:
+        return float(float_str)
+    except:
+        return None
+
+
 def are_lists_eq(list_of_lists: List[list]) -> bool:
     first_list = list_of_lists[0]
     len_first_list = len(first_list)

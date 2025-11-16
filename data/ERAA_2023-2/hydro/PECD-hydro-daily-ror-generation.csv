@@ -1,4 +1,4 @@
-zone;day;week;climatic_year;ror_hydro_gen
+zone;day;week;climatic_year;value
 benelux;1;1;1982;2.472
 benelux;1;1;1983;2.049
 benelux;1;1;1984;1.429
