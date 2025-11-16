@@ -1,3 +1,4 @@
+import logging
 import warnings
 
 import numpy as np
@@ -18,6 +19,19 @@ def selec_in_df_based_on_list(df: pd.DataFrame, selec_col, selec_vals: list, rm_
     if rm_selec_col:
         val = val.drop(columns=[selec_col])
     return val
+
+
+def get_tuples_from_columns(df: pd.DataFrame, columns: list) -> List[tuple]:
+    """
+    Extract a list of tuples from specified columns in a DataFrame
+    """
+    # Validate columns
+    missing_cols = [col for col in columns if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Columns not found in DataFrame: {missing_cols}")
+
+    # Convert subset to list of tuples
+    return [tuple(row) for row in df[columns].to_numpy()]
 
 
 def concatenate_dfs(dfs: List[pd.DataFrame], reset_index: bool = True) -> pd.DataFrame:
@@ -93,6 +107,24 @@ def rename_df_columns(df: pd.DataFrame, old_to_new_cols: dict) -> pd.DataFrame:
     return df
 
 
+def replace_none_values_in_df(df: pd.DataFrame, per_col_repl_values: dict, key_cols: list = None) -> pd.DataFrame:
+    if key_cols is None:
+        key_cols = list(set(df.columns) - set(per_col_repl_values))
+    cols_with_none_vals = {}
+    for col, default_val in per_col_repl_values.items():
+        df_with_na = df[df[col].isna()]
+        if len(df_with_na) > 0:
+            keys_with_none_vals = get_tuples_from_columns(df=df_with_na, columns=key_cols)
+            cols_with_none_vals[col] = keys_with_none_vals
+            df = df.fillna({col: default_val})
+    if len(cols_with_none_vals) > 0:
+        repl_values_applied = {col: default_val for col, default_val in per_col_repl_values.items()
+                               if col in cols_with_none_vals}
+        logging.warning(f'There were none values in df associated to keys: {cols_with_none_vals}'
+                        f'\n-> replaced by {repl_values_applied}')
+    return df
+
+
 def set_key_columns(col_names: list, tuple_values: List[tuple], n_repeat: int = None) -> pd.DataFrame:
     """
     :param col_names: list of key column names
@@ -137,8 +169,7 @@ def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, e
     # Resample division?
     if resample_divisor is not None:
         for col in value_cols:
-            # TODO: proper data before this stage... (issue with hydro data reading)
-            resampled[col] = resampled[col].apply(lambda x: x / resample_divisor if x is not None else None)
+            resampled[col] = resampled[col] / resample_divisor
 
     # Forward-fill key columns if provided
     if key_cols:
@@ -154,11 +185,10 @@ if __name__ == '__main__':
         'date': pd.date_range('2025-11-10', periods=3, freq='D'),
         'region': ['Europe', 'Europe', 'Europe'],
         'value': [240, 480, 720],
-        'value2': [24, 48, 72]
+        'value2': [24, 480, 72]
     }
     df = pd.DataFrame(data)
 
     # Apply function
     hourly_df = resample_and_distribute(df, date_col='date', value_cols=['value', 'value2'], key_cols=['region'],
                                         freq='h', resample_divisor=24, end_date=datetime(2025,11,12,23))
-    bob = 1

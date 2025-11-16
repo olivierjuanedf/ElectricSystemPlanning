@@ -6,11 +6,12 @@ from datetime import datetime
 
 from common.constants.aggreg_operations import AggregOpeNames
 from common.constants.datatypes import DATATYPE_NAMES
-from common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT, FILES_FORMAT, HYDRO_VALUE_COLUMNS, HYDRO_FILES
+from common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT, FILES_FORMAT, HYDRO_VALUE_COLUMNS, HYDRO_FILES, \
+    HYDRO_KEY_COLUMNS, HYDRO_DEFAULT_VALUES
 from utils.basic_utils import str_sanitizer, robust_cast_str_to_float
 from utils.dates import set_date_from_year_and_iso_idx, set_date_from_year_and_day_idx
 from utils.df_utils import cast_df_col_as_date, concatenate_dfs, selec_in_df_based_on_list, \
-    get_subdf_from_date_range
+    get_subdf_from_date_range, replace_none_values_in_df
 
 
 def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, period_start: datetime, 
@@ -76,6 +77,9 @@ def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols
     value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
     for col in value_cols:
         df_hydro[col] = df_hydro[col].apply(robust_cast_str_to_float)
+    # replace none values by default ones
+    df_hydro = replace_none_values_in_df(df=df_hydro, per_col_repl_values=HYDRO_DEFAULT_VALUES[hydro_dt],
+                                         key_cols=HYDRO_KEY_COLUMNS[hydro_dt])
     # specific treatment for hydro weekly/daily data -> set date column based on week(/and day) values
     df_cols = list(df_hydro.columns)
     week_col = COLUMN_NAMES.week

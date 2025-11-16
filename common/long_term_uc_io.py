@@ -75,9 +75,16 @@ HYDRO_KEY_COLUMNS = {DATATYPE_NAMES.hydro_ror:
                      }
 HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_levels_min]
 HYDRO_VALUE_COLUMNS = {DATATYPE_NAMES.hydro_ror: [COLUMN_NAMES.value],
-                       DATATYPE_NAMES.hydro_inflows: [],
+                       DATATYPE_NAMES.hydro_inflows:
+                           ['cum_inflow_into_reservoirs', 'cum_nat_inflow_into_pump-storage_reservoirs'],
                        DATATYPE_NAMES.hydro_levels_min: ['min_value', 'max_value']}
 HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_min]
+HYDRO_DEFAULT_VALUES = {DATATYPE_NAMES.hydro_ror: {COLUMN_NAMES.value: 0},
+                        DATATYPE_NAMES.hydro_inflows:
+                            {'cum_inflow_into_reservoirs': 0, 'cum_nat_inflow_into_pump-storage_reservoirs': 0},
+                        # extreme values found in ERAA2023.2 data(over all countries)
+                        DATATYPE_NAMES.hydro_levels_min: {'min_value': 0, 'max_value': 5}
+                        }
 INPUT_ERAA_FOLDER = f'{DATA_FOLDER}/ERAA_2023-2'
 INPUT_FOLDER = 'input'
 INPUT_FUEL_SOURCES_FOLDER = f'{DATA_FOLDER}/fuel_sources'
