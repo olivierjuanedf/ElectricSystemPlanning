@@ -1,10 +1,11 @@
-Description of the input data examples: 
-- For data analysis script [my_little_europe_data_analysis.py](../../../my_little_europe_data_analysis.py)
-- Extracting cases (dictionaries of parameters) from [input_example/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json](../../../input_example/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json)
+Description of the **input data examples**: 
+- **For data analysis** script [my_little_europe_data_analysis.py](../../../my_little_europe_data_analysis.py)
+- **Extracting cases** (dictionaries of parameters) **from** [input_example/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json](../../../input_example/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json)
 
 # Start simple
 
-- **Plot unique case** -> obtain graph with a unique curve in file *demand_france_2025_cy1985.png*
+- **Plot unique case** -> obtain graph with a unique curve in file *demand_france_2025_cy1985.png* (in 
+folder [output/data_analysis](../../../output/data_analysis))
 
 ```json
     {
@@ -16,9 +17,8 @@ Description of the input data examples:
 }
 ```
 
-- **Extract data** for the same unique case -> obtain .csv file *demand_france_2025_cy1985_1-1to14.csv*, the final
-  suffix - specifying
-  the temporal period considered — by default, the first two weeks of the year
+- **Extract data** for the same unique case -> obtain *demand_france_2025_cy1985_1-1to14.csv*, the final
+  suffix - specifying the temporal period considered — by default, the first two weeks of the year
 
 ```json
     {
@@ -30,9 +30,8 @@ Description of the input data examples:
 }
 ```
 
-- **Change the type of data** (to get RES capa. factors), **country and climatic year** -> file
-  *res_capa-factors_italy_2025_cy1989_3-aggpts.png*. N.B. In this case all (3) production types with capa. factor data
-  are obtained; and the filename is not "totally explicit"
+- **Change the type of data** (to get RES capa. factors), **country and climatic year** -> *res_capa-factors_italy_2025_cy1989_3-aggpts.png*. 
+N.B. In this case all (3) production types with capa. factor data are obtained; and the filename is not "totally explicit"
 
 ```json
     {
@@ -95,17 +94,15 @@ Description of the input data examples:
     1987
   ],
   "period_start": "1900/1/15",
-  "period_end": "1900/1/29",
-  "extra_params": null
+  "period_end": "1900/1/29"
 }
 ```
 
 # More advanced
 
 - Usage of **extra_params** field to change generation capacity values **for data_type=net_demand** calculation ->
-  obtain
-  file *net_demand_france_2025_cy1985_2-extraparams.png*. N.B. In this case two extra-params cases have been
-  introduced - in addition
+  obtain *net_demand_france_2025_cy1985_2-extraparams.png*. 
+  N.B. In this case two extra-params cases have been introduced - in addition
   to the reference one, with capacity data from ERAA, with labels "res_low" and "res_high"
 
 ```json
@@ -145,7 +142,7 @@ Description of the input data examples:
 
 - Select **only part of the (aggreg.) production types** for net demand calculation (and then plot/csv extract).
   N.B. Attention in this case only two curves will be plotted; the selection of prod. types is only accounted for in
-  net demand calculation, here demand - cf(solar_pv) - cf(wind_onshore)
+  net demand calculation, here: net_demand = demand - cf(solar_pv) - cf(wind_onshore)
 
 ```json
     {
