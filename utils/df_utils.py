@@ -6,6 +6,7 @@ import pandas as pd
 from typing import Dict, List
 from datetime import datetime
 
+from common.long_term_uc_io import ResampleMethods
 from utils.basic_utils import get_key_of_val
 
 
@@ -140,8 +141,9 @@ def set_key_columns(col_names: list, tuple_values: List[tuple], n_repeat: int = 
     return pd.DataFrame(data=concat_keys, columns=col_names)
 
 
-def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, end_date: datetime = None,
-                            resample_divisor: float = None, key_cols: list = None, freq: str = 'h'):
+def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, method: str, end_date: datetime = None,
+                            resample_divisor: float = None, fill_na_vals: dict = None, key_cols: list = None,
+                            freq: str = 'h') -> pd.DataFrame:
     """
     Resample a DataFrame from daily to a finer frequency (e.g., hourly),
     distribute numeric values proportionally, and repeat key columns.
@@ -163,13 +165,17 @@ def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, e
 
     full_range = pd.date_range(df.index.min(), last_date, freq=freq)
 
-    # Resample to target frequency
-    resampled = df.resample(freq).ffill()
-    resampled = resampled.reindex(full_range, method='ffill')
-    # Resample division?
-    if resample_divisor is not None:
-        for col in value_cols:
-            resampled[col] = resampled[col] / resample_divisor
+    if method == ResampleMethods.uniform_distrib:
+        # Resample to target frequency
+        resampled = df.resample(freq).ffill()
+        resampled = resampled.reindex(full_range, method='ffill')
+        # Resample division?
+        if resample_divisor is not None:
+            for col in value_cols:
+                resampled[col] = resampled[col] / resample_divisor
+    elif method == ResampleMethods.all_at_first_ts:
+        resampled = df.reindex(full_range)
+        resampled = resampled.fillna(fill_na_vals)
 
     # Forward-fill key columns if provided
     if key_cols:
@@ -185,10 +191,12 @@ if __name__ == '__main__':
         'date': pd.date_range('2025-11-10', periods=3, freq='D'),
         'region': ['Europe', 'Europe', 'Europe'],
         'value': [240, 480, 720],
-        'value2': [24, 480, 72]
+        'value2': [24, 48, 72]
     }
     df = pd.DataFrame(data)
 
     # Apply function
     hourly_df = resample_and_distribute(df, date_col='date', value_cols=['value', 'value2'], key_cols=['region'],
-                                        freq='h', resample_divisor=24, end_date=datetime(2025,11,12,23))
+                                        freq='h', resample_divisor=24, end_date=datetime(2025,11,12,23),
+                                        method=ResampleMethods.all_at_first_ts, fill_na_vals={'value': 0, 'value2': 1000})
+    bob = 1

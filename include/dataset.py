@@ -9,17 +9,16 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 from common.constants.aggreg_operations import AggregOpeNames
-from common.constants.datatypes import DATATYPE_NAMES, HYDRO_DTS
+from common.constants.datatypes import DATATYPE_NAMES
 from common.constants.eraa_data import ERAAParamNames
 from common.constants.prod_types import ProdTypeNames
 from common.error_msgs import print_errors_list
 from common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
-    GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER, HYDRO_FILES, HYDRO_KEY_COLUMNS, \
-    HYDRO_VALUE_COLUMNS
+    GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER, HYDRO_KEY_COLUMNS, \
+    HYDRO_VALUE_COLUMNS, HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS
 from common.uc_run_params import UCRunParams
 from include.dataset_builder import GenerationUnitData, GEN_UNITS_PYPSA_PARAMS, set_gen_unit_name
 from utils.basic_utils import get_intersection_of_lists
-from utils.dates import set_date_from_year_and_iso_idx
 from utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row, resample_and_distribute
 from utils.dir_utils import uniformize_path_os
@@ -148,21 +147,8 @@ def get_installed_gen_capas_data(folder: str, file_suffix: str, country: str, ag
     return df_gen_capa
 
 
-def get_hydro_ror_data(hydro_dt: str, folder: str, countries: List[str], climatic_year: int,
-                       period: Tuple[datetime, datetime]) -> Optional[Dict[str, pd.DataFrame]]:
-    # get hydro. RoR data
-    data_name = 'hydro. Run-of-River production'
-    logging.debug(f'Get {data_name} data (1 file over all countries and years)')
-    df_ror_prod = read_and_process_hydro_data(hydro_dt=hydro_dt, folder=folder)
-    date_col = COLUMN_NAMES.date
-    period_end = period[1]
-    df_ror_prod = filter_input_data(df=df_ror_prod, date_col=date_col, climatic_year_col=COLUMN_NAMES.climatic_year,
-                                    period_start=period[0], period_end=period_end, climatic_year=climatic_year)
-    # resample and distribute to hourly values
-    # end date to resample -> to include the 23h of last date in data
-    end_date_resample = max(df_ror_prod[date_col]) + timedelta(hours=23)
+def set_final_hydro_key_cols(hydro_dt: str) -> List[str]:
     key_cols = HYDRO_KEY_COLUMNS[hydro_dt]
-    value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
     # week and day idx columns have been removed when reading and processing
     for col in [COLUMN_NAMES.day, COLUMN_NAMES.week]:
         if col in key_cols:
@@ -170,14 +156,85 @@ def get_hydro_ror_data(hydro_dt: str, folder: str, countries: List[str], climati
     # not to be saved in df of a given country (with all fields of same value)
     zone_col = COLUMN_NAMES.zone
     key_cols.remove(zone_col)
-    per_country_ror_prod = {}
+    # if data wo climatic year, but added to have uniform format hereafter
+    if COLUMN_NAMES.climatic_year not in key_cols:
+        key_cols.append(COLUMN_NAMES.climatic_year)
+    return key_cols
+
+
+def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_year: int,
+                   period: Tuple[datetime, datetime]) -> Optional[Dict[str, pd.DataFrame]]:
+    """
+    Get hydro. data - with generic function for the different (sub) datatypes: ror prod., inflows, extreme levels
+    Args:
+        hydro_dt: hydro datatype considered
+        folder: in which data is to be read
+        countries: to be considered
+        climatic_year: idem
+        period: idem
+
+    Returns: {country: associated df with date and climatic year - with unique value - as 'key' columns}
+    """
+    logging.debug(f'Get {hydro_dt} data (1 file over all countries and years)')
+    df_hydro_data = read_and_process_hydro_data(hydro_dt=hydro_dt, folder=folder)
+    date_col = COLUMN_NAMES.date
+    period_end = period[1]
+    df_hydro_data = filter_input_data(df=df_hydro_data, date_col=date_col, climatic_year_col=COLUMN_NAMES.climatic_year,
+                                      period_start=period[0], period_end=period_end, climatic_year=climatic_year)
+    # resample and distribute to hourly values
+    # end date to resample -> to include the 23h of last date in data
+    end_date_resample = max(df_hydro_data[date_col]) + timedelta(hours=23)
+    value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
+    key_cols = set_final_hydro_key_cols(hydro_dt=hydro_dt)
+    per_country_hydro_data = {}
     for country in countries:
+        # either day to hours or week to hours
+        resample_divisor = 24 if HYDRO_TS_GRANULARITY[hydro_dt] == 'day' else 7 * 24
+        fill_na_vals = HYDRO_LEVELS_RESAMPLE_FILLNA_VALS  # only used for extreme-levels of reservoir -> no limit
         current_country_df = (
-            selec_in_df_based_on_list(df=df_ror_prod, selec_col=zone_col, selec_vals=[country], rm_selec_col=True))
-        per_country_ror_prod[country] = resample_and_distribute(df=current_country_df, date_col=date_col,
-                                                                value_cols=value_cols, end_date=end_date_resample,
-                                                                resample_divisor=24, key_cols=key_cols, freq='h')
-    return per_country_ror_prod
+            selec_in_df_based_on_list(df=df_hydro_data, selec_col=COLUMN_NAMES.zone, selec_vals=[country],
+                                      rm_selec_col=True))
+        if len(current_country_df) > 0:
+            resample_method = HYDRO_DATA_RESAMPLE_METHODS[hydro_dt]
+            per_country_hydro_data[country] = (
+                resample_and_distribute(df=current_country_df, date_col=date_col, value_cols=value_cols,
+                                        key_cols=key_cols, method=resample_method, end_date=end_date_resample,
+                                        resample_divisor=resample_divisor, fill_na_vals=fill_na_vals, freq='h')
+            )
+        else:  # no data for current country
+            logging.warning(f'No {hydro_dt} data obtained for country {country}')
+            per_country_hydro_data[country] = pd.DataFrame()
+    return per_country_hydro_data
+
+
+def separate_hydro_extr_levels_data(hydro_extr_levels_data: Dict[str, pd.DataFrame]) \
+        -> Tuple[Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]]:
+    """
+    From {country: df containing both min and max levels data} to two separate dictionaries
+    Args:
+        hydro_extr_levels_data:
+
+    Returns: {country: df with min level data}, {country: df with max level data}
+    """
+    climatic_year_col = COLUMN_NAMES.climatic_year
+    hydro_min_level_data = {}
+    hydro_max_level_data = {}
+    cols_min_level = [COLUMN_NAMES.date, climatic_year_col, COLUMN_NAMES.min_value]
+    cols_max_level = [COLUMN_NAMES.date, climatic_year_col, COLUMN_NAMES.max_value]
+    for country, df in hydro_extr_levels_data.items():
+        if len(df) == 0:  # no data obtained
+            hydro_min_level_data[country] = df
+            hydro_max_level_data[country] = df
+        else:
+            df_min_level = df[cols_min_level]
+            df_max_level = df[cols_max_level]
+            # TODO: avoid cast to float beforehand of climatic year (because of appli
+            #  of ffill method in resample_and_distribute?)
+            df_min_level[climatic_year_col] = df_min_level[climatic_year_col].astype(int)
+            df_max_level[climatic_year_col] = df_max_level[climatic_year_col].astype(int)
+            hydro_min_level_data[country] = df_min_level
+            hydro_max_level_data[country] = df_max_level
+    return hydro_min_level_data, hydro_max_level_data
 
 
 def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[str, Dict[str, float]],
@@ -380,13 +437,33 @@ class Dataset:
             dts_tb_read = list(set(dts_tb_read))
 
         # hydro. data is concatenated over all countries in hydro data -> read it once
+        # TODO: merge/loop (how to for assignment depending on hydro datatype?)
         if DATATYPE_NAMES.hydro_ror in datatypes_selec:
             self.hydro_ror_data \
-                = get_hydro_ror_data(hydro_dt=DATATYPE_NAMES.hydro_ror, folder=hydro_folder,
-                                     countries=uc_run_params.selected_countries,
-                                     climatic_year=uc_run_params.selected_climatic_year,
-                                     period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end)
-                                     )
+                = get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_ror, folder=hydro_folder,
+                                 countries=uc_run_params.selected_countries,
+                                 climatic_year=uc_run_params.selected_climatic_year,
+                                 period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end)
+                                 )
+        if DATATYPE_NAMES.hydro_inflows in datatypes_selec:
+            self.hydro_inflows_data = (
+                get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_inflows, folder=hydro_folder,
+                               countries=uc_run_params.selected_countries,
+                               climatic_year=uc_run_params.selected_climatic_year,
+                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end))
+            )
+        # both extr levels data in same file -> get data once
+        if DATATYPE_NAMES.hydro_levels_min in datatypes_selec or DATATYPE_NAMES.hydro_levels_max in datatypes_selec:
+            hydro_extr_levels_data = (
+                get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=hydro_folder,
+                               countries=uc_run_params.selected_countries,
+                               climatic_year=uc_run_params.selected_climatic_year,
+                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end))
+            )
+            # from {country: df containing both min and max levels data} to two separate dictionaries
+            self.hydro_reservoir_levels_min_data, self.hydro_reservoir_levels_max_data = (
+                separate_hydro_extr_levels_data(hydro_extr_levels_data=hydro_extr_levels_data)
+            )
         for country in uc_run_params.selected_countries:
             logging.info(3 * '#' + f' For country: {country}')
             logging.info(f'With selected aggreg. prod. types: {uc_run_params.selected_prod_types[country]}')

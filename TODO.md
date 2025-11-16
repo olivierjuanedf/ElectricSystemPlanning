@@ -24,6 +24,7 @@ M19) Select only data of considered cys when reading data in dataset.py\get_coun
 DATA (D)
 D1) Add ERAA ed. 2024, with climatic modelling...
 D2) Pb with hydro data/week idx when both day and week given they seem equal...
+D3) Pb with hydro data format -> lot (all?) of numeric data not casted directly by pd.read_csv
 
 DATA ANALYSIS (DA) - before 1st UC run, to get an intuition of the pbs - my_little_europe_data_analysis.py
 #################### LATER  ################

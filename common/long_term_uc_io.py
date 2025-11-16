@@ -34,6 +34,8 @@ class ColumnNames:
     climatic_year: str = 'climatic_year'
     production_type: str = 'production_type'
     value: str = 'value'
+    min_value: str = 'min_value'
+    max_value: str = 'max_value'
     zone: str = 'zone'
     zone_origin: str = 'zone_origin'
     zone_destination: str = 'zone_destination'
@@ -77,14 +79,34 @@ HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_KEY_COLUMNS[DATATYPE_
 HYDRO_VALUE_COLUMNS = {DATATYPE_NAMES.hydro_ror: [COLUMN_NAMES.value],
                        DATATYPE_NAMES.hydro_inflows:
                            ['cum_inflow_into_reservoirs', 'cum_nat_inflow_into_pump-storage_reservoirs'],
-                       DATATYPE_NAMES.hydro_levels_min: ['min_value', 'max_value']}
+                       DATATYPE_NAMES.hydro_levels_min: [COLUMN_NAMES.min_value, COLUMN_NAMES.max_value]}
 HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_min]
+HYDRO_TS_GRANULARITY = {DATATYPE_NAMES.hydro_ror: 'day',
+                        DATATYPE_NAMES.hydro_inflows: 'week',
+                        DATATYPE_NAMES.hydro_levels_min: 'week',
+                        DATATYPE_NAMES.hydro_levels_max: 'week'}
 HYDRO_DEFAULT_VALUES = {DATATYPE_NAMES.hydro_ror: {COLUMN_NAMES.value: 0},
                         DATATYPE_NAMES.hydro_inflows:
                             {'cum_inflow_into_reservoirs': 0, 'cum_nat_inflow_into_pump-storage_reservoirs': 0},
                         # extreme values found in ERAA2023.2 data(over all countries)
-                        DATATYPE_NAMES.hydro_levels_min: {'min_value': 0, 'max_value': 5}
+                        DATATYPE_NAMES.hydro_levels_min: {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 5}
                         }
+# method used when resampling from week/day granularity to hourly one -> (uniform) distribution,
+# or all at first hourly time-slot of the week/day - and 0 for the rest (typically for constraints
+# on min/max reservoir levels)
+
+
+@dataclass
+class ResampleMethods:
+    uniform_distrib: str = 'uniform_distrib'
+    all_at_first_ts: str = 'all_at_first_ts'
+
+
+HYDRO_DATA_RESAMPLE_METHODS = {DATATYPE_NAMES.hydro_ror: ResampleMethods.uniform_distrib,
+                               DATATYPE_NAMES.hydro_inflows: ResampleMethods.uniform_distrib,
+                               DATATYPE_NAMES.hydro_levels_min: ResampleMethods.all_at_first_ts,
+                               DATATYPE_NAMES.hydro_levels_max: ResampleMethods.all_at_first_ts}
+HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e10}
 INPUT_ERAA_FOLDER = f'{DATA_FOLDER}/ERAA_2023-2'
 INPUT_FOLDER = 'input'
 INPUT_FUEL_SOURCES_FOLDER = f'{DATA_FOLDER}/fuel_sources'

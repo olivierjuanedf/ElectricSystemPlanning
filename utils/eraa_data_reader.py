@@ -23,7 +23,12 @@ def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, p
     # keep only wanted date range
     df_filtered = get_subdf_from_date_range(df=df, date_col=date_col, date_min=period_start, date_max=period_end)
     # then selected climatic year
-    df_filtered = selec_in_df_based_on_list(df=df_filtered, selec_col=climatic_year_col, selec_vals=[climatic_year])
+    if climatic_year_col in df_filtered.columns:
+        df_filtered = selec_in_df_based_on_list(df=df_filtered, selec_col=climatic_year_col, selec_vals=[climatic_year])
+    # cases with data inependent of climatic years (e.g. hydro reservoir min/max levels)
+    # -> add climatic year col (+ selected value in it) to have uniform formats hereafter
+    else:
+        df_filtered[climatic_year_col] = climatic_year
     return df_filtered
 
 
@@ -87,6 +92,13 @@ def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols
     if day_col not in df_cols:  # set date from week index only
         # add day column with 1 for all (i.e. Monday)
         df_hydro[day_col] = 1
+        df_cols.append(day_col)
+        # remove rows with invalid week idx (> 52)
+        init_len = len(df_hydro)
+        df_hydro = df_hydro[df_hydro[week_col] < 53]
+        new_len = len(df_hydro)
+        if new_len < init_len:
+            logging.warning(f'{init_len - new_len} rows suppressed in {hydro_dt} data due to invalid week idx (> 52)')
         # set date column based on week and day=1 index values
         df_hydro[COLUMN_NAMES.date] = (
             df_hydro.apply(lambda row:
