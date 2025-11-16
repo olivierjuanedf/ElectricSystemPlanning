@@ -33,7 +33,9 @@ To get some insights on the data used in this code environment, from **European 
 <span style="color:#257cbd; font-weight:bold">N.B.</span> If list are provided for countries, years, climatic years, and extra-params: if plots are displayed, a curve will be obtained for each case in the product of requested lists; if csv is written, concatenation will be done over the product of cases.
 For plots a maximal number of 6 cases is allowed, so that obtained graph be readable.
 
-An **example of such a JSON script is provided** in folder [input_example/long_term_uc/data_analysis](../../input_example/long_term_uc/data_analysis), providing some of the main cases that could be used for data analysis. 
+An **example of such a JSON script is provided** in folder [input_example/long_term_uc/data_analysis](../../input_example/long_term_uc/data_analysis), 
+providing some of the main cases that could be used for data analysis. In the same folder is given a file describing a few illustrative examples 
+extracted from the JSON file
 
 **Run script [my_little_europe_data_analysis.py](../../my_little_europe_data_analysis.py)**
 
