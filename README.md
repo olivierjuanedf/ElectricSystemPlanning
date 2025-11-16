@@ -2,10 +2,10 @@ Planning the European Electric System
 
 ## Requirements 
 
-* a Github account: If not the case, go https://github.com/ and sign up
-* enroll the classroom as a student: go [enroll](https://classroom.github.com/a/M_bX8C28)
+* A **Github account**: If not the case, go https://github.com/ and sign up
+* **Enroll the classroom** as a student: go [enroll](https://classroom.github.com/a/M_bX8C28)
 ![step 1n, enrolling](/.assets/img/enroll1.png)
-* Click to accept the assignment
+* **Click to accept** the assignment
 
 ## Setup
 
@@ -35,7 +35,8 @@ Are you sure you want to choose the red pill over the blue pill?
 You have to install Python and ( Pycharm or VSCode ) 
 
 #### Python
-Install a compatible Python version from 3.9 to 3.12, avoid 3.13 and versions older than 3.9 
+
+Install a compatible Python version from 3.10 to 3.12, avoid 3.13 
 
 <details>
   <summary>On windows</summary>
@@ -99,11 +100,10 @@ TO COME
 
 #### VSCode
 
+Download and install https://code.visualstudio.com/download
 
-download and install https://code.visualstudio.com/download
 
-
-in VSCode terminal, create a python environment and activate it :
+In VSCode terminal, create a python environment and activate it :
 
 
 ```
@@ -127,7 +127,7 @@ pip install -r requirements.txt
 ```
 
 
-run the code
+run the code, here for example the European Unit Commitment simulation
 
 
 ```
@@ -146,29 +146,19 @@ python .\my_little_europe_lt_uc.py
 
 <details>
 
-* connect to the university wifi or maybe eduroam wifi
-* go and register here with you student email: https://portal.gurobi.com/iam/register
+* Connect to the university wifi or maybe eduroam wifi
+* **Go and register** here with you student email: https://portal.gurobi.com/iam/register
   ![registration page 1/3](/.assets/img/gurobi_registration.png)
-* register as a student
+* Register **as a student**
   ![registration page 2/3](/.assets/img/gurobi_registration2.png)
-* set a password !
-* request a 'WLS license' on this page: https://portal.gurobi.com/iam/licenses/request
+* Set a password!
+* **Request a 'WLS license'** on this page: https://portal.gurobi.com/iam/licenses/request
   ![license 1/3](/.assets/img/gurobi_license1.png)
-* go and download your license file it should be a gurobi.lic file: https://license.gurobi.com/manager/licenses
+* **Go and download your license file**. It should be a gurobi.lic file: https://license.gurobi.com/manager/licenses
   ![license 2/3](/.assets/img/gurobi_license2.png)
-* put your gurobi license at the root of your git project using drag and drop
+* **Put your gurobi license at the root of your git project** using drag and drop
   ![license 3/3](/.assets/img/gurobi_license3.png)
 
-now in your python script replace
-```python
-result = network.optimize(solver_name="highs")
-```
-with
-```python
-import os
-os.environ['GRB_LICENSE_FILE'] = os.path.join(os.path.dirname(__file__), 'gurobi.lic')
-result = network.optimize(solver_name="gurobi")
-```
+Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.json) indicating your solver ('gurobi') and license file (normally 'gurobi.lic') names.  
 
-Hopefully it should work
 </details>
