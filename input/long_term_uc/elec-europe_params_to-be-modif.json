@@ -2,12 +2,7 @@
   "selected_climatic_year": 1989,
   "selected_countries": [
     "france",
-    "germany",
-    "italy",
-    "iberian-peninsula",
-    "benelux",
-    "scandinavia",
-    "poland"
+    "germany"
   ],
   "selected_target_year": 2025,
   "uc_period_start": "1900/1/1",

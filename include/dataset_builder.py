@@ -39,6 +39,7 @@ class GenerationUnitData:
     committable: bool = False
     max_hours: float = None
     cyclic_state_of_charge: bool = None
+    inflow: np.ndarray = None
 
     def get_non_none_attr_names(self):
         return [key for key, val in self.__dict__.items() if val is not None]

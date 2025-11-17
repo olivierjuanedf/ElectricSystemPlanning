@@ -10,6 +10,7 @@ class GenUnitsPypsaParams:
     co2_emissions: str = 'co2_emissions'  # TODO: check that aligned on PyPSA generators attribute names
     efficiency: str = 'efficiency'
     energy_capa: str = None
+    inflow: str = 'inflow'
     marginal_cost: str = 'marginal_cost'
     max_hours: str = 'max_hours'
     max_power_pu: str = 'p_max_pu'

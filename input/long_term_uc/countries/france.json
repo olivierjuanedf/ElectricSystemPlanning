@@ -2,12 +2,20 @@
   "team": "france",
   "selected_prod_types": {
     "france": [
-      "nuclear", "wind_onshore"
+      "nuclear",
+      "wind_onshore",
+      "hydro_reservoir"
     ],
-    "germany": ["coal"]
+    "germany": [
+      "coal"
+    ]
   },
   "capacities_tb_overwritten": {
-    "france": {"nuclear": 80000},
-    "germany": {"coal": 20000}
+    "france": {
+      "nuclear": 80000
+    },
+    "germany": {
+      "coal": 20000
+    }
   }
 }

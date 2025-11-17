@@ -567,11 +567,17 @@ class Dataset:
             self.interco_capas = interco_capas
 
     def complete_data(self):
-        # TODO: see cases leading to None data at this stage... and if to be treated before
+        # TODO: see cases leading to None data at this stage... and if to be treated before - and merge following cases
         self.demand = complete_country_data(per_country_data=self.demand)
         self.net_demand = complete_country_data(per_country_data=self.net_demand)
         self.agg_cf_data = complete_country_data(per_country_data=self.agg_cf_data)
         self.agg_gen_capa_data = complete_country_data(per_country_data=self.agg_gen_capa_data)
+        self.hydro_ror_data = complete_country_data(per_country_data=self.hydro_ror_data)
+        self.hydro_inflows_data = complete_country_data(per_country_data=self.hydro_inflows_data)
+        self.hydro_reservoir_levels_min_data = complete_country_data(
+            per_country_data=self.hydro_reservoir_levels_min_data)
+        self.hydro_reservoir_levels_max_data = complete_country_data(
+            per_country_data=self.hydro_reservoir_levels_max_data)
 
     def get_agg_prod_types(self, country: str) -> List[str]:
         return list(set(self.agg_gen_capa_data[country][PROD_TYPE_AGG_COL]))
@@ -591,6 +597,7 @@ class Dataset:
         # TODO: set as global constants/unify...
         power_capa_key = 'power_capa'
         capa_factor_key = 'capa_factors'
+        inflow_key = 'inflow'  # TODO: as a constant
         self.generation_units_data = {}
         for country in countries:
             logging.debug(f'- for country {country}')
@@ -636,6 +643,17 @@ class Dataset:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.capa_factors] = (
                             np.array(current_pt_res_cf_data[COLUMN_NAMES.value])
                         )
+                    # add inflow when it applies
+                    if inflow_key in units_complem_params_per_agg_pt[agg_pt]:
+                        logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {capa_factor_key}')
+                        current_pt_inflow_data = self.hydro_inflows_data[country]
+                        # set column according to type of hydro asset
+                        inflow_value_col = 'cum_inflow_into_reservoirs' if agg_pt == ProdTypeNames.hydro_reservoir \
+                            else 'cum_nat_inflow_into_pump-storage_reservoirs'
+                        current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.inflow] = (
+                            np.array(current_pt_inflow_data[inflow_value_col])
+                        )
+
                 # specific parameters for failure
                 elif agg_pt == ProdTypeNames.failure:
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
