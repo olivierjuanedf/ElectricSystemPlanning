@@ -182,8 +182,8 @@ def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_ye
     df_hydro_data = filter_input_data(df=df_hydro_data, date_col=date_col, climatic_year_col=COLUMN_NAMES.climatic_year,
                                       period_start=period[0], period_end=period_end, climatic_year=climatic_year)
     # resample and distribute to hourly values
-    # end date to resample -> to include the 23h of last date in data
-    end_date_resample = max(df_hydro_data[date_col]) + timedelta(hours=23)
+    # end date to resample -> to include the 23h of last date in data (under convention that period end is EXCLUDED)
+    end_date_resample = period_end - timedelta(hours=1)
     value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
     key_cols = set_final_hydro_key_cols(hydro_dt=hydro_dt)
     per_country_hydro_data = {}

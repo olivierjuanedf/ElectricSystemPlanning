@@ -35,11 +35,13 @@
     ],
     "hydro_pump_storage_open_loop": [
       "p_min_pu",
-      "p_max_pu"
+      "p_max_pu",
+      "inflow"
     ],
     "hydro_reservoir": [
       "p_min_pu",
-      "p_max_pu"
+      "p_max_pu",
+      "inflow"
     ],
     "hydro_run_of_river": [
       "p_min_pu",
