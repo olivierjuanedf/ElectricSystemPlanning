@@ -66,11 +66,12 @@ for elt_analysis in data_analyses:
             extra_params_vals = current_extra_params.values
             extra_params_idx = current_extra_params.index
         # get data to be analyzed/plotted hereafter - using extra-parameters if provided
+        # TODO: cleaner...
+        subdt_selec = elt_analysis.aggreg_prod_types if not elt_analysis.aggreg_prod_types == [None] else None
         eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
                                         datatypes_selec=[elt_analysis.data_type],
-                                        subdt_selec=elt_analysis.aggreg_prod_types,
-                                        **extra_params_vals)
+                                        subdt_selec=subdt_selec, **extra_params_vals)
         eraa_dataset.complete_data()
         # create Unit Commitment Timeseries object from data read
         if elt_analysis.data_type == DATATYPE_NAMES.demand:

@@ -442,12 +442,13 @@ class Dataset:
         # hydro. data is concatenated over all countries in hydro data -> read it once
         # TODO: merge/loop (how to for assignment depending on hydro datatype?)
         if DATATYPE_NAMES.hydro_ror in dts_tb_read:
-            self.hydro_ror_data \
-                = get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_ror, folder=hydro_folder,
-                                 countries=uc_run_params.selected_countries,
-                                 climatic_year=uc_run_params.selected_climatic_year,
-                                 period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end)
-                                 )
+            if subdt_selec is None or DATATYPE_NAMES.hydro_ror in subdt_selec:
+                self.hydro_ror_data \
+                    = get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_ror, folder=hydro_folder,
+                                     countries=uc_run_params.selected_countries,
+                                     climatic_year=uc_run_params.selected_climatic_year,
+                                     period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end)
+                                     )
         if DATATYPE_NAMES.hydro_inflows in dts_tb_read:
             self.hydro_inflows_data = (
                 get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_inflows, folder=hydro_folder,
@@ -467,6 +468,7 @@ class Dataset:
             self.hydro_reservoir_levels_min_data, self.hydro_reservoir_levels_max_data = (
                 separate_hydro_extr_levels_data(hydro_extr_levels_data=hydro_extr_levels_data)
             )
+        # loop over countries for per country data files
         for country in uc_run_params.selected_countries:
             logging.info(3 * '#' + f' For country: {country}')
             logging.info(f'With selected aggreg. prod. types: {uc_run_params.selected_prod_types[country]}')
@@ -541,7 +543,10 @@ class Dataset:
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
                 # ror production of current country
-                current_ror_prod = self.hydro_ror_data[country]
+                if country in self.hydro_ror_data:
+                    current_ror_prod = self.hydro_ror_data[country]
+                else:
+                    current_ror_prod = None
                 current_df_net_demand, pts_with_capa_from_arg = (
                     calc_net_demand(df_demand=current_df_demand, df_gen_capa=current_df_gen_capa,
                                     df_agg_cf=agg_cf_data_read, cf_agg_prod_types_tb_read=cf_agg_prod_types_tb_read,

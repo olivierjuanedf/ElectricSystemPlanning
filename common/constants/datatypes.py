@@ -11,7 +11,7 @@ class DatatypesNames:
     interco_capa: str = 'intercos_capas'
     net_demand: str = 'net_demand'
     # different hydro (sub)datatypes
-    hydro_ror: str = 'hydro_ror'
+    hydro_ror: str = 'hydro_run_of_river'
     hydro_inflows: str = 'hydro_inflows'
     hydro_levels_min: str = 'hydro_levels_min'
     hydro_levels_max: str = 'hydro_levels_max'
