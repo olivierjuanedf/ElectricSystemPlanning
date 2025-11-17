@@ -5,7 +5,11 @@
       "data_type": "net_demand",
       "countries": "france",
       "years": 2025,
-      "climatic_years": 1985
+      "climatic_years": 1985,
+      "aggreg_prod_types": [
+        "solar_pv",
+        "hydro_run_of_river"
+      ]
     }
   ]
 }
