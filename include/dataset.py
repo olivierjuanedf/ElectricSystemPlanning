@@ -267,7 +267,8 @@ def capa_info_log(df_gen_capa: pd.DataFrame):
 
 
 def calc_net_demand(df_demand: pd.DataFrame, df_gen_capa: pd.DataFrame, df_agg_cf: pd.DataFrame,
-                    cf_agg_prod_types_tb_read: List[str], capas_aggreg_pt_with_cf: Dict[str, int]) \
+                    cf_agg_prod_types_tb_read: List[str], capas_aggreg_pt_with_cf: Dict[str, int],
+                    df_hydro_ror_prod: pd.DataFrame = None) \
         -> (pd.DataFrame, List[str]):
     """
     Calculate net demand
@@ -292,6 +293,8 @@ def calc_net_demand(df_demand: pd.DataFrame, df_gen_capa: pd.DataFrame, df_agg_c
             current_np_net_demand -= current_capa * np.array(current_cf_data[value_col])
         else:
             pts_wo_cf_data.append(agg_prod_type)
+    if df_hydro_ror_prod is not None and len(df_hydro_ror_prod) > 0:
+        current_np_net_demand -= np.array(df_hydro_ror_prod[value_col])
     df_net_demand = deepcopy(df_demand)
     df_net_demand[value_col] = current_np_net_demand
     # warning if prod. types without CF data obtained -> not taken into account here...
@@ -438,14 +441,14 @@ class Dataset:
 
         # hydro. data is concatenated over all countries in hydro data -> read it once
         # TODO: merge/loop (how to for assignment depending on hydro datatype?)
-        if DATATYPE_NAMES.hydro_ror in datatypes_selec:
+        if DATATYPE_NAMES.hydro_ror in dts_tb_read:
             self.hydro_ror_data \
                 = get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_ror, folder=hydro_folder,
                                  countries=uc_run_params.selected_countries,
                                  climatic_year=uc_run_params.selected_climatic_year,
                                  period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end)
                                  )
-        if DATATYPE_NAMES.hydro_inflows in datatypes_selec:
+        if DATATYPE_NAMES.hydro_inflows in dts_tb_read:
             self.hydro_inflows_data = (
                 get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_inflows, folder=hydro_folder,
                                countries=uc_run_params.selected_countries,
@@ -453,7 +456,7 @@ class Dataset:
                                period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end))
             )
         # both extr levels data in same file -> get data once
-        if DATATYPE_NAMES.hydro_levels_min in datatypes_selec or DATATYPE_NAMES.hydro_levels_max in datatypes_selec:
+        if DATATYPE_NAMES.hydro_levels_min in dts_tb_read or DATATYPE_NAMES.hydro_levels_max in dts_tb_read:
             hydro_extr_levels_data = (
                 get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=hydro_folder,
                                countries=uc_run_params.selected_countries,
@@ -537,10 +540,12 @@ class Dataset:
                 capa_info_log(df_gen_capa=current_df_gen_capa)
 
             if DATATYPE_NAMES.net_demand in datatypes_selec:
+                # ror production of current country
+                current_ror_prod = self.hydro_ror_data[country]
                 current_df_net_demand, pts_with_capa_from_arg = (
                     calc_net_demand(df_demand=current_df_demand, df_gen_capa=current_df_gen_capa,
                                     df_agg_cf=agg_cf_data_read, cf_agg_prod_types_tb_read=cf_agg_prod_types_tb_read,
-                                    capas_aggreg_pt_with_cf=capas_aggreg_pt_with_cf)
+                                    capas_aggreg_pt_with_cf=capas_aggreg_pt_with_cf, df_hydro_ror_prod=current_ror_prod)
                 )
                 self.net_demand[country] = current_df_net_demand
                 capa_from_arg_for_net_demand_info_log(prod_types_with_capa_from_arg=pts_with_capa_from_arg,

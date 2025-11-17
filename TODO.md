@@ -22,6 +22,7 @@ M18) Reformat data files description with file objects (folder, separators, colu
 M19) Select only data of considered cys when reading data in dataset.py\get_countries_data (and other filtering...)
 -> seems not TB done for all dts
 DATA (D)
+D0) Unit of hydro data? Scale accordingly when reading
 D1) Add ERAA ed. 2024, with climatic modelling...
 D2) Pb with hydro data/week idx when both day and week given they seem equal...
 D3) Pb with hydro data format -> lot (all?) of numeric data not casted directly by pd.read_csv
