@@ -44,6 +44,7 @@ TE2) Keep FUEL_SOURCES or too complex for the students?
 MAIN EUROPE SIMUS (MAS) (my_little_europe_lt_uc.py)
 MAS2) Integrate hydraulic storages... with inflows/min SOC data from ERAA
 -> min/max levels in PyPSA?
+MAS2bis) ror with p_set input of PyPSA
 MAS3) Usage param auto fulfill interco capa missing -> ??
 MAS4) Add possibility to set Stock (additional to ERAA data) in JSON tb modif input file
 #################### LATER  ################
