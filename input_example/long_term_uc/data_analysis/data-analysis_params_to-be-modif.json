@@ -10,7 +10,6 @@
     {
       "analysis_type": "plot",
       "data_type": "res_capa-factors",
-      "data_subtype": "solar_pv",
       "countries": "italy",
       "years": 2025,
       "climatic_years": 1989
@@ -32,9 +31,7 @@
         "germany"
       ],
       "years": 2025,
-      "climatic_years": 1985,
-      "period_start": "1900/1/15",
-      "period_end": "1900/1/29"
+      "climatic_years": 1985
     },
     {
       "analysis_type": "plot_duration_curve",
@@ -100,6 +97,106 @@
             "capas_aggreg_pt_with_cf": {
               "wind_onshore": 40000,
               "wind_offshore": 10000,
+              "solar_pv": 40000
+            }
+          }
+        }
+      ]
+    },
+    {
+      "analysis_type": "plot",
+      "data_type": "res_capa-factors",
+      "aggreg_prod_types": [
+        "solar_pv",
+        "wind_offshore"
+      ],
+      "countries": "france",
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": [
+        1985,
+        1987
+      ],
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29"
+    },
+    {
+      "analysis_type": "extract",
+      "data_type": "res_capa-factors",
+      "aggreg_prod_types": [
+        "solar_pv",
+        "wind_offshore"
+      ],
+      "countries": "france",
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": [
+        1985,
+        1987
+      ],
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29"
+    },
+    {
+      "analysis_type": "plot_duration_curve",
+      "data_type": "net_demand",
+      "aggreg_prod_types": [
+        "solar_pv",
+        "wind_onshore"
+      ],
+      "countries": "france",
+      "years": 2025,
+      "climatic_years": [
+        1985,
+        1987
+      ],
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29"
+    },
+    {
+      "analysis_type": "extract",
+      "data_type": "net_demand",
+      "aggreg_prod_types": [
+        "solar_pv"
+      ],
+      "countries": "france",
+      "years": [
+        2025,
+        2033
+      ],
+      "climatic_years": 1985,
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29"
+    },
+    {
+      "analysis_type": "plot_duration_curve",
+      "data_type": "net_demand",
+      "aggreg_prod_types": [
+        "solar_pv"
+      ],
+      "countries": "france",
+      "years": 2025,
+      "climatic_years": 1985,
+      "period_start": "1900/1/15",
+      "period_end": "1900/1/29",
+      "extra_params": [
+        null,
+        {
+          "label": "res_low",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
+              "solar_pv": 10000
+            }
+          }
+        },
+        {
+          "label": "res_high",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
               "solar_pv": 40000
             }
           }

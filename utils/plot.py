@@ -235,8 +235,6 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], plot_dim
                                                                   return_none_if_not_found=True)
 
     # get dicts {plot dim value: style attr value} to be used
-    zone_level = plot_dims_order.index(DataDimensions.zone)
-    extra_args_level = plot_dims_order.index(DataDimensions.extra_args)
     per_attr_corresp = {('color', color_level): per_dim_plot_params[plot_dims_order[color_level]].per_case_color}
     if linestyle_level is not None:
         per_attr_corresp[('linestyle', linestyle_level)] = (
@@ -245,6 +243,8 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], plot_dim
         per_attr_corresp[('marker', marker_level)] = per_dim_plot_params[plot_dims_order[marker_level]].per_case_marker
 
     # set style attrs values for each of the cases - def. by tuples
+    zone_level = plot_dims_order.index(DataDimensions.zone)
+    extra_args_level = plot_dims_order.index(DataDimensions.extra_args)
     per_case_curve_style_attrs = {}
     for case_tuple in plot_dims_tuples:
         style_attrs_dict = {}

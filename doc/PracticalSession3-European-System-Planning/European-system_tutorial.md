@@ -1,10 +1,8 @@
 # To start with: some general documentation
 
-* **PyPSA documentation**: https://pypsa.readthedocs.io/en/latest/ -> **normally not really useful** as the connection with PyPSA framework is already done in the code you will be playing with 
-
-* **On ERAA (European Resource Adequacy Assessment)** (2023.2 will be used): https://www.entsoe.eu/outlooks/eraa/ -> to get **some information about the collection, preparation and limitations of data**.
-    - (i) **ERAA is a dataset** yearly collected, "built" and made available by ENTSO-E, but also a long-term planning model (and study) to assess... European Resource Adequacy! 
-    - (ii) **Only an extract of these data is available here**: 2 "Target Years" (2025, 2033) over the 4 ones provided in ERAA2023.2 edition, 6 climatic years over 35 ones available (1982-2016 historical period).
+See [doc/useful_references.md](doc/useful_references.md) file to get 
+- infos about ERAA (data) and PyPSA (framework/modeler)
+- also some complementary sources of infos regarding the different countries you will be analysing
 
 # Tutorial - Long-Term Unit Commitment (UC) part
 

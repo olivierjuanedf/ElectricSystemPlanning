@@ -18,6 +18,9 @@ To get some insights on the data used in this code environment, from **European 
     N.B. If list of years: if plots are displayed, multiple curves will be obtained (one for each year - on the same graph); if csv is written, data of the different years will be concatenated.
   - **climatic_year** (<span style="color:#257cbd; font-weight:bold">int</span> or <span style="color:#257cbd; font-weight:bold">list of int</span>): the (past) year from which weather conditions will be "extracted" and applied to current year; it must be in list given in file [input/long_term_uc/elec-europe_eraa-available-values.json](../../input/long_term_uc/elec-europe_eraa-available-values.json) (field "climatic_years")  
     N.B. If list of climatic years: if plots are displayed, multiple curves will be obtained (one for each climatic year - on the same graph); if csv is written, data of the different climatic years will be concatenated.
+  - (optional) **aggreg_prod_types** (<span style="color:#257cbd; font-weight:bold">str</span>): aggreg. production types to analyze/plot; to be used only if datatype is "res_capa-factors" of "net_demand", setting as value(s) the production types with capa factor data to be extracted/saved, or used for net demand calculation. 
+    See [input/long_term_uc/elec-europe_eraa-available-values.json](../../input/long_term_uc/elec-europe_eraa-available-values.json) (field "aggreg_prod_types") to get list of per-country available production types, and select only the RES ones ("solar_pv", "wind_onshore", "wind_offshore", or "csp_nostorage").
+    N.B. If using this field with data_type="net_demand" a unique curve/data extract will be obtained; the name of output .png/.csv file will indicate which aggreg. prod. types have been used to get its content
   - **period_start** (<span style="color:#257cbd; font-weight:bold">str</span>, with date format <span style="color:#257cbd; font-weight:bold">yyyy/mm/dd</span>): start date of the period to be considered
   - **period_end** (<span style="color:#257cbd; font-weight:bold">str</span>, with date format <span style="color:#257cbd; font-weight:bold">yyyy/mm/dd</span>): end date of the period to be considered
   - **extra_params** (<span style="color:#257cbd; font-weight:bold">dict</span> or <span style="color:#257cbd; font-weight:bold">list of dict</span>): to specify extra-parameters that can be used to analyse data, e.g. fixed capacities for RES sources for net demand calculation.
@@ -30,7 +33,9 @@ To get some insights on the data used in this code environment, from **European 
 <span style="color:#257cbd; font-weight:bold">N.B.</span> If list are provided for countries, years, climatic years, and extra-params: if plots are displayed, a curve will be obtained for each case in the product of requested lists; if csv is written, concatenation will be done over the product of cases.
 For plots a maximal number of 6 cases is allowed, so that obtained graph be readable.
 
-An **example of such a JSON script is provided** in folder [input_example/long_term_uc/data_analysis](../../input_example/long_term_uc/data_analysis), providing some of the main cases that could be used for data analysis. 
+An **example of such a JSON script is provided** in folder [input_example/long_term_uc/data_analysis](../../input_example/long_term_uc/data_analysis), 
+providing some of the main cases that could be used for data analysis. In the same folder is given a file describing a few illustrative examples 
+extracted from the JSON file
 
 **Run script [my_little_europe_data_analysis.py](../../my_little_europe_data_analysis.py)**
 
@@ -41,3 +46,8 @@ They will be obtained in folder [output/data_analysis](../../output/data_analysi
   - **.csv ones**, if "extract"
   - with explicit filenames - hopefully! -, of the form: 
   {data_type}_{country(ies)}_{year(s)}_cy{clim. year(s)}_{extra-params cases nber}.csv/png
+
+N.B. For some obtained files, their name is not "totally explicit" with some suffix like "3-clim-years" if a selection 
+of 3 climatic years has been requested. Re-running the same data analysis changing the values of these 3 climatic years - but keeping the same number of them - would overwrite this file. In turn...
+
+**a good practice would be to save out of this environment the figures you would like to archive for your final analysis** (and synthesis to be written at the end of the week)

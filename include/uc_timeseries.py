@@ -1,3 +1,4 @@
+import logging
 import os
 import warnings
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from common.constants.data_analysis_types import COMMON_PLOT_YEAR
+from common.constants.datatypes import PLOT_YLABEL_PER_DT
 from common.plot_params import PlotParams
 from utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
 from utils.dates import set_year_in_date, set_temporal_period_str
@@ -17,9 +19,21 @@ NAME_SEP = '_'
 SUBNAME_SEP = '-'
 
 
-def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int], climatic_years: List[int],
-                   n_extra_params: int = None):
-    data_type_prefix = SUBNAME_SEP.join(list(full_data_type))
+def set_uc_ts_name(data_type: Tuple[str, List[str]], countries: List[str], years: List[int],
+                   climatic_years: List[int], extra_params: List[Optional[int]], aggreg_prod_types: List[str] = None):
+    """
+    Set UC timeseries names, based on the different characteristics of UC model
+    Args:
+        data_type:
+        countries:
+        years:
+        climatic_years:
+        extra_params:
+        aggreg_prod_types:
+
+    Returns:
+
+    """
     n_countries = len(countries)
     n_countries_max_in_suffix = 2
     n_countries_min_with_trigram = 2
@@ -31,12 +45,20 @@ def set_uc_ts_name(full_data_type: tuple, countries: List[str], years: List[int]
     clim_years_suffix = set_years_suffix(years=climatic_years, sep=SUBNAME_SEP, is_climatic_year=True)
     if CLIM_YEARS_SUFFIX not in clim_years_suffix:
         clim_years_suffix = f'cy{clim_years_suffix}'
-    if n_extra_params is not None:
-        extra_params_suffix = SUBNAME_SEP.join([str(n_extra_params), 'extraparams'])
-    else:
+    if extra_params == [None]:  # only null extra-params
         extra_params_suffix = ''
+    else:
+        n_extra_params = len(extra_params)
+        if None in extra_params:
+            n_extra_params -= 1
+        extra_params_suffix = SUBNAME_SEP.join([str(n_extra_params), 'extraparams'])
+    if aggreg_prod_types == [None]:
+        agg_pt_suffix = ''
+    else:
+        n_agg_pt = len(aggreg_prod_types)
+        agg_pt_suffix = SUBNAME_SEP.join([str(n_agg_pt), 'aggpts'])
     # remove empty str
-    suffix_lst = [data_type_prefix, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix]
+    suffix_lst = [data_type, countries_suffix, years_suffix, clim_years_suffix, extra_params_suffix, agg_pt_suffix]
     suffix_lst = [elt for elt in suffix_lst if len(elt) > 0]
     return NAME_SEP.join(suffix_lst)
 
@@ -47,7 +69,7 @@ def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
     """
     name_split = name.split(NAME_SEP)
     dims = []
-    for i in range(4):
+    for i in range(5):
         if SUBNAME_SEP in name_split[i]:
             return None
         current_dim = int(name_split[i]) if name_split[i].isdigit() else name_split[i]
@@ -56,19 +78,19 @@ def get_dims_from_uc_ts_name(name: str) -> Optional[Tuple[str, str, int, int]]:
 
 
 def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int = None,
-                    climatic_year: int = None, extra_args_label: str = None) -> str:
-    sep = ', '
-    label = ''
+                    climatic_year: int = None, extra_args_label: str = None, agg_prod_type: str = None) -> str:
+    label_elts = []
     if 'country' in attrs_in_legend and country is not None:
-        label += country[:3]
+        label_elts.append(country[:3])
     yr_labels = {'year': ('TY', year), 'climatic_year': ('CY', climatic_year)}
     for key, val in yr_labels.items():
         label_name = val[0]
         label_val = val[1]
         if key in attrs_in_legend and label_val is not None:
-            if len(label) > 0:
-                label += sep
-            label += f'{label_name}={label_val}'
+            label_elts.append(f'{label_name}={label_val}')
+    if 'agg_prod_type' in attrs_in_legend and agg_prod_type is not None:
+        label_elts.append(agg_prod_type)
+    label = ', '.join(label_elts)
     if 'extra_args' in attrs_in_legend:
         label += extra_args_label if extra_args_label is not None else 'no extra-args'
     return label
@@ -86,9 +108,9 @@ def set_y_with_label_as_key(y: Dict[tuple, Union[np.ndarray, list]], extra_param
     y_with_label = {}
     for key, vals in y.items():
         current_key = list(key)
-        # replace last element of (tuple) key - the extra arg idx - by its label
-        if current_key[-1] is not None:
-            current_key[-1] = extra_params_labels[current_key[-1]]
+        # replace before-last element of (tuple) key - the extra arg idx - by its label (last element is agg. prod type)
+        if current_key[-2] is not None:
+            current_key[-2] = extra_params_labels[current_key[-2]]
         y_with_label[set_curve_label(attrs_in_legend, *current_key)] = vals
     return y_with_label
 
@@ -96,7 +118,7 @@ def set_y_with_label_as_key(y: Dict[tuple, Union[np.ndarray, list]], extra_param
 @dataclass
 class UCTimeseries:
     name: str = None
-    data_type: tuple = None
+    data_type: str = None
     # can be a dict. {(country, year, clim year): vector of values}, in case multiple
     # (country, year, climatic year) be considered
     values: Union[np.ndarray, Dict[Tuple[str, int, int], np.ndarray]] = None
@@ -112,7 +134,7 @@ class UCTimeseries:
             self.unit = unit
 
     def set_output_dates(self, is_plot: bool) -> Union[List[int], List[datetime]]:
-        # per (country, year, clim year) values
+        # per (country, year, clim year, extra-params case, agg. pt) values
         if isinstance(self.values, dict):
             first_key = list(self.values)[0]
             # repeat these ts index when saving a csv file, not when plotting (common x-axis)
@@ -130,7 +152,7 @@ class UCTimeseries:
         # ... or dates (if provided)
         else:
             if first_key is not None:
-                # saving to csv file -> concatenate the dates of all (country, year, clim year) cases
+                # saving to csv file -> concatenate the dates of all (country, year, cy, extra-params, agg pt) cases
                 if not is_plot:
                     output_dates = []
                     for key, dates_val in self.dates.items():
@@ -146,29 +168,45 @@ class UCTimeseries:
     def set_output_values(self, is_plot: bool) -> Union[list, dict]:
         # per (country, year, clim year) values
         if isinstance(self.values, dict):
-            # saving to csv file -> concatenate the values of all (country, year, clim year) cases
+            # saving to csv file -> concatenate the values of all (country, year, clim year, ...) cases
             if not is_plot:
                 output_vals = []
                 for key, vals in self.values.items():
                     output_vals.extend(vals)
-            # plot -> dict.
+            # plot -> dict. except if of length 1 and not treated before...
+            # TODO: manage it more properly before (normally should be the case for RES CF plot
+            #  with unique agg prod type selected)
             else:
-                output_vals = self.values
+                if len(self.values) == 1:
+                    logging.debug(f'Dict of data of length 1 converte to list for plot: {self.values}')
+                    first_key = list(self.values)[0]
+                    output_vals = self.values[first_key]
+                else:
+                    output_vals = self.values
         else:
             output_vals = self.values
         return output_vals
 
+    def get_name_with_added_dt_suffix(self, data_type_suffix: str = None) -> str:
+        if data_type_suffix is None:
+            return self.name
+        len_dt = len(self.data_type)
+        # + 1 for last term not to have repetition of separator '_'
+        return '_'.join([self.name[:len_dt], data_type_suffix, self.name[len_dt + 1:]])
+
     def to_csv(self, output_dir: str, complem_columns: Dict[str, Union[list, np.ndarray, float]] = None,
-               extra_params_labels: Dict[int, str] = None):
+               extra_params_labels: Dict[int, str] = None, dt_suffix_for_output: str = None):
         """
         :param output_dir: in which csv must be saved
         :param complem_columns: to be added to saved csv
         :param extra_params_labels: {idx: label} corresp. for extra-parameters (no corresp. for None extra-params)
+        :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
         """
         with_temp_period_suffix = True
         output_dates = self.set_output_dates(is_plot=False)
         date_col = set_date_col(first_date=output_dates[0])
         extra_params_col = 'extra_params'
+        agg_prod_type_col = 'aggreg_prod_type'
         output_vals = self.set_output_values(is_plot=False)
         values_dict = {date_col: output_dates, 'value': output_vals}
         if complem_columns is not None:
@@ -178,15 +216,16 @@ class UCTimeseries:
         # add "key" columns corresp. to the (country, ty, cy, extra-params) tuples
         if isinstance(self.dates, dict):
             all_keys = []
-            # tuple keys of dates dict, replacing last component by label, if not None
+            # tuple keys of dates dict, replacing last but one component (extra-params) by label, if not None
             for elt_tuple in self.dates:
-                if elt_tuple[-1] is None:
+                # TODO: make this -2 adaptative to order of key names in tuple?
+                if elt_tuple[-2] is None:
                     all_keys.append(elt_tuple)
                 else:
                     all_keys.append(elt_tuple[:-1] + (extra_params_labels[elt_tuple[-1]],))
             n_dates = len(self.dates[all_keys[0]])
-            df_keys = set_key_columns(col_names=['country', 'year', 'climatic_year', extra_params_col],
-                                      tuple_values=all_keys, n_repeat=n_dates)
+            column_names = ['country', 'year', 'climatic_year', extra_params_col, agg_prod_type_col]
+            df_keys = set_key_columns(col_names=column_names, tuple_values=all_keys, n_repeat=n_dates)
             df_to_csv = pd.concat([df_keys, df_to_csv], axis=1)
         if with_temp_period_suffix:
             min_date = min(output_dates)
@@ -196,22 +235,26 @@ class UCTimeseries:
             temp_period_suffix = f'_{temp_period_str}'
         else:
             temp_period_suffix = ''
-        output_file = os.path.join(output_dir, f'{self.name.lower()}{temp_period_suffix}.csv')
-        # remove extra-params column if unique value is None (i.e., no extra-params applied)
-        if df_to_csv[extra_params_col].isna().all():
-            del df_to_csv[extra_params_col]
+        # get name with added suffix to identify this specific file
+        name_with_added_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        output_file = os.path.join(output_dir, f'{name_with_added_suffix.lower()}{temp_period_suffix}.csv')
+        # remove extra-params/aggreg. prod. type column if unique value is None (i.e., no extra-params applied)
+        for col in [extra_params_col, agg_prod_type_col]:
+            if df_to_csv[col].isna().all():
+                del df_to_csv[col]
         df_to_csv.to_csv(output_file, index=None)
 
     def set_plot_ylabel(self) -> str:
-        ylabel = self.data_type[0].capitalize()
+        ylabel = PLOT_YLABEL_PER_DT[self.data_type]
         if self.unit is not None:
             ylabel += f' ({self.unit.upper()})'
         return ylabel
 
     def set_plot_title(self, dt_suffix: str = None) -> str:
-        plot_title = '-'.join(list(self.data_type)).capitalize()
         if dt_suffix is not None:
-            plot_title += f' {dt_suffix}'
+            plot_title = dt_suffix.capitalize()
+        else:
+            plot_title = ''
         # add suffix to indicate temporal period
         if isinstance(self.dates, list):
             dates_for_title = self.dates
@@ -221,7 +264,13 @@ class UCTimeseries:
 
         min_date = min(dates_for_title)
         max_date = max(dates_for_title)
-        plot_title += f', period {set_temporal_period_title(min_date=min_date, max_date=max_date)}'
+        date_in_title = f'period {set_temporal_period_title(min_date=min_date, max_date=max_date)}'
+        if len(plot_title) == 0:
+            date_in_title = date_in_title.capitalize()
+            sep = ''
+        else:
+            sep = ', '
+        plot_title += f'{sep}{date_in_title}'
         return plot_title
 
     def set_attrs_in_plot_legend(self) -> List[str]:
@@ -232,9 +281,9 @@ class UCTimeseries:
         if not isinstance(self.values, dict):
             return []
         all_tuples_in_vals = list(self.values)
-        pot_attrs_for_plot_legend = {'country': 0, 'year': 1, 'climatic_year': 2, 'extra_args': 3}
+        plot_attrs_for_plot_legend = {'country': 0, 'year': 1, 'climatic_year': 2, 'extra_args': 3, 'agg_prod_type': 4}
         attrs_in_plot_legend = []
-        for attr_name, attr_idx in pot_attrs_for_plot_legend.items():
+        for attr_name, attr_idx in plot_attrs_for_plot_legend.items():
             all_vals = set([elt[attr_idx] for elt in all_tuples_in_vals])
             if len(all_vals) > 1:
                 attrs_in_plot_legend.append(attr_name)
@@ -274,7 +323,7 @@ class UCTimeseries:
         return curve_style_attrs
 
     def plot(self, output_dir: str, fig_style: FigureStyle = None, per_dim_plot_params: Dict[str, PlotParams] = None,
-             extra_params_labels: Dict[int, str] = None):
+             extra_params_labels: Dict[int, str] = None, dt_suffix_for_output: str = None):
         """
         Plot (UC) timeseries
         :param output_dir: in which figure will be saved
@@ -282,13 +331,16 @@ class UCTimeseries:
         :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
         defined in plot_params.json file)
         :param extra_params_labels: corresp. between extra. parameters index and labels
+        :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
         """
-        name_label = self.name.capitalize()
-        fig_file = os.path.join(output_dir, f'{name_label.lower()}.png')
+        # get name with added suffix to identify this specific file
+        name_with_added_dt_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        fig_file = os.path.join(output_dir, f'{name_with_added_dt_suffix.lower()}.png')
         x = self.set_output_dates(is_plot=True)
         y = self.set_output_values(is_plot=True)
         xlabel = set_date_col(first_date=x[0]).capitalize() + 's'
-        # replace (country, year, clim year, possibly extra-args label) keys by labels to be used for plot
+        # replace (country, year, clim year, possibly extra-args label, agg. prod type) keys by labels
+        # to be used for plot
         if isinstance(y, dict):
             attrs_in_legend = self.set_attrs_in_plot_legend()
             y = set_y_with_label_as_key(y=y, extra_params_labels=extra_params_labels, attrs_in_legend=attrs_in_legend)
@@ -304,7 +356,7 @@ class UCTimeseries:
 
     def plot_duration_curve(self, output_dir: str, as_a_percentage: bool = False, fig_style: FigureStyle = None,
                             per_dim_plot_params: Dict[str, PlotParams] = None,
-                            extra_params_labels: Dict[int, str] = None):
+                            extra_params_labels: Dict[int, str] = None, dt_suffix_for_output: str = None):
         """
         Plot (UC) timeseries duration curve(s)
         :param output_dir: in which figure will be saved
@@ -313,6 +365,7 @@ class UCTimeseries:
         :param per_dim_plot_params: per plot dimension (zone, year, climatic year) plot parameter values (the ones
         defined in plot_params.json file)
         :param extra_params_labels: corresp. between extra. parameters index and labels
+        :param dt_suffix_for_output: suffix to be added to datatype in output files to identify them in specific cases
         """
         y = self.set_output_values(is_plot=True)
         # sort values in descending order
@@ -334,7 +387,9 @@ class UCTimeseries:
             xlabel = 'Duration (%)'
         else:
             xlabel = 'Duration (nber of time-slots - hours)'
-        fig_file = os.path.join(output_dir, f'{self.name.lower()}_duration_curve.png')
+        # get name with added suffix to identify this specific file
+        name_with_added_dt_suffix = self.get_name_with_added_dt_suffix(data_type_suffix=dt_suffix_for_output)
+        fig_file = os.path.join(output_dir, f'{name_with_added_dt_suffix.lower()}_duration_curve.png')
         if fig_style is None:
             fig_style = FigureStyle()
             fig_style.process()

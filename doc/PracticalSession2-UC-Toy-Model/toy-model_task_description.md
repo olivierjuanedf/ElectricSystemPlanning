@@ -11,7 +11,7 @@
 3. Read [my_toy_ex_italy.py](../my_toy_ex_italy.py) and associated [toy_model_params/italy_parameters.py](../toy_model_params/italy_parameters.py), following comments in them to understand the main stages when writing a PyPSA model
 
 ## Second step - with your own country
-4. **Read and follow the steps written in [doc/PracticalSession2-UC-Toy-Model/toy-model_tutorial.md](../doc/PracticalSession2-UC-Toy-Model/toy-model_tutorial.md)** to create the UC model for your own country
+4. **Read and follow the steps written in [doc/PracticalSession2-UC-Toy-Model/toy-model_tutorial.md](../PracticalSession2-UC-Toy-Model/toy-model_tutorial.md)** to create the UC model for your own country
 5. **Run your script** to optimise your single-country Unit Commitment model
 6. **Observe/analyse** the obtained solution in folders *output/long_term_uc/monozone_{country}/data* and *.../figures*
 **Do you get a "feasible" solution?** An intuitive shape for the production profile of the different assets?

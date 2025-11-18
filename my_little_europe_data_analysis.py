@@ -22,13 +22,15 @@ logging.info('START ERAA (input) data analysis')
 
 # read ERAA data description (JSON) file, and UC run parameters
 eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=phase_name, usage_params=usage_params)
-data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr)
-
 
 # set params and figure style for plots
 per_dim_plot_params = read_plot_params()
 fig_style = read_given_phase_plot_params(phase_name=phase_name)
 print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
+
+# read and check data analyses params
+data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr,
+                                                    n_curves_max=fig_style.n_curves_max)
 
 # loop over the different cases to be analysed
 for elt_analysis in data_analyses:
@@ -37,11 +39,11 @@ for elt_analysis in data_analyses:
     current_countries = elt_analysis.countries
     uc_run_params.set_countries(countries=current_countries)
     uc_run_params.set_uc_period(start=elt_analysis.period_start, end=elt_analysis.period_end)
-    uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
-                                   period_end=uc_run_params.uc_period_end)
+    uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start, period_end=uc_run_params.uc_period_end)
     # currently loop over year, climatic_year; given that UC run params made for a unique (year, climatic year) couple
     # init. dict. to save data for each (country, year, clim_year) tuple
     current_df = {}
+    dt_suffix_for_output = None  # suffix to be added to datatype in output files to identify them in specific cases
     for year, clim_year, current_extra_params in (
             product(elt_analysis.years, elt_analysis.climatic_years, elt_analysis.extra_params)):
         uc_run_params.set_target_year(year=year)
@@ -57,10 +59,6 @@ for elt_analysis in data_analyses:
                                agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data,
                                is_stress_test=uc_run_params.is_stress_test)
 
-        if elt_analysis.data_subtype is not None:
-            subdt_selec = [elt_analysis.data_subtype]
-        else:
-            subdt_selec = None
         if current_extra_params is None:
             extra_params_vals = {}
             extra_params_idx = None
@@ -70,7 +68,8 @@ for elt_analysis in data_analyses:
         # get data to be analyzed/plotted hereafter - using extra-parameters if provided
         eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                         aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def,
-                                        datatypes_selec=[elt_analysis.data_type], subdt_selec=subdt_selec,
+                                        datatypes_selec=[elt_analysis.data_type],
+                                        subdt_selec=elt_analysis.aggreg_prod_types,
                                         **extra_params_vals)
         eraa_dataset.complete_data()
         # create Unit Commitment Timeseries object from data read
@@ -90,9 +89,21 @@ for elt_analysis in data_analyses:
         else:
             for country in current_countries:
                 current_df[(country, year, clim_year, extra_params_idx)] = None
+    # ATTENTION TRICKY ASPECT: agg. prod. types only used for net demand calculation,
+    # not to have 1 curve/block of data per case -> set this attr. to [None] after data selection
+    if elt_analysis.data_type == DATATYPE_NAMES.net_demand and not elt_analysis.aggreg_prod_types == [None]:
+        logging.debug('Aggreg. prod. types attr. set to None after data selection for net demand analysis')
+        # save first a "datatype-suffix" to identify this case in filename saved
+        n_agg_pt = len(elt_analysis.aggreg_prod_types)
+        if n_agg_pt == 1:
+            dt_suffix_for_output = f'incl_{elt_analysis.aggreg_prod_types[0]}'
+        else:
+            dt_suffix_for_output = f'incl_{n_agg_pt}-aggpts'
+        elt_analysis.set_agg_prod_types_to_default_val()
+
     extra_params_labels = elt_analysis.get_extra_args_idx_to_label_corresp()
-    elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style,
-                                per_dim_plot_params=per_dim_plot_params, extra_params_labels=extra_params_labels)
+    elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,
+                                extra_params_labels=extra_params_labels, dt_suffix_for_output=dt_suffix_for_output)
 
 logging.info('THE END of ERAA (input) data analysis!')
 stop_logger()
