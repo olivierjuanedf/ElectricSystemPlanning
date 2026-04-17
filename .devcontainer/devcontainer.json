@@ -1,7 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {
-    "registry.gitlab.monentreprise.fr/edf/devcontainer-features/edf-corporate-setup:1": {}
+    "nexus.retd.edf.fr/osiris-r36-docker/edf-corporate-setup:1": {}
   },
   "postCreateCommand": "pip3 install --user -r requirements.txt",
   "customizations": {
