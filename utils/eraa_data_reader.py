@@ -21,14 +21,14 @@ def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, p
     if not isinstance(first_date, datetime):
         df = cast_df_col_as_date(df=df, date_col=date_col, date_format=DATE_FORMAT)
     # keep only wanted date range
-    df_filtered = get_subdf_from_date_range(df=df, date_col=date_col, date_min=period_start, date_max=period_end)
+    df_filtered = get_subdf_from_date_range(df=df, date_col=date_col, date_min=period_start, date_max=period_end).copy()
     # then selected climatic year
     if climatic_year_col in df_filtered.columns:
         df_filtered = selec_in_df_based_on_list(df=df_filtered, selec_col=climatic_year_col, selec_vals=[climatic_year])
     # cases with data inependent of climatic years (e.g. hydro reservoir min/max levels)
     # -> add climatic year col (+ selected value in it) to have uniform formats hereafter
     else:
-        df_filtered[climatic_year_col] = climatic_year
+        df_filtered.loc[:, climatic_year_col] = climatic_year
     return df_filtered
 
 
@@ -89,6 +89,7 @@ def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols
     df_cols = list(df_hydro.columns)
     week_col = COLUMN_NAMES.week
     day_col = COLUMN_NAMES.day
+    date_col = COLUMN_NAMES.date
     if day_col not in df_cols:  # set date from week index only
         # add day column with 1 for all (i.e. Monday)
         df_hydro[day_col] = 1
@@ -100,13 +101,13 @@ def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols
         if new_len < init_len:
             logging.warning(f'{init_len - new_len} rows suppressed in {hydro_dt} data due to invalid week idx (> 52)')
         # set date column based on week and day=1 index values
-        df_hydro[COLUMN_NAMES.date] = (
+        df_hydro[date_col] = (
             df_hydro.apply(lambda row:
                            set_date_from_year_and_iso_idx(year=1900, week_idx=row[week_col], day_idx=row[day_col]),
                            axis=1)
         )
     else:  # only from day index from 1 to 365
-        df_hydro[COLUMN_NAMES.date] = (df_hydro[day_col]
+        df_hydro[date_col] = (df_hydro[day_col]
                                        .apply(lambda x: set_date_from_year_and_day_idx(year=1900, day_idx=x))
                                        )
     if rm_week_and_day_cols:

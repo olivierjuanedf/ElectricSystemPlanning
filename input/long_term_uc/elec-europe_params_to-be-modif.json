@@ -11,7 +11,7 @@
   ],
   "selected_target_year": 2025,
   "uc_period_start": "1900/1/1",
-  "uc_period_end": "1900/1/15",
+  "uc_period_end": "1900/1/20",
   "failure_power_capa": 1e10,
   "failure_penalty": 1e5,
   "interco_capas_tb_overwritten": {
@@ -38,5 +38,24 @@
     "scandinavia2italy": 0,
     "scandinavia2iberian-peninsula": 0,
     "germany2italy": 0
+  },
+  "extra_params": {
+    "max_co2_emis_constraints": {
+      "temporal_granularity": "week",
+      "cases": [
+        {
+          "countries": [
+            "france",
+            "germany"
+          ],
+          "upper_bound": [
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    "co2_emis_price": 10
   }
 }

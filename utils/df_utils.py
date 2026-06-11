@@ -108,7 +108,8 @@ def rename_df_columns(df: pd.DataFrame, old_to_new_cols: dict) -> pd.DataFrame:
     return df
 
 
-def replace_none_values_in_df(df: pd.DataFrame, per_col_repl_values: dict, key_cols: list = None) -> pd.DataFrame:
+def replace_none_values_in_df(df: pd.DataFrame, per_col_repl_values: dict, key_cols: list = None, 
+                              deactivate_verbose_warn: bool = True) -> pd.DataFrame:
     if key_cols is None:
         key_cols = list(set(df.columns) - set(per_col_repl_values))
     cols_with_none_vals = {}
@@ -121,8 +122,14 @@ def replace_none_values_in_df(df: pd.DataFrame, per_col_repl_values: dict, key_c
     if len(cols_with_none_vals) > 0:
         repl_values_applied = {col: default_val for col, default_val in per_col_repl_values.items()
                                if col in cols_with_none_vals}
-        logging.warning(f'There were none values in df associated to keys: {cols_with_none_vals}'
-                        f'\n-> replaced by {repl_values_applied}')
+        if not deactivate_verbose_warn:
+            logging.warning(f'There were none values in df associated to keys: {cols_with_none_vals}'
+                            f'\n-> replaced by {repl_values_applied}')
+    return df
+
+
+def replace_all_none_values_in_df(df: pd.DataFrame, value_tb_set) -> pd.DataFrame:
+    df.fillna(value=value_tb_set, inplace=True)
     return df
 
 
@@ -141,14 +148,15 @@ def set_key_columns(col_names: list, tuple_values: List[tuple], n_repeat: int = 
     return pd.DataFrame(data=concat_keys, columns=col_names)
 
 
-def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, method: str, end_date: datetime = None,
-                            resample_divisor: float = None, fill_na_vals: dict = None, key_cols: list = None,
-                            freq: str = 'h') -> pd.DataFrame:
+def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, method: str, start_date: datetime = None, 
+                            end_date: datetime = None, resample_divisor: float = None, fill_na_vals: dict = None, 
+                            key_cols: list = None, freq: str = 'h') -> pd.DataFrame:
     """
     Resample a DataFrame from daily to a finer frequency (e.g., hourly),
     distribute numeric values proportionally, and repeat key columns.
     Params:
-    end_date: of the resampling, to possibly include some time-slots after the last date value in df
+    start_date: of the resampling, to possibly include some time-slots before first value in df
+    end_date: idem, after the last date value in df
     Returns:
     -------
     pd.DataFrame
@@ -157,33 +165,48 @@ def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, m
     df.set_index(date_col, inplace=True)
 
     # Determine the end date for resampling
+    first_date = df.index.min()
+    if start_date is not None:
+        if start_date > first_date:
+            raise ValueError('Start date cannot be later than the first index date for df resampling')
+        first_date = start_date
+        
     last_date = df.index.max()
     if end_date is not None:
         if end_date < last_date:
-            raise ValueError("End date cannot be earlier than the last index date for df reasmpling")
+            raise ValueError('End date cannot be earlier than the last index date for df reasmpling')
         last_date = end_date
-
-    full_range = pd.date_range(df.index.min(), last_date, freq=freq)
 
     if method == ResampleMethods.uniform_distrib:
         # Resample to target frequency
         resampled = df.resample(freq).ffill()
-        resampled = resampled.reindex(full_range, method='ffill')
+        # Reindex to the end (resp. by the start) and ffil (resp. bfill)
+        full_range_end = pd.date_range(df.index.min(), last_date, freq=freq)
+        resampled = resampled.reindex(full_range_end, method='ffill')
+        full_range = pd.date_range(first_date, last_date, freq=freq)
+        resampled = resampled.reindex(full_range, method='bfill')
         # Resample division?
         if resample_divisor is not None:
             for col in value_cols:
                 resampled[col] = resampled[col] / resample_divisor
+        
     elif method == ResampleMethods.all_at_first_ts:
+        full_range = pd.date_range(first_date, last_date, freq=freq)
         resampled = df.reindex(full_range)
         resampled = resampled.fillna(fill_na_vals)
 
-    # Forward-fill key columns if provided
+    # Forward+backward-fill key columns if provided
     if key_cols:
         for col in key_cols:
-            resampled[col] = resampled[col].ffill()
+            resampled[col] = resampled[col].ffill().bfill()
 
     # Reset index so date becomes a column
     return resampled.reset_index().rename(columns={'index': date_col})
+
+
+def sort_out_cols_with_zero_values(df: pd.DataFrame, abs_val_threshold: float) -> pd.DataFrame:
+    df = df.loc[:, (df.abs() >= abs_val_threshold).any(axis=0)]
+    return df
 
 
 if __name__ == '__main__':
@@ -197,6 +220,6 @@ if __name__ == '__main__':
 
     # Apply function
     hourly_df = resample_and_distribute(df, date_col='date', value_cols=['value', 'value2'], key_cols=['region'],
-                                        freq='h', resample_divisor=24, end_date=datetime(2025,11,12,23),
+                                        freq='h', resample_divisor=24, start_date=datetime(2025, 11, 9), end_date=datetime(2025,11,12,23),
                                         method=ResampleMethods.all_at_first_ts, fill_na_vals={'value': 0, 'value2': 1000})
     bob = 1

@@ -1,8 +1,9 @@
 import json
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import logging
 
 from common.constants.optimisation import SolverParams
+from common.constants.plots import PlotNames
 from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
     get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
@@ -10,13 +11,15 @@ from common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_pa
     check_uc_input_folder_content
 from common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
-from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD
+from common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD, \
+    EUR_JSON_PARAM_TYPES_FOR_CHECK, EuropeJsonExtraParamNames
 from common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES, EnvPhaseNames
 from common.uc_run_params import UCRunParams
 from include.dataset_analyzer import DataAnalysis
-from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER
+from common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER, PlotParamsKeysInJson, FigureStyle
+from utils.basic_utils import get_default_values
 from utils.dir_utils import check_file_existence
-from utils.plot import FigureStyle
+from utils.type_checker import apply_params_type_check
 
 
 def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:
@@ -168,6 +171,38 @@ def read_usage_params() -> UsageParameters:
     return set_usage_params(json_usage_params_data=set_json_usage_params_data())
 
 
+def check_and_process_eur_json_tb_modified(json_data: dict):
+    json_file = get_json_params_tb_modif_file()
+    # first check that keys are coherent
+    json_data_keys = list(json_data)
+    known_keys = get_default_values(obj=EuropeJsonParamNames)
+    unknwon_keys = list(set(json_data_keys) - set(known_keys))
+    if len(unknwon_keys) > 0:
+        logging.warning(f'Unknown keys in {json_file}: {unknwon_keys} (must be in {known_keys})'
+                        f'\n-> will not be taken into account here')
+        json_data = {key: val for key, val in json_data.items() if key in known_keys}
+    # then that extra-params names are known
+    extra_params_key = EuropeJsonParamNames.extra_params
+    if extra_params_key in json_data:
+        avail_extra_param_names = get_default_values(obj=EuropeJsonExtraParamNames)
+        current_extra_param_names = list(json_data[extra_params_key])
+        unknown_extra_param_names = list(set(current_extra_param_names) - set(avail_extra_param_names))
+        if len(unknown_extra_param_names) > 0:
+            logging.warning(f'Unknown extra-param names in {json_file} (keys in dict. associated to '
+                            f'{extra_params_key}: {unknown_extra_param_names} (must be in {avail_extra_param_names})'
+                            f'\n-> will not be taken into account here')
+            json_data[extra_params_key] = \
+                {key: val for key, val in json_data[extra_params_key].items() if key in avail_extra_param_names}
+
+    apply_params_type_check(json_data, types_for_check=EUR_JSON_PARAM_TYPES_FOR_CHECK,
+                            param_name=f'European params to be modif. (from JSON file {json_file})')
+    # suppress first-level extra-params key in json params tb modif dict (if present)
+    if extra_params_key in json_data:
+        json_data |= json_data[extra_params_key]
+        del json_data[extra_params_key]
+    return json_data
+
+
 def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
                                  get_only_eraa_data_descr: bool = False) \
         -> tuple[ERAADatasetDescr, Optional[UCRunParams]]:
@@ -197,6 +232,8 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
     countries_data, json_params_tb_modif = None, None
     if not get_only_eraa_data_descr:
         json_params_tb_modif = set_json_params_tb_modif()
+        # check values in JSON params to be modif
+        json_params_tb_modif = check_and_process_eur_json_tb_modified(json_data=json_params_tb_modif)
         countries_data, json_params_tb_modif = (
             set_countries_data(usage_params=usage_params, phase_name=phase_name,
                                available_countries=eraa_data_descr.available_countries,
@@ -270,25 +307,59 @@ def read_solver_params() -> SolverParams:
     return SolverParams(**solver_params_data)
 
 
-def read_given_phase_plot_params(phase_name: str) -> FigureStyle:
+def read_given_phase_specific_key_from_plot_params(phase_name: str, param_to_be_set: str) -> Union[
+    FigureStyle, List[str]]:
+    """
+    Read given phase specific parameters from plot_params.json file
+    Args:
+        phase_name: 'data_analysis', 'monozone_toy_uc_model', or 'multizones_uc_model'
+        param_to_be_set: either figure style, or list of plots to be done
+    Returns: either a FigureStyle object or a list of plot names; according to param_to_be_set value
+    """
+    allowed_params_tb_set = [PlotParamsKeysInJson.fig_style, PlotParamsKeysInJson.plots_tb_done]
     json_plot_params_file = get_json_plot_params_file()
-    logging.debug(f'Read and check {phase_name} plot parameters file: {json_plot_params_file}')
+    if param_to_be_set not in allowed_params_tb_set:
+        raise Exception(f'Param to be set {param_to_be_set} when reading {json_plot_params_file} for '
+                        f'phase {phase_name} must be in {allowed_params_tb_set}')
+    logging.debug(f'Read and check {phase_name} plot parameters file: {json_plot_params_file}'
+                  f'\n-> to set {param_to_be_set}')
     json_data_analysis_plot_params = check_and_load_json_file(json_file=json_plot_params_file,
                                                               file_descr=f'JSON {phase_name} plot params')
-    return FigureStyle(**json_data_analysis_plot_params[f'fig_style_{phase_name}'])
+    key_in_json = f'{param_to_be_set}_{phase_name}'
+    if param_to_be_set == PlotParamsKeysInJson.fig_style:
+        return FigureStyle(**json_data_analysis_plot_params[key_in_json])
+    else:
+        plots_tb_done = json_data_analysis_plot_params[key_in_json]
+        # default value for plots to be done -> all plot names
+        all_plots_tb_done = get_default_values(obj=PlotNames)
+        if plots_tb_done is None:
+            plots_tb_done = all_plots_tb_done
+        else:  # check that set values are known
+            # that all figs to be done are known
+            unknown_plot_names = set(plots_tb_done) - set(all_plots_tb_done)
+            if len(unknown_plot_names) > 0:
+                logging.warning(f'Unknown plots to be done in {json_plot_params_file} file {unknown_plot_names} '
+                                f'for key {key_in_json}\n-> will not be used in plotting phase')
+                plots_tb_done = [name for name in plots_tb_done if name in all_plots_tb_done]
+        return plots_tb_done
 
 
 def read_plot_params() -> Dict[str, PlotParams]:
+    """
+    Read plot parameters
+    Returns: list of plots to be done, per dimension (aggreg. prod types, zones, ...) plot params
+    """
     json_plot_params_file = get_json_plot_params_file()
     logging.debug(f'Read and check plot parameters file: {json_plot_params_file}')
 
     json_plot_params = check_and_load_json_file(json_file=json_plot_params_file, file_descr='JSON plot params')
-    # remove elt used only for FigureStyle of data analysis
+    # remove elt used only for FigureStyle of data analysis / idem for list of plots to be done
     for phase_name in [EnvPhaseNames.data_analysis, EnvPhaseNames.monozone_toy_uc_model,
                        EnvPhaseNames.multizones_uc_model]:
-        current_key = f'fig_style_{phase_name}'
-        if current_key in json_plot_params:
-            del json_plot_params[current_key]
+        for param_name in [PlotParamsKeysInJson.fig_style, PlotParamsKeysInJson.plots_tb_done]:
+            current_key = f'{param_name}_{phase_name}'
+            if current_key in json_plot_params:
+                del json_plot_params[current_key]
 
     per_dim_plot_params = {}
     for plot_dim in DEFAULT_PLOT_DIMS_ORDER:
@@ -296,7 +367,7 @@ def read_plot_params() -> Dict[str, PlotParams]:
         dict_params['dimension'] = plot_dim
         current_plot_params = PlotParams(**dict_params)
         current_plot_params.process()
-        # TODO: add checker
+        current_plot_params.check(json_plot_params_file=json_plot_params_file)
         per_dim_plot_params[plot_dim] = current_plot_params
 
     return per_dim_plot_params

@@ -200,6 +200,7 @@
       "carrier": "oil",
       "p_min_pu": 0,
       "p_max_pu": 1,
+      "marginal_cost": 30,
       "committable": "true"
     },
     "others_fatal": {
@@ -269,6 +270,7 @@
       "power_capa": "from_eraa_data",
       "energy_capa": "from_eraa_data",
       "inflow": "from_eraa_data",
+      "soc_level_extr": "from_eraa_data",
       "init_soc_pu": "from_json_tb_modif"
     },
     "nuclear": {

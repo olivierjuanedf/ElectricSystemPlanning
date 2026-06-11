@@ -6,11 +6,12 @@ from common.constants.datatypes import DATATYPE_NAMES
 from common.constants.usage_params_json import EnvPhaseNames
 from common.logger import init_logger, stop_logger
 from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
+from common.plot_params import PlotParamsKeysInJson
 from include.dataset import Dataset
 from utils.basic_utils import print_non_default
 from utils.dates import get_period_str
 from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
-    read_given_phase_plot_params, read_plot_params, read_usage_params
+    read_given_phase_specific_key_from_plot_params, read_plot_params, read_usage_params
 
 phase_name = EnvPhaseNames.data_analysis
 
@@ -25,7 +26,8 @@ eraa_data_descr, uc_run_params = read_and_check_uc_run_params(phase_name=phase_n
 
 # set params and figure style for plots
 per_dim_plot_params = read_plot_params()
-fig_style = read_given_phase_plot_params(phase_name=phase_name)
+fig_style = read_given_phase_specific_key_from_plot_params(phase_name=phase_name,
+                                                           param_to_be_set=PlotParamsKeysInJson.fig_style)
 print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
 
 # read and check data analyses params
@@ -73,34 +75,21 @@ for elt_analysis in data_analyses:
                                         datatypes_selec=[elt_analysis.data_type],
                                         subdt_selec=subdt_selec, **extra_params_vals)
         eraa_dataset.complete_data()
+        per_dt_data = {DATATYPE_NAMES.demand: eraa_dataset.demand,
+                       DATATYPE_NAMES.capa_factor: eraa_dataset.agg_cf_data,
+                       DATATYPE_NAMES.net_demand: eraa_dataset.net_demand,
+                       DATATYPE_NAMES.fatal_production: eraa_dataset.fatal_prod}
         # create Unit Commitment Timeseries object from data read
-        if elt_analysis.data_type == DATATYPE_NAMES.demand:
+        if elt_analysis.data_type in per_dt_data:
             # loop over country to extract per-country data from dataset.
             # N.B. year and climatic_year have been uniquely set up when init. the Dataset object
             for country in current_countries:
-                current_df[(country, year, clim_year, extra_params_idx)] = eraa_dataset.demand[country]
-        elif elt_analysis.data_type == DATATYPE_NAMES.capa_factor:
-            # idem
-            for country in current_countries:
-                current_df[(country, year, clim_year, extra_params_idx)] = eraa_dataset.agg_cf_data[country]
-        elif elt_analysis.data_type == DATATYPE_NAMES.net_demand:
-            # idem
-            for country in current_countries:
-                current_df[(country, year, clim_year, extra_params_idx)] = eraa_dataset.net_demand[country]
+                current_df[(country, year, clim_year, extra_params_idx)] = per_dt_data[elt_analysis.data_type][country]
         else:
             for country in current_countries:
                 current_df[(country, year, clim_year, extra_params_idx)] = None
-    # ATTENTION TRICKY ASPECT: agg. prod. types only used for net demand calculation,
-    # not to have 1 curve/block of data per case -> set this attr. to [None] after data selection
-    if elt_analysis.data_type == DATATYPE_NAMES.net_demand and not elt_analysis.aggreg_prod_types == [None]:
-        logging.debug('Aggreg. prod. types attr. set to None after data selection for net demand analysis')
-        # save first a "datatype-suffix" to identify this case in filename saved
-        n_agg_pt = len(elt_analysis.aggreg_prod_types)
-        if n_agg_pt == 1:
-            dt_suffix_for_output = f'incl_{elt_analysis.aggreg_prod_types[0]}'
-        else:
-            dt_suffix_for_output = f'incl_{n_agg_pt}-aggpts'
-        elt_analysis.set_agg_prod_types_to_default_val()
+    # get potential dt suffix to be added to figure filename (to identify it)
+    dt_suffix_for_output = elt_analysis.get_dt_suffix_for_output()
 
     extra_params_labels = elt_analysis.get_extra_args_idx_to_label_corresp()
     elt_analysis.apply_analysis(per_case_data=current_df, fig_style=fig_style, per_dim_plot_params=per_dim_plot_params,

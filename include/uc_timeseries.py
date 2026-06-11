@@ -91,6 +91,9 @@ def set_curve_label(attrs_in_legend: List[str], country: str = None, year: int =
     if 'agg_prod_type' in attrs_in_legend and agg_prod_type is not None:
         label_elts.append(agg_prod_type)
     label = ', '.join(label_elts)
+    # add a separator before potentially adding an extra-arg component to the legend
+    if len(label) > 0:
+        label += '_'
     if 'extra_args' in attrs_in_legend:
         label += extra_args_label if extra_args_label is not None else 'no extra-args'
     return label
@@ -178,7 +181,7 @@ class UCTimeseries:
             #  with unique agg prod type selected)
             else:
                 if len(self.values) == 1:
-                    logging.debug(f'Dict of data of length 1 converte to list for plot: {self.values}')
+                    logging.debug(f'Dict of data of length 1 converted to list for plot: {self.values}')
                     first_key = list(self.values)[0]
                     output_vals = self.values[first_key]
                 else:

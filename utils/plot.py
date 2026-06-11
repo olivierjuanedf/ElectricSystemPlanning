@@ -111,14 +111,14 @@ def set_date_xtick_labels(idx_xticks: List[int], x_dates: List[datetime], date_x
                     current_date_fmt = '%d'
                 date_str = current_date.strftime(current_date_fmt)
                 if short_months and 'B' in current_date_fmt:
-                    date_str = set_month_short_in_date(date=date_str)
+                    date_str = set_month_short_in_date(my_date=date_str)
 
                 if rm_useless_zeros:
-                    date_str = remove_useless_zero_in_date(date=date_str, date_sep=' ')
+                    date_str = remove_useless_zero_in_date(my_date=date_str, date_sep=' ')
 
                 # add day exponent?
                 if add_day_exp and len(date_str) > 0:
-                    date_str = add_day_exponent(date=date_str)
+                    date_str = add_day_exponent(my_date=date_str)
                 # add hours
                 # new line if year or month in str
                 if len(date_str) >= 3:
@@ -256,6 +256,8 @@ def set_curve_style_attrs(plot_dims_tuples: List[Tuple[str, int, int]], plot_dim
                     set_specific_keys_to_get_style_attr(key=case_tuple[level], attr_level=level,
                                                         zone_level=zone_level, extra_args_level=extra_args_level,
                                                         per_case_attrs_vals=corresp_dict))
+                if corresp_dict is None:
+                    raise Exception(f"No dict. to set style attrs for attr. name {attr_name}")
                 style_attrs_dict[attr_name] = corresp_dict[key_for_attr]
         per_case_curve_style_attrs[case_tuple] = CurveStyleAttrs(**style_attrs_dict)
     return per_case_curve_style_attrs

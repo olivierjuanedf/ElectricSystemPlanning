@@ -3,6 +3,8 @@ import warnings
 from itertools import product
 from pathlib import Path
 from datetime import datetime
+
+import linopy.model
 import pandas as pd
 import numpy as np
 import logging
@@ -12,15 +14,16 @@ import pypsa
 import matplotlib.pyplot as plt
 
 from common.constants.countries import set_country_trigram
-from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams
+from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
+    OptimPbCharacteristics, OptimPbTypes
+from common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
 from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
 from common.error_msgs import print_errors_list
 from common.fuel_sources import FuelSource
-from common.long_term_uc_io import (get_marginal_prices_file, get_network_figure, get_opt_power_file,
-                                    get_storage_opt_dec_file, get_figure_file_named, FigNamesPrefix, get_output_figure)
-from common.plot_params import PlotParams
-from utils.basic_utils import lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically
-from utils.df_utils import rename_df_columns
+from common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
+from include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
+from utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
+                               format_with_spaces)
 from utils.dir_utils import make_dir
 from utils.pypsa_utils import get_network_obj_value
 from utils.serializer import array_serializer
@@ -35,11 +38,16 @@ class GenerationUnitData:
     p_min_pu: Union[float, np.ndarray] = None
     p_max_pu: Union[float, np.ndarray] = None
     efficiency: float = None
+    efficiency_store: float = None
+    efficiency_dispatch: float = None
     marginal_cost: float = None
     committable: bool = False
     max_hours: float = None
     cyclic_state_of_charge: bool = None
     inflow: np.ndarray = None
+    soc_min: np.ndarray = None
+    soc_max: np.ndarray = None
+    state_of_charge_initial: float = None
 
     def get_non_none_attr_names(self):
         return [key for key, val in self.__dict__.items() if val is not None]
@@ -52,38 +60,14 @@ class GenerationUnitData:
         return unit_data_dict
 
 
-UNIT_NAME_SEP = '_'
-
-
-def get_prod_type_from_unit_name(prod_unit_name: str) -> str:
-    len_country_suffix = 3 + len(UNIT_NAME_SEP)
-    return prod_unit_name[len_country_suffix:]
-
-
-def set_gen_unit_name(country: str, agg_prod_type: str) -> str:
-    country_trigram = set_country_trigram(country=country)
-    return f'{country_trigram}{UNIT_NAME_SEP}{agg_prod_type}'
+def select_gen_units_data(gen_units_data: List[GenerationUnitData], countries: List[str], 
+                          unit_types: List[str]) -> List[GenerationUnitData]:
+    return [elt for elt in gen_units_data
+            if get_country_from_unit_name(elt.name) in countries and elt.type in unit_types]
 
 
 GEN_UNITS_DATA_TYPE = Dict[str, List[GenerationUnitData]]
 PYPSA_RESULT_TYPE = Tuple[str, str]
-
-
-def set_col_order_for_plot(df: pd.DataFrame, cols_ordered: List[str]) -> pd.DataFrame:
-    current_df_cols = list(df.columns)
-    current_df_cols_ordered = [col for col in cols_ordered if col in current_df_cols]
-    df = df[current_df_cols_ordered]
-    return df
-
-
-def set_full_coll_for_storage_df(df: pd.DataFrame, col_suffix: str) -> pd.DataFrame:
-    old_cols = list(df.columns)
-    new_cols = {col: f'{col}_{col_suffix}' for col in old_cols}
-    df = rename_df_columns(df=df, old_to_new_cols=new_cols)
-    return df
-
-
-OUTPUT_DATE_COL = 'date'
 
 
 def check_gen_unit_params(params: dict, n_ts: int) -> bool:
@@ -139,21 +123,31 @@ def set_per_origin_bus_links_msg(link_names: List[str]) -> str:
     return links_msg
 
 
+def set_optim_pb_type(model: linopy.model.Model) -> Optional[str]:
+    if model.is_linear:
+        if len(model.integers) > 0:
+            return OptimPbTypes.milp
+        else:
+            return OptimPbTypes.lp
+    # quadratic if not linear (or other possibilities?)
+    if model.is_quadratic:
+        if len(model.integers) > 0:
+            return OptimPbTypes.miqp
+        else:
+            return OptimPbTypes.qp
+    return None
+
+
 @dataclass
 class PypsaModel:
     # TODO: json dump to have an aggreg. view of such a model in saved files (and check stress test effect rapidly)
     name: str
     network: pypsa.Network = None
-    prod_var_opt: pd.DataFrame = None  # prod opt value that will be obtained after optim.
-    sde_dual_var_opt: pd.DataFrame = None  # idem for SDE constraint dual variable
-    storage_prod_var_opt: pd.DataFrame = None  # idem for Storage prod -> prod (turbining)
-    storage_cons_var_opt: pd.DataFrame = None  # idem for Storage prod -> cons (pumping)
-    storage_soc_opt: pd.DataFrame = None  # idem for Storage prod -> SoC (State-of-Charge)
+    uc_summary_metrics: UCSummaryMetrics = None  # UC summary metrics (ENS, nber of failure hours, costs...)
     optim_solver_params: SolverParams = None
     DEFAULT_CARRIER = 'ac'
 
     def init_pypsa_network(self, date_idx: pd.Index, date_range: pd.DatetimeIndex = None):
-        # TODO: type date_idx, date_range
         logging.info('Initialize PyPSA network')
         self.network = pypsa.Network(name=self.name, snapshots=date_idx)
         if date_range is not None:
@@ -201,11 +195,13 @@ class PypsaModel:
 
                 # case of storage units, identified via the presence of max_hours param
                 if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
-                    # initial SoC fixed to 80% statically here
-                    init_soc = (pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa]
-                                * pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8)
-                    self.network.add('StorageUnit', bus=f'{country_bus_name}', **pypsa_gen_unit_dict,
-                                     state_of_charge_initial=init_soc)
+                    if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.soc_init, None) is None:
+                        # initial SoC fixed to 80% statically here
+                        logging.info(f'Default value set for {pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.name]} init. SOC as 80% of energy storage capa.')
+                        init_soc = (pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa]
+                                    * pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8)
+                        pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.soc_init] = init_soc
+                    self.network.add('StorageUnit', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
                 else:
                     self.network.add('Generator', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
         generator_names = self.get_generator_names()
@@ -283,6 +279,43 @@ class PypsaModel:
         logging.info(f'Considered links - the ones with nonzero capacity ({len(link_names)}), in alphabetic order '
                      f'of origin: {set_per_origin_bus_links_msg(link_names=link_names)}')
 
+    def build_model_before_adding_custom_const(self):
+        logging.warning('In PyPSA 0.35.1 not possible to build only model without solving it; '
+                        'to add custome constraints it will be solved first "for fun" (ignoring the solution)')
+        # TODO: see if deactivate resolution logs, in cmd windows/log file
+        self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
+
+    def add_sum_of_prod_custom_const(self):
+        """
+        Add sum-of-production custom constraints, of the form sum_{z, t} coeff(z, t) * production(z, t) <= ub (or >=, =)
+        N.B. Can be applied to CO2 max emission constraints
+        Returns:
+        """
+        logging.warning(f'Add custom sum of prod constraints (sum over z,t coeff(z,t) * prod(z, t) <= ub, or >=, =; '
+                        f'used, e.g. for max CO2 emissions) -> to be coded')
+
+    def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, np.ndarray], soc_max: Dict[str, np.ndarray], 
+                                            energy_capa: Dict[str, np.ndarray]):
+        """
+        Add constraint on hydro extreme SOC levels
+        :param soc_min: dict {unit name: soc min vector}
+        :param soc_max: idem, max
+        :param energy_capa: dict {unit name: energy capa value}
+        """
+        bob = 1
+        # check if soc_min/max values induce a real constraint (not all 0/bigger than energy capacity)
+        # TODO: loop over bus?
+        # hydro_soc = self.network.model.variables[PypsaOptimVarNames.storage_soc]["battery"]
+        # self.network.model.add_constraints(hydro_soc >= soc_min_profile.values, name="soc_min")
+        # self.network.model.add_constraints(hydro_soc <= soc_max_profile.values, name="soc_max")
+    
+    def add_hydro_extreme_gen_constraint(self):
+        bob = 1
+        # # Generator production constraints
+        # gen_p = m.variables["Generator-p"]["gen"]
+        # m.add_constraints(gen_p >= gen_min_profile.values, name="gen_min")
+        # m.add_constraints(gen_p <= gen_max_profile.values, name="gen_max")
+
     def get_bus_names(self) -> List[str]:
         return list(set(self.network.buses.index))
 
@@ -305,12 +338,24 @@ class PypsaModel:
             link_names = sort_lexicographically(strings=link_names)
         return link_names
 
+    def get_per_bus_total_installed_capa(self):
+        bus_names = self.get_bus_names()
+        df_generators = self.network.generators
+        return {name: df_generators.loc[(df_generators.index.str.startswith(f'{name}-'))
+                                        & (df_generators['type'] != ProdTypeNames.failure), 'p_nom'].sum()
+                for name in bus_names}
+
+    def get_per_bus_max_load(self) -> Dict[str, float]:
+        bus_names = self.get_bus_names()
+        return {name: max(self.network.loads_t['p_set'][f'{name}-load']) for name in bus_names}
+
     def plot_network(self, toy_model_output: bool = False, country: str = None):
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            self.network.plot(title=f'{self.name.capitalize()} network', color_geomap=True, jitter=0.3)
-            plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country))
+            self.network.plot(title=f'{self.name.capitalize()} PyPSA network', color_geomap=True, jitter=0.3)
+            plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country,
+                                           n_bus=len(self.network.buses)))
             plt.close()
 
     def set_default_optim_solver(self, warning_msg: str):
@@ -345,6 +390,18 @@ class PypsaModel:
                     else:
                         os.environ[f'{self.optim_solver_params.name.upper()}_LICENSE_FILE'] = solver_license_file
 
+    def get_optim_pb_characteristics(self) -> OptimPbCharacteristics:
+        """
+        N.B. (i) This method can be called only after having optimized network in PyPSA 0.35.1 (model attribute of network
+        not init before that)
+        (ii) network.model.constraints contains per type of constraint info (dimensions and size)
+        """
+        linopy_model = self.network.model
+        return OptimPbCharacteristics(type=set_optim_pb_type(model=linopy_model),
+                                      n_variables=len(linopy_model.variables.flat),
+                                      n_int_variables=len(linopy_model.integers),
+                                      n_constraints=len(linopy_model.constraints.flat))
+
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
                          toy_model_output: bool = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
         """
@@ -359,22 +416,27 @@ class PypsaModel:
                           toy_model_output=toy_model_output, countries=countries)
         return result
 
-    def get_prod_var_opt(self):
-        self.prod_var_opt = self.network.generators_t.p
-
-    def get_storage_vars_opt(self):
-        self.storage_prod_var_opt = self.network.storage_units_t.p
-        self.storage_cons_var_opt = self.network.storage_units_t.p_store
-        self.storage_soc_opt = self.network.storage_units_t.state_of_charge
-
-    def get_sde_dual_var_opt(self):
-        self.sde_dual_var_opt = self.network.buses_t.marginal_price
+    def set_uc_opt_solution(self) -> UCOptimalSolution:
+        """
+        Returns: an object containing variables + methods on the UC optimal solution
+        """
+        # init.
+        uc_opt_solution = UCOptimalSolution(network_name=self.network.name)
+        # get primal optimal values from PyPSA network
+        uc_opt_solution.get_prod_var_opt(network=self.network)
+        uc_opt_solution.get_storage_vars_opt(network=self.network)
+        uc_opt_solution.get_link_flow_vars_opt(network=self.network)
+        # and dual variables - some of them "entering" into Linopy framework
+        uc_opt_solution.get_sde_dual_var_opt(network=self.network)
+        uc_opt_solution.get_link_capa_dual_var_opt(network=self.network)
+        return uc_opt_solution
 
     def get_opt_value(self, pypsa_resol_status: str) -> float:
         objective_value = get_network_obj_value(network=self.network)
+        objective_value_refmted = format_with_spaces(number=int(objective_value/1e6))
         logging.info(
             f'Optimisation resolution status is {pypsa_resol_status} with objective value (cost) = '
-            f'{objective_value:.2f} -> output data (resp. figures) can be generated')
+            f'{objective_value_refmted} (M€) -> output data (resp. figures) can be generated')
         return objective_value
 
     def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False):
@@ -391,104 +453,6 @@ class PypsaModel:
             plt.savefig(get_output_figure(fig_name=FigNamesPrefix.capacity, country=country, year=year,
                                           toy_model_output=toy_model_output))
             plt.close()
-
-    def plot_opt_prod_var(self, plot_params_agg_pt: PlotParams, country: str, year: int,
-                          climatic_year: int, start_horizon: datetime, toy_model_output: bool = False):
-        """ 
-        Plot 'stack' of optimized production profiles
-        """
-        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            # sort values to get only prod of given country
-            country_trigram = set_country_trigram(country=country)
-            country_prod_cols = [prod_unit_name for prod_unit_name in list(self.prod_var_opt)
-                                 if prod_unit_name.startswith(country_trigram)]
-            current_prod_var_opt = self.prod_var_opt[country_prod_cols]
-            # suppress trigram from prod unit names to simplify legend in figures
-            new_prod_cols = {col: col[4:] for col in country_prod_cols}
-            current_prod_var_opt = rename_df_columns(df=current_prod_var_opt, old_to_new_cols=new_prod_cols)
-            current_prod_var_opt = set_col_order_for_plot(df=current_prod_var_opt,
-                                                          cols_ordered=plot_params_agg_pt.order)
-            current_prod_var_opt.div(1e3).plot.area(subplots=False, ylabel='GW',
-                                                    color=plot_params_agg_pt.per_case_color)
-            plt.tight_layout()
-            plt.savefig(get_output_figure(fig_name=FigNamesPrefix.production, country=country, year=year,
-                                          climatic_year=climatic_year, start_horizon=start_horizon,
-                                          toy_model_output=toy_model_output))
-            plt.close()
-
-    def plot_failure_at_opt(self, country: str, year: int, climatic_year: int, start_horizon: datetime,
-                            toy_model_output: bool = False):
-        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            failure_unit_name = set_gen_unit_name(country=country, agg_prod_type='failure')
-            self.network.generators_t.p.div(1e3)[failure_unit_name].plot.line(subplots=False, ylabel='GW')
-            plt.tight_layout()
-            plt.savefig(get_figure_file_named('failure', country=country, year=year, climatic_year=climatic_year,
-                                              start_horizon=start_horizon, toy_model_output=toy_model_output)
-                        )
-            plt.close()
-
-    def plot_marginal_price(self, plot_params_zone: PlotParams, year: int, climatic_year: int, start_horizon: datetime,
-                            country: str = 'europe', toy_model_output: bool = False):
-        # catch DeprecationWarnings TODO: fix/more robust way to catch them?
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual_var_opt,
-                                                           cols_ordered=plot_params_zone.order)
-            sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh',
-                                            color=plot_params_zone.per_case_color)
-            plt.tight_layout()
-            plt.savefig(get_output_figure(fig_name=FigNamesPrefix.prices, country=country, year=year,
-                                          climatic_year=climatic_year, start_horizon=start_horizon,
-                                          toy_model_output=toy_model_output)
-                        )
-            plt.close()
-
-    def save_opt_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
-                                  rename_snapshot_col: bool = True, toy_model_output: bool = False,
-                                  country: str = 'europe'):
-        # TODO: check if unique country and in this case (i) suppress country prefix in asset names
-        # opt prod decisions for all but Storage assets
-        opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
-                                            start_horizon=start_horizon, toy_model_output=toy_model_output)
-        logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv file {opt_p_csv_file}')
-        df_prod_opt = self.prod_var_opt
-        if rename_snapshot_col:
-            df_prod_opt.index.name = OUTPUT_DATE_COL
-        df_prod_opt.to_csv(opt_p_csv_file)
-        # then storage assets decisions
-        storage_opt_dec_csv_file = \
-            get_storage_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
-                                     start_horizon=start_horizon, toy_model_output=toy_model_output)
-        logging.info(f'Save Storage optimal decisions to csv file {storage_opt_dec_csv_file}')
-        # join the 3 Storage result dfs
-        df_prod_opt = self.storage_prod_var_opt
-        df_cons_opt = self.storage_cons_var_opt
-        df_soc_opt = self.storage_soc_opt
-        # rename first the different columns -> adding prod/cons/soc suffixes
-        df_prod_opt = set_full_coll_for_storage_df(df=df_prod_opt, col_suffix='prod')
-        df_cons_opt = set_full_coll_for_storage_df(df=df_cons_opt, col_suffix='cons')
-        df_soc_opt = set_full_coll_for_storage_df(df=df_soc_opt, col_suffix='soc')
-        df_storage_all_decs = df_prod_opt.join(df_cons_opt).join(df_soc_opt)
-        if rename_snapshot_col:
-            df_storage_all_decs.index.name = OUTPUT_DATE_COL
-        df_storage_all_decs.to_csv(storage_opt_dec_csv_file)
-
-    def save_marginal_prices_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
-                                    rename_snapshot_col: bool = True, toy_model_output: bool = False,
-                                    country: str = 'europe'):
-        logging.info('Save marginal prices decisions to .csv file')
-        marginal_prices_csv_file = get_marginal_prices_file(country=country, year=year,
-                                                            climatic_year=climatic_year,
-                                                            start_horizon=start_horizon,
-                                                            toy_model_output=toy_model_output)
-        df_sde_dual_var_opt = self.sde_dual_var_opt
-        if rename_snapshot_col:
-            df_sde_dual_var_opt.index.name = OUTPUT_DATE_COL
-        df_sde_dual_var_opt.to_csv(marginal_prices_csv_file)
 
 
 # def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
@@ -514,14 +478,15 @@ def get_country_bus_name(country: str) -> str:
 STORAGE_LIKE_UNITS = ['batteries', 'flexibility', 'hydro']
 
 
-def add_loads(network, demand: Dict[str, pd.DataFrame]):
-    print("Add loads - associated to their respective buses")
-    for country in demand:
-        country_bus_name = get_country_bus_name(country=country)
-        load_data = {"name": f"{country_bus_name}-load", "bus": f"{country_bus_name}",
-                     "carrier": "AC", "p_set": demand[country]["value"].values}
-        network.add("Load", **load_data)
-    return network
+# TODO: suppr?
+# def add_loads(network, demand: Dict[str, pd.DataFrame]):
+#     print("Add loads - associated to their respective buses")
+#     for country in demand:
+#         country_bus_name = get_country_bus_name(country=country)
+#         load_data = {"name": f"{country_bus_name}-load", "bus": f"{country_bus_name}",
+#                      "carrier": "AC", "p_set": demand[country]["value"].values}
+#         network.add("Load", **load_data)
+#     return network
 
 
 def get_current_interco_capa(interco_capas: Dict[Tuple[str, str], float], country_origin: str,

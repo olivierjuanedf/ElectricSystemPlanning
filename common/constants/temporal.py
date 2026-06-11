@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 
@@ -9,3 +10,10 @@ MIN_DATE_IN_DATA = datetime(year=1900, month=1, day=1)
 MAX_DATE_IN_DATA = datetime(year=1901, month=1, day=1)
 N_DAYS_DATA_ANALYSIS_DEFAULT = 14
 N_DAYS_UC_DEFAULT = 9
+
+
+@dataclass
+class Timescale:
+    day: str = 'day'
+    week: str = 'week'
+    month: str = 'month'

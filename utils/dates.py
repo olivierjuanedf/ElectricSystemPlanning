@@ -1,6 +1,10 @@
 import logging
+from calendar import calendar
 from datetime import datetime, date, timedelta
 from typing import List, Optional, Union
+from math import ceil
+
+import pandas as pd
 
 from common.constants.temporal import DAY_OF_WEEK
 from common.long_term_uc_io import DATE_FORMAT_PRINT
@@ -17,30 +21,34 @@ def set_year_in_date(my_date: datetime, new_year: int) -> datetime:
                     hour=my_date.hour, minute=my_date.minute, second=my_date.second)
 
 
-def remove_useless_zero_in_date(date: str, date_sep: str = '/') -> str:
+def remove_useless_zero_in_date(my_date: str, date_sep: str = '/') -> str:
     suppr_first_char = False
-    if date.startswith('0'):
-        date = date_sep + date
+    if my_date.startswith('0'):
+        my_date = date_sep + my_date
         suppr_first_char = True
     chars_tb_replaced = {f'{date_sep}0{i + 1}': f'{date_sep}{i + 1}' for i in range(9)}
     for old_char, new_char in chars_tb_replaced.items():
-        if old_char in date:
-            date = date.replace(old_char, new_char)
+        if old_char in my_date:
+            my_date = my_date.replace(old_char, new_char)
     if suppr_first_char:
-        date = date[1:]
-    return date
+        my_date = my_date[1:]
+    return my_date
 
 
-def add_day_exponent(date: str) -> str:
-    date += DAY_EXP[int(date[-1])]
-    return date
+def add_day_exponent(my_date: str) -> str:
+    my_date += DAY_EXP[int(my_date[-1])]
+    return my_date
 
 
-def set_month_short_in_date(date: str) -> str:
+def set_month_short_in_date(my_date: str) -> str:
     for month, month_short in MONTHS_SHORT.items():
-        if month in date:
-            date = date.replace(month, month_short)
-    return date
+        if month in my_date:
+            my_date = my_date.replace(month, month_short)
+    return my_date
+
+
+def timestamp_to_datetime(my_date: pd.Timestamp) -> datetime:
+    return my_date.to_pydatetime()
 
 
 def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: bool, min_str_fmt: bool = True,
@@ -57,7 +65,7 @@ def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: 
     min_date_fmt = full_date_fmt if print_year else date_wo_year_fmt
     min_date_str = min_date.strftime(format=min_date_fmt)
     if rm_useless_zeros:
-        min_date_str = remove_useless_zero_in_date(date=min_date_str, date_sep=date_sep)
+        min_date_str = remove_useless_zero_in_date(my_date=min_date_str, date_sep=date_sep)
 
     # idem for max date, with more cases...
     # provide str with full date if
@@ -77,16 +85,16 @@ def set_temporal_period_str(min_date: datetime, max_date: datetime, print_year: 
 
     max_date_str = max_date.strftime(format=max_date_fmt)
     if rm_useless_zeros:
-        max_date_str = remove_useless_zero_in_date(date=max_date_str, date_sep=date_sep)
+        max_date_str = remove_useless_zero_in_date(my_date=max_date_str, date_sep=date_sep)
 
     # use shortened names, day exponents for months
     if in_letter:
         if short_months:
-            min_date_str = set_month_short_in_date(date=min_date_str)
-            max_date_str = set_month_short_in_date(date=max_date_str)
+            min_date_str = set_month_short_in_date(my_date=min_date_str)
+            max_date_str = set_month_short_in_date(my_date=max_date_str)
         if add_day_exp:
-            min_date_str = add_day_exponent(date=min_date_str)
-            max_date_str = add_day_exponent(date=max_date_str)
+            min_date_str = add_day_exponent(my_date=min_date_str)
+            max_date_str = add_day_exponent(my_date=max_date_str)
 
     return f'{min_date_str}{sep_str}{max_date_str}'
 
@@ -132,3 +140,28 @@ def set_date_from_year_and_iso_idx(year: int, week_idx: int, day_idx: int = 1, t
 
 def set_date_from_year_and_day_idx(year: int, day_idx: int) -> datetime:
     return datetime(year, 1, 1) + timedelta(days=day_idx - 1)
+
+
+def get_n_days_in_period(start: datetime, end: datetime) -> int:
+    """
+    Number of days in period, both start and end being included in it
+    """
+    return (end - start).days + 1
+
+
+def get_n_weeks_in_period(start: datetime, end: datetime) -> int:
+    """
+    Number of weeks in period, both start and end being included in it
+    """
+    return ceil((end - start).days / 7)
+
+
+def get_n_months_in_period(start: datetime, end: datetime) -> int:
+    """
+    Number of months in period, both start and end being included in it
+    """
+    return end.month - start.month + 1
+
+
+def get_n_days_in_month(year: int, month: int) -> int:
+    return calendar.monthrange(year, month)[1]

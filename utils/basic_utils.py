@@ -1,10 +1,12 @@
 import logging
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Dict
 import numpy as np
 import math
 from dataclasses import fields, MISSING
+from collections import Counter
 
-CLIM_YEARS_SUFFIX = 'clim-years'
+
+CLIM_YEARS_SUFFIX = 'clim-years'  # TODO: set this constant in a more logical place... constant\...
 
 
 def str_sanitizer(raw_str: Optional[str], replace_empty_char: bool = True,
@@ -105,6 +107,11 @@ def get_intersection_of_lists(list1: list, list2: list) -> list:
     return list(set(list1) & set(list2))
 
 
+def get_repeated_elts_in_lst(my_lst: list) -> list:
+    counter = Counter(my_lst)
+    return [item for item, count in counter.items() if count > 1]
+
+
 def set_years_suffix(years: List[int], is_climatic_year: bool = False, sep: str = '-') -> str:
     n_years = len(years)
     if n_years == 0:
@@ -154,6 +161,11 @@ def get_all_attr_names(obj) -> List[str]:
     return [f.name for f in fields(obj)]
 
 
+def get_default_values(obj) -> list:
+    return [f.default if f.default is not MISSING else f.default_factory() for f in fields(obj)
+            if f.default is not MISSING or f.default_factory is not MISSING]
+
+
 def get_first_level_with_multiple_vals(tuple_list: List[tuple], init_level: int = None,
                                        return_none_if_not_found: bool = False) -> Optional[int]:
     if init_level is None:
@@ -197,11 +209,6 @@ def sort_lexicographically(strings: list[str]) -> list[str]:
 def check_all_values_equal(d: dict) -> bool:
     """
     Check that all values in a nested dict. are equal
-    Args:
-        d:
-
-    Returns:
-
     """
     values = []
 
@@ -214,3 +221,19 @@ def check_all_values_equal(d: dict) -> bool:
 
     traverse(d)
     return all([elt == values[0] for elt in values])
+
+
+def format_with_spaces(number) -> str:
+    return f"{number:,}".replace(",", " ")
+
+
+def dict_to_str(d: Dict[str, float], nbers_with_spaces: bool = False) -> str:
+    """
+    Nice printing of dictionary into logs
+    """
+    str_sep = ', '
+    if nbers_with_spaces:
+        key_val_lst = [f'{key}: {format_with_spaces(number=val)}' for key, val in d.items()]
+    else:
+        key_val_lst = [f'{key}: {val}' for key, val in d.items()]
+    return str_sep.join(key_val_lst)

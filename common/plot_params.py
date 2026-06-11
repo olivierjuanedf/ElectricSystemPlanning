@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from typing import Dict, List, Union, Optional, Tuple
 
 from common.constants.datadims import DataDimensions
+from common.constants.plots import PlotNames
+from common.constants.prod_types import STOCK_LIKE_PROD_TYPES, add_suffix_to_storage_unit_col
+from utils.basic_utils import get_default_values
 
 
 def to_int_keys_dict(dict_with_level_two_str_keys: Dict[str, Dict[str, str]]) -> Optional[Dict[str, Dict[int, str]]]:
@@ -20,6 +23,12 @@ TYPE_PARAMS_DEF = Union[Dict[str, Dict[str, str]], Dict[str, Dict[int, str]]]
 TYPE_PER_CASE_PARAMS = Union[Dict[str, str], Dict[int, str]]
 N_LETTERS_ZONE = 3
 N_MAX_CHARS_FLAT_LABEL = 8
+
+
+@dataclass
+class PlotParamsKeysInJson:  # names of (some of) the keys in \input\functional\plot_params.json
+    fig_style: str = 'fig_style'
+    plots_tb_done: str = 'plots_tb_done'
 
 
 def set_per_case_dict(params_def: TYPE_PARAMS_DEF, param_choice: str,
@@ -77,9 +86,22 @@ class PlotParams:
             self.order = list(self.per_case_color)
             self.order.sort()
 
-    def check(self):
+    def check(self, json_plot_params_file: str):
         # TODO: check TB coded
-        logging.warning('Not coded for now')
+        bob = 1
+        # logging.warning('Plot params check TO BE CODED')
+
+    def add_colors_for_stock_with_suffix(self):
+        """
+        During the execution of the code if both prod. and cons. of stock-like assets are plotted on the same graph,
+        the color dictionary needs to be enriched with - identical - colors for this 'cases with suffix'
+        """
+        added_colors = {}
+        for prod_type, color in self.per_case_color.items():
+            if prod_type in STOCK_LIKE_PROD_TYPES:
+                added_colors |= {add_suffix_to_storage_unit_col(col=prod_type, col_type='prod'): color,
+                                 add_suffix_to_storage_unit_col(col=prod_type, col_type='cons'): color}
+        self.per_case_color |= added_colors
 
 
 @dataclass

@@ -184,13 +184,16 @@ def get_json_fuel_sources_file() -> str:
     return uniformize_path_os(path_str=os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'params.json'))
 
 
-def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True) -> str:
+def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True,
+                       n_bus: int = None) -> str:
     output_folder = set_full_lt_uc_output_folder(folder_type='figures', country=country,
                                                  toy_model_output=toy_model_output)
     if create_subdir:
         make_dir(full_path=output_folder)
 
-    return f'{output_folder}/network.png'
+    n_bus_suffix = f'_{n_bus}-bus' if n_bus is not None else ''
+
+    return f'{output_folder}/network{n_bus_suffix}.png'
 
 
 def get_output_file_suffix(country: str, year: int, climatic_year: int = None, start_horizon: datetime = None) -> str:
@@ -245,6 +248,7 @@ def set_full_lt_uc_output_folder(folder_type: str = None, country: str = None, t
     return '/'.join(folders_tb_join)
 
 
+# TODO: merge 2 following functions
 def get_csv_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime,
                        toy_model_output: bool = False, create_subdir: bool = True) -> str:
     output_folder = set_full_lt_uc_output_folder(folder_type='data', country=country, toy_model_output=toy_model_output)
@@ -254,17 +258,39 @@ def get_csv_file_named(name: str, country: str, year: int, climatic_year: int, s
     return get_output_file_named(name, 'csv', output_folder, country, year, climatic_year, start_horizon)
 
 
+def get_json_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime,
+                        toy_model_output: bool = False, create_subdir: bool = True) -> str:
+    output_folder = set_full_lt_uc_output_folder(folder_type='data', country=country, toy_model_output=toy_model_output)
+    if create_subdir:
+        make_dir(full_path=output_folder)
+
+    return get_output_file_named(name, 'json', output_folder, country, year, climatic_year, start_horizon)
+
+
 def get_opt_power_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                        toy_model_output: bool = False) -> str:
-    return get_csv_file_named('opt_power', country, year, climatic_year, start_horizon, toy_model_output)
+    return get_csv_file_named(name='opt_power', country=country, year=year, climatic_year=climatic_year, 
+                              start_horizon=start_horizon, toy_model_output=toy_model_output)
 
 
 def get_storage_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                              toy_model_output: bool = False) -> str:
-    return get_csv_file_named('storage_opt_decisions', country, year, climatic_year, start_horizon,
-                              toy_model_output)
+    return get_csv_file_named(name='storage_opt_decisions', country=country, year=year, climatic_year=climatic_year, 
+                              start_horizon=start_horizon, toy_model_output=toy_model_output)
 
+
+def get_link_flow_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
+                               toy_model_output: bool= False) -> str:
+    return get_csv_file_named(name='link-flow_opt_decisions', country=country, year=year, climatic_year=climatic_year, 
+                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+    
 
 def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                              toy_model_output: bool = False) -> str:
-    return get_csv_file_named('marginal_prices', country, year, climatic_year, start_horizon, toy_model_output)
+    return get_csv_file_named(name='marginal_prices', country=country, year=year, climatic_year=climatic_year, 
+                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+
+def get_uc_summary_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
+                        toy_model_output: bool = False) -> str:
+    return get_json_file_named(name='uc-summary', country=country, year=year, climatic_year=climatic_year,
+                               start_horizon=start_horizon, toy_model_output=toy_model_output)
