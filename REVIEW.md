@@ -105,6 +105,8 @@ Le README commence directement par les requirements sans expliquer ce qu'est le 
   4. Supprimer ou compléter la section PyCharm (`TO COME` est inacceptable dans un README étudiant)
   5. Mettre à jour les screenshots si les noms de projets GitHub Classroom ont changé (TODO M2)
 
+(CR, 15/6/2026; commit 589b5d3eab192fa397cd37b2ee764950838d7d50)
+
 ---
 
 #### P2-B : `elec-europe_params_to-be-modif.json` — Trop complexe pour l'étudiant
