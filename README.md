@@ -150,3 +150,4 @@ and `input/long_term_uc/countries/{country}.json` with "country" the name of you
 * Input data (ERAA data) : `data`
 * Input parameters for European mode : `input`
 * Toy model parameters : `toy_model_params` 
+* Output (figures and files) : `output`
