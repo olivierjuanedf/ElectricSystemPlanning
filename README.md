@@ -1,12 +1,4 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/JT_9efVo)
-
-FOR TEACHERS:  [![Open in Codespaces](https://classroom.github.com/assets/launch-codespace-2972f46106e565e64193e422d61a12cf1da4916b45550586e14ef0a7c637dd04.svg)](https://classroom.github.com/open-in-codespaces?assignment_repo_id=21713496)
-
-FOR EUROPE 1 STUDENTS: [![Open in Codespaces](https://classroom.github.com/assets/launch-codespace-2972f46106e565e64193e422d61a12cf1da4916b45550586e14ef0a7c637dd04.svg)](https://classroom.github.com/open-in-codespaces?assignment_repo_id=21713465)
-
-FOR EUROPE 2 STUDENTS: [![ Open in Codespaces](https://classroom.github.com/assets/launch-codespace-2972f46106e565e64193e422d61a12cf1da4916b45550586e14ef0a7c637dd04.svg)](https://classroom.github.com/open-in-codespaces?assignment_repo_id=21713766)
-
-
+This code will help you simulate your own european electric system. It is written in Python, using library PyPSA to build Unit Commitment models, and it relies on the dataset ERAA (European Resource Adaquacy Assessment).
 
 ## Requirements 
 
@@ -40,7 +32,7 @@ Are you sure you want to choose the red pill over the blue pill?
 <details>
   <summary>Yes, I'm sure</summary>
 
-You have to install Python and ( Pycharm or VSCode ) 
+You have to install Python and VSCode.
 
 #### Python
 
@@ -72,39 +64,7 @@ or download and install https://www.python.org/ftp/python/3.12.7/python-3.12.7-m
 Hopefully if you use a linux machine, it means you're autonomous
 </details>
 
-#### Pycharm
 
-Install the last version of Pycharm Community
-
-<details>
-  <summary>On windows</summary>
-
-Either:
-```
-winget install JetBrains.PyCharm.Community
-```
-or download and install https://download.jetbrains.com/python/pycharm-community-2024.2.3.exe
-</details>
-
-<details>
-  <summary>On a mac</summary>
-
-If you have Homebrew installed:
-```
-brew install --cask pycharm-ce
-```
-or download and install https://download.jetbrains.com/python/pycharm-community-2024.2.3.dmg
-</details>
-
-<details>
-  <summary>On linux</summary>
-
-download and install https://download.jetbrains.com/python/pycharm-community-2024.2.3.tar.gz
-</details>
-
-#### Setting up Pycharm 
-
-TO COME
 
 #### VSCode
 
@@ -170,3 +130,23 @@ python .\my_little_europe_lt_uc.py
 Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.json) indicating your solver ('gurobi') and license file (normally 'gurobi.lic') names.  
 
 </details>
+
+## Quick start (European mode)
+
+* Main entry point : `my_little_europe_lt_uc.py`
+
+* Parameter files you can play with :
+
+  * Long-term Unit Commitment (UC) parameters : `input/long_term_uc/elec-europe_params_to-be-modif.json`
+and `input/long_term_uc/countries/{country}.json` with "country" the name of your considered country
+
+  * Functional parameters : `input/functional_params/usage_params.json`
+
+* See tutorials for more details : `doc/PracticalSession3-European-System-Planning/`
+
+## Structure of the repository
+
+* Source code for European UC : `common`, `include`, `utils`
+* Input data (ERAA data) : `data`
+* Input parameters for European mode : `input`
+* Toy model parameters : `toy_model_params` 
