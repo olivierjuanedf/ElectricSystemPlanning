@@ -512,7 +512,7 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False):
     import pypsa.optimization as opt
-    from common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
+    from code.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
     m = opt.create_model(network)
 
