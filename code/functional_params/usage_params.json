@@ -11,7 +11,5 @@
   },
   "res_cf_stress_test_folder": null,
   "res_cf_stress_test_cy": null,
-  "mode": "solo",
-  "team": "france",
   "log_level": "info"
 }

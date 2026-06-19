@@ -5,7 +5,7 @@ Q : sont-ils bien conservés si ensuite un nouveau projet est créé ? (idem op�
 Reformatage arborescence
 R1) Créer dossier CODE_PROF -> fait par CM
 R2) Créer dossier doc (TODO...) prof -> fait par CR
-R3) input\functional_params -> dans le doc CODE_PROF ; en dehors des params "mode" et "team" de usage_params.json -> elec_eur_params_tb_modif.json
+R3) input\functional_params -> dans le doc CODE_PROF ; en dehors des params "mode" et "team" de usage_params.json -> elec_eur_params_tb_modif.json (CR, 2026/06/19: FAIT)
 R4) input\long_term_uc -> virer sous-dossier long_term_uc pour simplifier arborescence
 R5) input_example : examples_description.md -> dans doc\PS1 ; data-analysis....json -> pour les tests pytest et supprimer ce dossier ensuite -> ok OB et CM
 R6) input -> avoir une structure miroir du dossier output 

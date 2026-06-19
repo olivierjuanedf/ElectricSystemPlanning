@@ -140,8 +140,6 @@ Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.
   * Long-term Unit Commitment (UC) parameters : `input/long_term_uc/elec-europe_params_to-be-modif.json`
 and `input/long_term_uc/countries/{country}.json` with "country" the name of your considered country
 
-  * Functional parameters : `input/functional_params/usage_params.json`
-
 * See tutorials for more details : `doc/PracticalSession3-European-System-Planning/`
 
 ## Structure of the repository

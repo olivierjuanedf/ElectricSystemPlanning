@@ -50,8 +50,6 @@ class UsageParameters:
     overwriting_eraa_interco_capa_vals: bool = False
     manually_adding_demand: bool = False
     manually_adding_generators: bool = False
-    mode: Mode = 'solo'
-    team: Optional[str] = None
     log_level: str = 'info'
     # parameters for climate-based 'sensitivity' tests
     apply_cf_techno_breakthrough: bool = False
