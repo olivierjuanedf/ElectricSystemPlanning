@@ -264,17 +264,22 @@ def read_and_check_pypsa_static_params() -> PypsaStaticParams:
     return pypsa_static_params
 
 
-def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr, n_curves_max: int = 6) -> List[DataAnalysis]:
+def read_and_check_data_analysis_params(eraa_data_descr: ERAADatasetDescr, n_curves_max: int = 6,
+                                        json_data_analysis_params_file: str = None) -> List[DataAnalysis]:
     """
 
     Args:
         eraa_data_descr:
         n_curves_max: maximal number of curves on a plot done during DA
+        json_data_analysis_params_file: if not provided the one from default location (folder in which
+        students are modidying data)
 
     Returns:
 
     """
-    json_data_analysis_params_file = get_json_data_analysis_params_file()
+    if json_data_analysis_params_file is None:  # get JSON params from default location (folder of the students)
+        json_data_analysis_params_file = get_json_data_analysis_params_file()
+
     logging.info(f'Read and check data analysis parameters file; '
                  f'the ones modified in file {json_data_analysis_params_file}')
 

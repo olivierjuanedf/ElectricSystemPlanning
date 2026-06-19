@@ -131,7 +131,7 @@ Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.
 
 </details>
 
-## Quick start (European mode)
+## Quick start: European mode 
 
 * Main entry point : `my_little_europe_lt_uc.py`
 
@@ -140,12 +140,23 @@ Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.
   * Long-term Unit Commitment (UC) parameters : `input/long_term_uc/elec-europe_params_to-be-modif.json`
 and `input/long_term_uc/countries/{country}.json` with "country" the name of your considered country
 
-* See tutorials for more details : `doc/PracticalSession3-European-System-Planning/`
+* See tutorials for more details : `doc/long_term_uc/`
 
 ## Structure of the repository
 
-* Source code for European UC : `common`, `include`, `utils`
+* Source code for European UC : `code`
 * Input data (ERAA data) : `data`
-* Input parameters for European mode : `input`
-* Toy model parameters : `toy_model_params` 
-* Output (figures and files) : `output`
+* Input parameters for European mode : `input/long_term_uc/`
+* Toy model parameters : `input/toy_model_params/` 
+* Outputs (figures and files) : `output`
+
+
+## For teachers
+
+* Branch main : light version for students => european mode only (no toy model nor data analysis)
+
+* Branch main-full : complete version with all use cases (european mode, toy model, data analysis)
+
+   * Contains documentation for teachers (TODO, etc) in doc/teachers
+  
+  * choose this branch for new developments
