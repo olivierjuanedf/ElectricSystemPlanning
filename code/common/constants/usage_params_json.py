@@ -18,10 +18,8 @@ class UsageJsonParamNames:  # by alpha. order
     apply_cf_techno_breakthrough: str = 'apply_cf_techno_breakthrough'
     apply_per_country_json_file_params: str = 'apply_per_country_json_file_params'
     log_level: str = 'log_level'
-    mode: str = 'mode'
     res_cf_stress_test_cy: str = 'res_cf_stress_test_cy'
     res_cf_stress_test_folder: str = 'res_cf_stress_test_folder'
-    team: str = 'team'
 
 
 USAGE_PARAMS_SHORT_NAMES = {
@@ -32,8 +30,6 @@ USAGE_PARAMS_SHORT_NAMES = {
     UsageJsonParamNames.apply_cf_techno_breakthrough: 'apply_cf_techno_breakthrough',
     UsageJsonParamNames.apply_per_country_json_file_params: 'apply_per_country_json_file_params',
     UsageJsonParamNames.log_level: 'log_level',
-    UsageJsonParamNames.mode: 'mode',
     UsageJsonParamNames.res_cf_stress_test_cy: 'res_cf_stress_test_cy', 
-    UsageJsonParamNames.res_cf_stress_test_folder: 'res_cf_stress_test_folder',
-    UsageJsonParamNames.team: 'team'
+    UsageJsonParamNames.res_cf_stress_test_folder: 'res_cf_stress_test_folder'
 }

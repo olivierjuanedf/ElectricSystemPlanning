@@ -3,13 +3,12 @@ Q : sont-ils bien conservés si ensuite un nouveau projet est créé ? (idem op�
 
 %%%%%
 Reformatage arborescence
-R1) Créer dossier CODE_PROF -> fait par CM
-R2) Créer dossier doc (TODO...) prof -> fait par CR
-R3) input\functional_params -> dans le doc CODE_PROF ; en dehors des params "mode" et "team" de usage_params.json -> elec_eur_params_tb_modif.json
-R4) input\long_term_uc -> virer sous-dossier long_term_uc pour simplifier arborescence
-R5) input_example : examples_description.md -> dans doc\PS1 ; data-analysis....json -> pour les tests pytest
--> supprimer ce dossier ensuite
-R6) input -> avoir une structure miroir du dossier output
+R1) Créer dossier CODE_PROF (CM, 2026/06/19: FAIT)
+R2) Créer dossier doc (TODO...) prof (CR, 2026/06/19: FAIT)
+R3) input\functional_params -> dans le doc CODE_PROF ; en dehors des params "mode" et "team" de usage_params.json -> elec_eur_params_tb_modif.json (CR, 2026/06/19: FAIT)
+R4) input_example : examples_description.md -> dans doc\PS1 ; data-analysis....json -> pour les tests pytest et supprimer ce dossier ensuite (OB, CM, 2026/06/19: FAIT)
+R5) input\ -> Mettre le dossier toy_model_params dans le dossier input (CM, 2026/06/19: FAIT)
+R6) output\ -> Avoir les output du toy_model dans un dossier toy_model au lieu d'un sous dossier de long_term_uc
 Rx) Se renseigner sur la façon de faire un sous-projet dédié à un cours à S-2 :)
 -> dans le cas d'EELISA virer data_analysis et toy_ex_1country
 -> en créant une branche ?

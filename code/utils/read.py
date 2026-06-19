@@ -153,7 +153,8 @@ def set_countries_data(usage_params: UsageParameters, phase_name: str, available
     if apply_per_country_params:
         countries_data = (
             apply_per_country_json_file_params(countries_data=countries_data, available_countries=available_countries,
-                                               mode_name=usage_params.mode, team_name=usage_params.team)
+                                               mode_name=json_params_tb_modif[EuropeJsonParamNames.mode],
+                                               team_name=json_params_tb_modif[EuropeJsonParamNames.team])
         )
 
     # init. selected prod. types, with 'all' value for all selected countries

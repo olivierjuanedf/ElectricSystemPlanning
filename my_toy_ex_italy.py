@@ -163,7 +163,7 @@ open_loop_pump_sto_inflows_data = \
     (1) Initialize a network, the key component in PyPSA
     (2) Define specific parameters of your country to this network model 
     KEY POINT: main parameters needed for Italy description in PyPSA are set in script 
-    toy_model_params/italy_parameters.py
+    input/toy_model_params/italy_parameters.py
     To get the meaning and format of main PyPSA objects/attributes look at file doc/toy-model_tutorial.md
     In your case you will have to reproduce such a file for your own country
     Step-by-step:
@@ -201,7 +201,7 @@ print(pypsa_model.network)
 # (IV.2.i) Add bus for considered country
 # N.B. Italy coordinates set randomly! (not useful in the calculation that will be done this week)
 # [N-countries] Add key, values (tuple of coordinates) to the following 'coordinates' dictionary
-from toy_model_params.italy_parameters import gps_coords
+from input.toy_model_params.italy_parameters import gps_coords
 
 coordinates = {country: gps_coords}
 pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
@@ -213,14 +213,14 @@ pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # to different fuel sources are available in following dictionary. You can use it or search/define 
 # fictive alternative values instead -> plenty infos on Internet on this... sometimes of 'varying' quality! 
 # (keeping format of dataclass - sort of enriched dictionary -, just change values directly in
-# file toy_model_params/{country}_parameters.py)
+# file input/toy_model_params/{country}_parameters.py)
 from code.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES
-from toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
+from input.toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
 
 fuel_sources = set_fuel_sources_from_json()
 
 # get properties of generators to be set on the unique considered bus here
-# -> from toy_model_params/italy_parameters.py script
+# -> from input/toy_model_params/italy_parameters.py script
 generators = get_generators(country_trigram=country_trigram, fuel_sources=fuel_sources,
                             wind_onshore_cf_data=wind_onshore_cf_data[country],
                             wind_offshore_cf_data=wind_offshore_cf_data[country],

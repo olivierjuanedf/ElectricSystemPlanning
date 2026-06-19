@@ -50,6 +50,8 @@ class UCRunParams:
     selected_target_year: int
     selected_prod_types: Dict[str, Optional[List[str]]]
     uc_period_start: Union[str, datetime]
+    mode: str = 'solo'
+    team: Optional[str] = None
     uc_period_end: Union[str, datetime] = None
     failure_power_capa: float = None
     failure_penalty: float = None

@@ -1,6 +1,6 @@
 Description of the **input data examples**: 
 - **For data analysis** script [my_little_europe_data_analysis.py](../../../my_little_europe_data_analysis.py)
-- **Extracting cases** (dictionaries of parameters) **from** [input_example/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json](../../../input_example/long_term_uc/data_analysis/data-analysis_params_to-be-modif.json)
+- **Extracting cases** (dictionaries of parameters) **from the examples below**
 
 # Start simple
 
