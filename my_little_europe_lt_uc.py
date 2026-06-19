@@ -227,7 +227,8 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
 
 
 def run(network_name: str = 'my little europe', solver_params: SolverParams = None,
-        fixed_uc_run_params: UCRunParams = None, fixed_run_params_fields: List[str] = None, extra_params: dict = None):
+        fixed_uc_run_params: UCRunParams = None, fixed_run_params_fields: List[str] = None, extra_params: dict = None,
+        json_params_filepath: str = None):
     """
     Run N-zones European Unit Commitment model
     :param network_name: just to set associated attribute in PyPSA network
@@ -239,6 +240,9 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
         - log_level: it will overwrite the one defined in usage parameters JSON file
         - debug_mode: activated to save some intermediate data/results in (JSON) output files
     to more easily debug the code
+    :param json_params_filepath: path to the JSON file containing parameters defining Europe configuration (prod.
+    capacities, interconnection ones...). If None, default path - to the file to be modified by the students -
+    will be used
     """
     if extra_params is None:
         extra_params = {}

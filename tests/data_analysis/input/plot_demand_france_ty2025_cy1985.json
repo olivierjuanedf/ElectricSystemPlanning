@@ -1,0 +1,11 @@
+{
+  "data_analysis_list": [
+    {
+      "analysis_type": "plot",
+      "data_type": "demand",
+      "countries": "france",
+      "years": 2025,
+      "climatic_years": 1985
+    }
+  ]
+}
