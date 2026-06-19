@@ -36,14 +36,14 @@ You have to install Python and VSCode.
 
 #### Python
 
-Install a compatible Python version from 3.10 to 3.12, avoid 3.13 
+Install a compatible Python version 3.10
 
 <details>
   <summary>On windows</summary>
 
 Either:
 ```
-winget install Python.Python.3.12
+winget install Python.Python.3.10
 ```
 or download and install  https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe
 </details>
@@ -53,7 +53,7 @@ or download and install  https://www.python.org/ftp/python/3.12.7/python-3.12.7-
 
 If you have Homebrew installed:
 ```
-brew install python@3.12
+brew install python@3.10
 ```
 or download and install https://www.python.org/ftp/python/3.12.7/python-3.12.7-macos11.pkg
 </details>
