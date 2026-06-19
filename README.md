@@ -45,7 +45,7 @@ Either:
 ```
 winget install Python.Python.3.10
 ```
-or download and install  https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe
+or download and install  https://www.python.org/ftp/python/3.10.10/python-3.10.10-amd64.exe
 </details>
 
 <details>
@@ -55,7 +55,7 @@ If you have Homebrew installed:
 ```
 brew install python@3.10
 ```
-or download and install https://www.python.org/ftp/python/3.12.7/python-3.12.7-macos11.pkg
+or download and install https://www.python.org/ftp/python/3.10.10/python-3.10.10-macos11.pkg
 </details>
 
 <details>
