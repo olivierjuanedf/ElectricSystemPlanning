@@ -11,15 +11,13 @@
 
 3. Check parameters in [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json). For the moment you should be in “solo” mode. Put your country name in the field “team”.
 
-4. Check parameters in [input/functional_params/usage_params.json](../../input/functional_params/usage_params.json).
-
-5. Run [my_little_europe_lt_uc.py](../../my_little_europe_lt_uc.py) 
+4. Run [my_little_europe_lt_uc.py](../../my_little_europe_lt_uc.py) 
     - First to check that it works correctly.
     - What is the result of the optimization? Why?
 
-6. Using yesterday’s data analysis of your country, update file  [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json*  to add production capacities to your country. Try different electricity mixes until you obtain a feasible UC problem.
+5. Using yesterday’s data analysis of your country, update file  [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json*  to add production capacities to your country. Try different electricity mixes until you obtain a feasible UC problem.
 
-7. Once your UC problem is feasible, check the results : data in csv files are available in [output/long_term_uc/multizones_eur/data](../../output/long_term_uc/multizones_eur/data) and plotted figures in [output/long_term_uc/multizones_eur/figures](../../output/long_term_uc/multizones_eur/figures). What can you say about the prices ?
+6. Once your UC problem is feasible, check the results : data in csv files are available in [output/long_term_uc/multizones_eur/data](../../output/long_term_uc/multizones_eur/data) and plotted figures in [output/long_term_uc/multizones_eur/figures](../../output/long_term_uc/multizones_eur/figures). What can you say about the prices ?
 
 ## Playing with the European Serious Game
 8. Now you can start playing with the parameters in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json)
