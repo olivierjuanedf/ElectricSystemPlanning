@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict
 
-from common.long_term_uc_io import get_json_fuel_sources_file
-from utils.read import check_and_load_json_file
+from code.common.long_term_uc_io import get_json_fuel_sources_file
+from code.utils.read import check_and_load_json_file
 
 """
 **[Optional, for better parametrization of assets]**

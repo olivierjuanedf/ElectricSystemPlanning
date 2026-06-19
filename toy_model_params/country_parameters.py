@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from common.fuel_sources import FuelSource
+from code.common.fuel_sources import FuelSource
 
 
 gps_coords = (0, 0)  # Your choice!

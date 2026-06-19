@@ -2,18 +2,18 @@ from itertools import product
 
 import logging
 
-from common.constants.datatypes import DATATYPE_NAMES
-from common.constants.usage_params_json import EnvPhaseNames
-from common.logger import init_logger, stop_logger
-from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
-from common.plot_params import PlotParamsKeysInJson
-from include.dataset import Dataset
-from utils.basic_utils import print_non_default
-from utils.dates import get_period_str
-from utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
+from code.common.constants.datatypes import DATATYPE_NAMES
+from code.common.constants.usage_params_json import EnvPhaseNames
+from code.common.logger import init_logger, stop_logger
+from code.common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
+from code.common.plot_params import PlotParamsKeysInJson
+from code.include.dataset import Dataset
+from code.utils.basic_utils import print_non_default
+from code.utils.dates import get_period_str
+from code.utils.read import read_and_check_data_analysis_params, read_and_check_uc_run_params, \
     read_given_phase_specific_key_from_plot_params, read_plot_params, read_usage_params
 
-phase_name = EnvPhaseNames.data_analysis
+phase_name = EnvPhaseNames.data_analysis.value
 
 # read code environment "usage" parameters
 usage_params = read_usage_params()

@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterator, List
 
-from common.constants.countries import set_country_trigram
-from common.constants.datatypes import DATATYPE_NAMES
-from utils.dir_utils import make_dir, uniformize_path_os
+from code.common.constants.countries import set_country_trigram
+from code.common.constants.datatypes import DATATYPE_NAMES
+from code.utils.dir_utils import make_dir, uniformize_path_os
 
 
 @dataclass

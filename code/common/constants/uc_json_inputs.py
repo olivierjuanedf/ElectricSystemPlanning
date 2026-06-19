@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from utils.type_checker import CheckerNames
+from code.utils.type_checker import CheckerNames
 
 
 @dataclass
