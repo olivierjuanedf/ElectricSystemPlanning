@@ -1,9 +1,9 @@
 import logging
 from typing import List
 
-from common.constants.extract_eraa_data import ERAADatasetDescr
-from common.uc_run_params import UCRunParams, overwrite_uc_run_params
-from utils.basic_utils import get_all_attr_names
+from code.common.constants.extract_eraa_data import ERAADatasetDescr
+from code.common.uc_run_params import UCRunParams, overwrite_uc_run_params
+from code.utils.basic_utils import get_all_attr_names
 
 
 def apply_fixed_uc_run_params(uc_run_params: UCRunParams, fixed_uc_run_params: UCRunParams,

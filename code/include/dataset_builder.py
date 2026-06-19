@@ -13,20 +13,20 @@ from dataclasses import dataclass
 import pypsa
 import matplotlib.pyplot as plt
 
-from common.constants.countries import set_country_trigram
-from common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
+from code.common.constants.countries import set_country_trigram
+from code.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes
-from common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
-from common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
-from common.error_msgs import print_errors_list
-from common.fuel_sources import FuelSource
-from common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
-from include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
-from utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
+from code.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
+from code.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
+from code.common.error_msgs import print_errors_list
+from code.common.fuel_sources import FuelSource
+from code.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
+from code.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
+from code.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
                                format_with_spaces)
-from utils.dir_utils import make_dir
-from utils.pypsa_utils import get_network_obj_value
-from utils.serializer import array_serializer
+from code.utils.dir_utils import make_dir
+from code.utils.pypsa_utils import get_network_obj_value
+from code.utils.serializer import array_serializer
 
 
 @dataclass
@@ -512,7 +512,7 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False):
     import pypsa.optimization as opt
-    from common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
+    from code.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
     m = opt.create_model(network)
 

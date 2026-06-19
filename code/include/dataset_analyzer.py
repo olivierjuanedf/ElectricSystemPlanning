@@ -7,19 +7,19 @@ from typing import List, Union, Dict, Tuple, Optional
 import numpy as np
 import pandas as pd
 
-from common.constants.data_analysis_types import ANALYSIS_TYPES, ANALYSIS_TYPES_PLOT, AVAILABLE_ANALYSIS_TYPES
-from common.constants.datatypes import DatatypesNames, UNITS_PER_DT, DATATYPE_NAMES
-from common.constants.extract_eraa_data import ERAADatasetDescr, FICTIVE_CALENDAR_YEAR
-from common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_DAYS_DATA_ANALYSIS_DEFAULT
-from common.error_msgs import uncoherent_param_stop
-from common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
-from common.plot_params import PlotParams
-from include.uc_timeseries import set_uc_ts_name, UCTimeseries
-from utils.basic_utils import random_draw_in_list, check_all_values_equal
-from utils.dates import robust_date_parser, set_year_in_date, set_temporal_period_str
-from utils.df_utils import selec_in_df_based_on_list
-from utils.plot import FigureStyle
-from utils.type_checker import CheckerNames, apply_params_type_check
+from code.common.constants.data_analysis_types import ANALYSIS_TYPES, ANALYSIS_TYPES_PLOT, AVAILABLE_ANALYSIS_TYPES
+from code.common.constants.datatypes import DatatypesNames, UNITS_PER_DT, DATATYPE_NAMES
+from code.common.constants.extract_eraa_data import ERAADatasetDescr, FICTIVE_CALENDAR_YEAR
+from code.common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_DAYS_DATA_ANALYSIS_DEFAULT
+from code.common.error_msgs import uncoherent_param_stop
+from code.common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
+from code.common.plot_params import PlotParams
+from code.include.uc_timeseries import set_uc_ts_name, UCTimeseries
+from code.utils.basic_utils import random_draw_in_list, check_all_values_equal
+from code.utils.dates import robust_date_parser, set_year_in_date, set_temporal_period_str
+from code.utils.df_utils import selec_in_df_based_on_list
+from code.utils.plot import FigureStyle
+from code.utils.type_checker import CheckerNames, apply_params_type_check
 
 AVAILABLE_DATA_TYPES = list(DatatypesNames.__annotations__.values())
 AGG_PROD_TYPE_KEY = 'aggreg_prod_types'  # TODO[Q2OJ]: cleaner way to set/get it?
