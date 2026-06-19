@@ -12,7 +12,7 @@ R6) output\ -> Avoir les output du toy_model dans un dossier toy_model au lieu d
 Rx) Se renseigner sur la façon de faire un sous-projet dédié à un cours à S-2 :)
 -> dans le cas d'EELISA virer data_analysis et toy_ex_1country
 -> en créant une branche ?
-FAIT (CR) : une branche main pour les étudiants EELISA (uniquemen mode europe) et une branche main-full avec l'intégralité du cours (data analysis, toy model, european mode)
+FAIT (CR) : une branche main pour les étudiants EELISA (uniquement mode europe) et une branche main-full avec l'intégralité du cours (data analysis, toy model, european mode)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 MAIN actions (M)
