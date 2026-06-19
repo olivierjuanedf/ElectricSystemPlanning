@@ -1,11 +1,12 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Iterator, List
 
 from code.common.constants.countries import set_country_trigram
 from code.common.constants.datatypes import DATATYPE_NAMES
-from code.utils.dir_utils import make_dir, uniformize_path_os
+from code.utils.dir_utils import make_dir, uniformize_path_os, find_project_root
 
 
 @dataclass
@@ -53,6 +54,7 @@ class ComplemDataSources:
     from_eraa_data: str = 'from_eraa_data'
 
 
+PROJECT_ROOT_FOLDER = find_project_root(start_path=Path(__file__).resolve())
 LT_UC_COMMON_FOLDER = 'long_term_uc/common'
 COLUMN_NAMES = ColumnNames()
 COMPLEM_DATA_SOURCES = ComplemDataSources()
@@ -107,13 +109,14 @@ HYDRO_DATA_RESAMPLE_METHODS = {DATATYPE_NAMES.hydro_ror: ResampleMethods.uniform
                                DATATYPE_NAMES.hydro_levels_min: ResampleMethods.all_at_first_ts,
                                DATATYPE_NAMES.hydro_levels_max: ResampleMethods.all_at_first_ts}
 HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e10}
-INPUT_ERAA_FOLDER = f'{DATA_FOLDER}/ERAA_2023-2'
+# TODO: more robust way to complete path from root folder
+INPUT_ERAA_FOLDER = f'{PROJECT_ROOT_FOLDER}/{DATA_FOLDER}/ERAA_2023-2'
 INPUT_FOLDER = 'input'
 CODE_FOLDER = 'code'
-INPUT_FUEL_SOURCES_FOLDER = f'{DATA_FOLDER}/fuel_sources'
-INPUT_LT_UC_SUBFOLDER = f'{INPUT_FOLDER}/long_term_uc'
+INPUT_FUEL_SOURCES_FOLDER = f'{PROJECT_ROOT_FOLDER}/{DATA_FOLDER}/fuel_sources'
+INPUT_LT_UC_SUBFOLDER = f'{PROJECT_ROOT_FOLDER}/{INPUT_FOLDER}/long_term_uc'
 INPUT_LT_UC_COUNTRY_SUBFOLDER = f'{INPUT_LT_UC_SUBFOLDER}/countries'
-INPUT_FUNC_PARAMS_SUBFOLDER = f'{CODE_FOLDER}/functional_params'
+INPUT_FUNC_PARAMS_SUBFOLDER = f'{PROJECT_ROOT_FOLDER}/{CODE_FOLDER}/functional_params'
 INPUT_DATA_ANALYSIS_SUBFOLDER = f'{INPUT_LT_UC_SUBFOLDER}/data_analysis'
 INTERCO_STR_SEP = '2'
 INPUT_CY_STRESS_TEST_SUBFOLDER = 'cy_stress-test'
@@ -121,7 +124,7 @@ OUTPUT_FOLDER = 'output'
 OUTPUT_FOLDER_LT = f'{OUTPUT_FOLDER}/long_term_uc'
 OUTPUT_SUBFOLDER_DATA = 'data'
 OUTPUT_SUBFOLDER_FIG = 'figures'
-OUTPUT_DATA_ANALYSIS_FOLDER = f'{OUTPUT_FOLDER}/data_analysis'
+OUTPUT_DATA_ANALYSIS_FOLDER = f'{PROJECT_ROOT_FOLDER}/{OUTPUT_FOLDER}/data_analysis'
 
 
 def check_uc_input_folder_content(all_countries: List[str]):
@@ -290,6 +293,7 @@ def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_
                              toy_model_output: bool = False) -> str:
     return get_csv_file_named(name='marginal_prices', country=country, year=year, climatic_year=climatic_year, 
                               start_horizon=start_horizon, toy_model_output=toy_model_output)
+
 
 def get_uc_summary_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                         toy_model_output: bool = False) -> str:
