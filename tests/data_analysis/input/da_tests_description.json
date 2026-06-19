@@ -1,0 +1,206 @@
+{
+  "plot_cases": {
+    "1": [
+      "plot",
+      "demand",
+      "france",
+      2025,
+      1985
+    ],
+    "2": [
+      "plot",
+      "res_capa-factors",
+      "italy",
+      2025,
+      1989
+    ],
+    "3": [
+      "plot",
+      "net_demand",
+      "france",
+      2025,
+      1985,
+      "1900/1/15",
+      "1900/1/29"
+    ],
+    "4": [
+      "plot_duration_curve",
+      "demand",
+      [
+        "france",
+        "germany"
+      ],
+      2025,
+      1985
+    ],
+    "5": [
+      "plot_duration_curve",
+      "demand",
+      "france",
+      [
+        2025,
+        2033
+      ],
+      1985,
+      "1900/1/15",
+      "1900/1/29"
+    ],
+    "6": [
+      "plot",
+      "net_demand",
+      "france",
+      [
+        2025,
+        2033
+      ],
+      [
+        1989,
+        2010,
+        2016
+      ]
+    ],
+    "7": [
+      "plot",
+      "net_demand",
+      "france",
+      2025,
+      1985,
+      "1900/1/15",
+      "1900/1/29",
+      null,
+      [
+        null,
+        {
+          "label": "res_low",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
+              "wind_onshore": 10000,
+              "wind_offshore": 500,
+              "solar_pv": 10000
+            }
+          }
+        },
+        {
+          "label": "res_high",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
+              "wind_onshore": 40000,
+              "wind_offshore": 10000,
+              "solar_pv": 40000
+            }
+          }
+        }
+      ]
+    ],
+    "8": [
+      "plot",
+      "res_capa-factors",
+      "france",
+      [
+        2025,
+        2033
+      ],
+      [
+        1985,
+        1987
+      ],
+      [
+        "solar_pv",
+        "wind_offshore"
+      ],
+      "1900/1/15",
+      "1900/1/29"
+    ],
+    "9": [
+      "plot_duration_curve",
+      "net_demand",
+      "france",
+      2025,
+      [
+        1985,
+        1987
+      ],
+      [
+        "solar_pv",
+        "wind_onshore"
+      ],
+      "1900/1/15",
+      "1900/1/29"
+    ],
+    "10": [
+      "plot_duration_curve",
+      "net_demand",
+      "france",
+      2025,
+      1985,
+      "1900/1/15",
+      "1900/1/29",
+      "solar_pv",
+      [
+        null,
+        {
+          "label": "res_low",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
+              "solar_pv": 10000
+            }
+          }
+        },
+        {
+          "label": "res_high",
+          "values": {
+            "capas_aggreg_pt_with_cf": {
+              "solar_pv": 40000
+            }
+          }
+        }
+      ]
+    ]
+  },
+  "extract_cases": {
+    "1": [
+      "extract",
+      "net_demand",
+      "france",
+      [
+        2025,
+        2033
+      ],
+      1985,
+      "1900/1/15",
+      "1900/1/29"
+    ],
+    "2": [
+      "extract",
+      "res_capa-factors",
+      "france",
+      [
+        2025,
+        2033
+      ],
+      [
+        1985,
+        1987
+      ],
+      [
+        "solar_pv",
+        "wind_offshore"
+      ],
+      "1900/1/15",
+      "1900/1/29"
+    ],
+    "3": [
+      "extract",
+      "net_demand",
+      "france",
+      [
+        2025,
+        2033
+      ],
+      1985,
+      "solar_pv",
+      "1900/1/15",
+      "1900/1/29"
+    ]
+  }
+}

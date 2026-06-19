@@ -34,3 +34,10 @@ def delete_files(directory: str, str_in_file: str = None, suffix: str = None):
         if file.is_file():
             logging.debug(f"Deleting: {file}")
             file.unlink()
+
+
+def find_project_root(start_path: Path) -> Path:
+    for path in [start_path, *start_path.parents]:
+        if (path / "pyproject.toml").exists() or (path / ".git").exists():
+            return path
+    raise RuntimeError("Project root not found")
