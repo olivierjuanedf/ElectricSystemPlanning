@@ -34,7 +34,8 @@ def run(json_params_filepath: str = None):
 
     # read and check data analyses params
     data_analyses = read_and_check_data_analysis_params(eraa_data_descr=eraa_data_descr,
-                                                        n_curves_max=fig_style.n_curves_max)
+                                                        n_curves_max=fig_style.n_curves_max,
+                                                        json_data_analysis_params_file=json_params_filepath)
 
     # loop over the different cases to be analysed
     for elt_analysis in data_analyses:
