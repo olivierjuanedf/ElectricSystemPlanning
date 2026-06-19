@@ -9,9 +9,9 @@
 
 2. Check parameters in [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country 
 
-3. Check parameters in [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json).
+3. Check parameters in [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json). For the moment you should be in “solo” mode. Put your country name in the field “team”.
 
-4.  Check parameters in [input/functional_params/usage_params.json](../../input/functional_params/usage_params.json) : for the moment you should be in “solo” mode. Put your country name in the field “team”.
+4. Check parameters in [input/functional_params/usage_params.json](../../input/functional_params/usage_params.json).
 
 5. Run [my_little_europe_lt_uc.py](../../my_little_europe_lt_uc.py) 
     - First to check that it works correctly.
