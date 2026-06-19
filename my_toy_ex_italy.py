@@ -83,7 +83,7 @@ from datetime import datetime, timedelta
 
 uc_period_start = datetime(year=1900, month=1, day=1)
 uc_period_end = uc_period_start + timedelta(days=14)
-from common.constants.prod_types import ProdTypeNames
+from code.common.constants.prod_types import ProdTypeNames
 
 agg_prod_types_selec = [ProdTypeNames.wind_onshore, ProdTypeNames.wind_offshore, ProdTypeNames.solar_pv]
 
@@ -201,7 +201,7 @@ print(pypsa_model.network)
 # (IV.2.i) Add bus for considered country
 # N.B. Italy coordinates set randomly! (not useful in the calculation that will be done this week)
 # [N-countries] Add key, values (tuple of coordinates) to the following 'coordinates' dictionary
-from code.toy_model_params.italy_parameters import gps_coords
+from toy_model_params.italy_parameters import gps_coords
 
 coordinates = {country: gps_coords}
 pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
@@ -215,7 +215,7 @@ pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # (keeping format of dataclass - sort of enriched dictionary -, just change values directly in
 # file toy_model_params/{country}_parameters.py)
 from code.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES
-from code.toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
+from toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
 
 fuel_sources = set_fuel_sources_from_json()
 
