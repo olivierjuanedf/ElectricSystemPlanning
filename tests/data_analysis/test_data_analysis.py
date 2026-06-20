@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -30,12 +31,13 @@ TEST_OUTPUT_FILES = {"plot_1.json": "demand_france_2025_cy1985.png",
 
 # @pytest.mark.parametrize("json_file", TEST_FILES)
 @pytest.mark.parametrize("json_param_file, expected_output", TEST_OUTPUT_FILES.items())
-def test_run_smoke(json_param_file, expected_output):
+def test_run_data_analysis(json_param_file, expected_output):
     print(f"Run data analysis test with JSON file {json_param_file}")
     json_params_filepath = os.path.join(INPUT_DIR, json_param_file)
 
     assert os.path.exists(json_params_filepath), f"{json_param_file} not found"
 
+    logging.disable(logging.CRITICAL)  # do not output all logs <= CRITICAL
     run(json_params_filepath=json_params_filepath)
     # check existence of file to be generated, and suppress it
     if expected_output is not None:
