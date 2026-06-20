@@ -4,10 +4,10 @@ from typing import List
 
 import numpy as np
 
-from code.common.constants.countries import set_country_trigram
-from code.common.constants.temporal import Timescale
-from code.common.error_msgs import print_errors_list, unknown_value_error
-from code.utils.basic_utils import format_with_spaces, get_repeated_elts_in_lst, get_default_values
+from src.common.constants.countries import set_country_trigram
+from src.common.constants.temporal import Timescale
+from src.common.error_msgs import print_errors_list, unknown_value_error
+from src.utils.basic_utils import format_with_spaces, get_repeated_elts_in_lst, get_default_values
 
 
 @dataclass

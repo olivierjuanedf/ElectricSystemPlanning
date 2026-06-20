@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from code.common.constants.prod_types import ProdTypeNames
+from src.common.constants.prod_types import ProdTypeNames
 
 
 @dataclass

@@ -8,25 +8,25 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 
-from code.common.constants.aggreg_operations import AggregOpeNames
-from code.common.constants.countries import set_country_trigram
-from code.common.constants.datatypes import DATATYPE_NAMES
-from code.common.constants.eraa_data import ERAAParamNames
-from code.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
-from code.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
-from code.common.error_msgs import print_errors_list
-from code.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
+from src.common.constants.aggreg_operations import AggregOpeNames
+from src.common.constants.countries import set_country_trigram
+from src.common.constants.datatypes import DATATYPE_NAMES
+from src.common.constants.eraa_data import ERAAParamNames
+from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
+from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
+from src.common.error_msgs import print_errors_list
+from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER, HYDRO_KEY_COLUMNS, \
     HYDRO_VALUE_COLUMNS, HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS
-from code.common.uc_run_params import UCRunParams
-from code.include.dataset_builder import GenerationUnitData, select_gen_units_data
-from code.utils.basic_utils import get_intersection_of_lists
-from code.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
+from src.common.uc_run_params import UCRunParams
+from src.include.dataset_builder import GenerationUnitData, select_gen_units_data
+from src.utils.basic_utils import get_intersection_of_lists
+from src.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row, resample_and_distribute
-from code.utils.dir_utils import uniformize_path_os
-from code.utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
+from src.utils.dir_utils import uniformize_path_os
+from src.utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
     set_aggreg_cf_prod_types_data, read_and_process_hydro_data
-from code.utils.write import json_dump
+from src.utils.write import json_dump
 
 N_SPACES_MSG = 2
 PROD_TYPE_AGG_COL = f'{COLUMN_NAMES.production_type}_agg'

@@ -2,24 +2,24 @@ import json
 from typing import List, Dict, Optional, Union
 import logging
 
-from code.common.constants.optimisation import SolverParams
-from code.common.constants.plots import PlotNames
-from code.common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
+from src.common.constants.optimisation import SolverParams
+from src.common.constants.plots import PlotNames
+from src.common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
     get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
     get_json_data_analysis_params_file, get_json_plot_params_file, get_json_solver_params_file, \
     check_uc_input_folder_content
-from code.common.constants.extract_eraa_data import ERAADatasetDescr, \
+from src.common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
-from code.common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD, \
+from src.common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD, \
     EUR_JSON_PARAM_TYPES_FOR_CHECK, EuropeJsonExtraParamNames
-from code.common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES, EnvPhaseNames
-from code.common.uc_run_params import UCRunParams
-from code.include.dataset_analyzer import DataAnalysis
-from code.common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER, PlotParamsKeysInJson, FigureStyle
-from code.utils.basic_utils import get_default_values
-from code.utils.dir_utils import check_file_existence
-from code.utils.type_checker import apply_params_type_check
+from src.common.constants.usage_params_json import USAGE_PARAMS_SHORT_NAMES, EnvPhaseNames
+from src.common.uc_run_params import UCRunParams
+from src.include.dataset_analyzer import DataAnalysis
+from src.common.plot_params import PlotParams, DEFAULT_PLOT_DIMS_ORDER, PlotParamsKeysInJson, FigureStyle
+from src.utils.basic_utils import get_default_values
+from src.utils.dir_utils import check_file_existence
+from src.utils.type_checker import apply_params_type_check
 
 
 def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:

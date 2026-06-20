@@ -6,26 +6,26 @@ import pandas as pd
 import time
 from datetime import datetime
 
-from code.common.constants.datadims import DataDimensions
-from code.common.constants.extract_eraa_data import ERAADatasetDescr
-from code.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams
-from code.common.constants.plots import PlotNames
-from code.common.constants.usage_params_json import EnvPhaseNames
-from code.common.error_msgs import infeas_debugging_hints_msg
-from code.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
-from code.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
-from code.common.long_term_uc_io import set_full_lt_uc_output_folder
-from code.common.plot_params import PlotParamsKeysInJson
-from code.common.uc_run_params import UCRunParams
-from code.include.dataset import Dataset
-from code.include.dataset_builder import PypsaModel
-from code.include.uc_postprocessing import UCSummaryMetrics
-from code.include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
-from code.utils.basic_utils import print_non_default
-from code.utils.dates import get_period_str
-from code.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_static_params,
-                        read_given_phase_specific_key_from_plot_params,
-                        read_plot_params, read_usage_params, read_solver_params)
+from src.common.constants.datadims import DataDimensions
+from src.common.constants.extract_eraa_data import ERAADatasetDescr
+from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams
+from src.common.constants.plots import PlotNames
+from src.common.constants.usage_params_json import EnvPhaseNames
+from src.common.error_msgs import infeas_debugging_hints_msg
+from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
+from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
+from src.common.long_term_uc_io import set_full_lt_uc_output_folder
+from src.common.plot_params import PlotParamsKeysInJson
+from src.common.uc_run_params import UCRunParams
+from src.include.dataset import Dataset
+from src.include.dataset_builder import PypsaModel
+from src.include.uc_postprocessing import UCSummaryMetrics
+from src.include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
+from src.utils.basic_utils import print_non_default
+from src.utils.dates import get_period_str
+from src.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_static_params,
+                            read_given_phase_specific_key_from_plot_params,
+                            read_plot_params, read_usage_params, read_solver_params)
 
 
 def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr,

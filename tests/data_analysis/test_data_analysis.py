@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from code.common.long_term_uc_io import OUTPUT_FOLDER
-from code.utils.dir_utils import find_project_root
+from src.common.long_term_uc_io import OUTPUT_FOLDER
+from src.utils.dir_utils import find_project_root
 from my_little_europe_data_analysis import run
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "input")

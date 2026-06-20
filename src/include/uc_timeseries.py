@@ -7,13 +7,13 @@ from typing import Dict, List, Union, Tuple, Optional
 import numpy as np
 import pandas as pd
 
-from code.common.constants.data_analysis_types import COMMON_PLOT_YEAR
-from code.common.constants.datatypes import PLOT_YLABEL_PER_DT
-from code.common.plot_params import PlotParams
-from code.utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
-from code.utils.dates import set_year_in_date, set_temporal_period_str
-from code.utils.df_utils import set_key_columns
-from code.utils.plot import simple_plot, set_temporal_period_title, FigureStyle, set_curve_style_attrs, CurveStyleAttrs
+from src.common.constants.data_analysis_types import COMMON_PLOT_YEAR
+from src.common.constants.datatypes import PLOT_YLABEL_PER_DT
+from src.common.plot_params import PlotParams
+from src.utils.basic_utils import set_years_suffix, CLIM_YEARS_SUFFIX
+from src.utils.dates import set_year_in_date, set_temporal_period_str
+from src.utils.df_utils import set_key_columns
+from src.utils.plot import simple_plot, set_temporal_period_title, FigureStyle, set_curve_style_attrs, CurveStyleAttrs
 
 NAME_SEP = '_'
 SUBNAME_SEP = '-'

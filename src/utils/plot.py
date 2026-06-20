@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Dict, List, Tuple, Optional
 
-from code.common.constants.datadims import DataDimensions
-from code.common.constants.temporal import DAY_OF_WEEK
-from code.common.plot_params import PlotParams, N_LETTERS_ZONE, XtickDateFormat, \
+from src.common.constants.datadims import DataDimensions
+from src.common.constants.temporal import DAY_OF_WEEK
+from src.common.plot_params import PlotParams, N_LETTERS_ZONE, XtickDateFormat, \
     DEFAULT_DATE_XTICK_FMT, CurveStyles, FigureStyle, N_MAX_CHARS_FLAT_LABEL
-from code.utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals, endswith_in_list
-from code.utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
+from src.utils.basic_utils import lowest_common_multiple, get_first_level_with_multiple_vals, endswith_in_list
+from src.utils.dates import set_temporal_period_str, add_day_exponent, set_month_short_in_date, remove_useless_zero_in_date
 
 
 def set_temporal_period_title(min_date: datetime, max_date: datetime) -> str:

@@ -9,14 +9,14 @@ import json
 import pypsa
 from matplotlib import pyplot as plt
 
-from code.common.constants.countries import set_country_trigram
-from code.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
+from src.common.constants.countries import set_country_trigram
+from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
     get_prod_type_from_unit_name, set_gen_unit_name
-from code.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
+from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
     get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file
-from code.common.plot_params import PlotParams
-from code.utils.basic_utils import format_with_spaces, get_default_values, dict_to_str
-from code.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values
+from src.common.plot_params import PlotParams
+from src.utils.basic_utils import format_with_spaces, get_default_values, dict_to_str
+from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values
 
 
 OUTPUT_DATE_COL = 'date'

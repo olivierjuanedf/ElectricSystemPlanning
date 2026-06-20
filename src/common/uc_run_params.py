@@ -3,18 +3,18 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
 import logging
 
-from code.common.constants.extract_eraa_data import ERAADatasetDescr
-from code.common.constants.optimisation import ZoneAndTempProdSumConstraint, CustomConstraintNames, ConstMultCoeffNames, \
+from src.common.constants.extract_eraa_data import ERAADatasetDescr
+from src.common.constants.optimisation import ZoneAndTempProdSumConstraint, CustomConstraintNames, ConstMultCoeffNames, \
     CustomConstraintDirection
-from code.common.constants.prod_types import ProdTypeNames
-from code.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
+from src.common.constants.prod_types import ProdTypeNames
+from src.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
-from code.common.constants.uc_json_inputs import ALL_KEYWORD
-from code.common.error_msgs import uncoherent_param_stop
-from code.include.timeseries import Timeseries
-from code.utils.basic_utils import are_lists_eq
-from code.utils.dates import get_period_str
-from code.utils.eraa_utils import set_interco_to_tuples
+from src.common.constants.uc_json_inputs import ALL_KEYWORD
+from src.common.error_msgs import uncoherent_param_stop
+from src.include.timeseries import Timeseries
+from src.utils.basic_utils import are_lists_eq
+from src.utils.dates import get_period_str
+from src.utils.eraa_utils import set_interco_to_tuples
 
 
 def check_unique_int_value(param_name: str, param_value) -> Optional[str]:

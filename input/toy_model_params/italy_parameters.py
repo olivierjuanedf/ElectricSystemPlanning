@@ -3,9 +3,9 @@ from typing import Dict, List, Union
 import pandas as pd
 import numpy as np
 
-from code.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
-from code.common.fuel_sources import FuelSource, FuelNames, DummyFuelNames
-from code.include.dataset_builder import GenerationUnitData
+from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
+from src.common.fuel_sources import FuelSource, FuelNames, DummyFuelNames
+from src.include.dataset_builder import GenerationUnitData
 
 GENERATOR_DICT_TYPE = Dict[str, Union[float, int, str]]
 gps_coords = (12.5674, 41.8719)

@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
-from code.common.constants.optimisation import WHOLE_PERIOD_GRANULARITY
-from code.common.constants.temporal import Timescale
-from code.utils.basic_utils import get_default_values
-from code.utils.dates import get_n_days_in_period, get_n_weeks_in_period, get_n_months_in_period, get_n_days_in_month, \
+from src.common.constants.optimisation import WHOLE_PERIOD_GRANULARITY
+from src.common.constants.temporal import Timescale
+from src.utils.basic_utils import get_default_values
+from src.utils.dates import get_n_days_in_period, get_n_weeks_in_period, get_n_months_in_period, get_n_days_in_month, \
     timestamp_to_datetime
 
 

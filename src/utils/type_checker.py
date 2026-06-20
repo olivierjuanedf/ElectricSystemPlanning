@@ -1,7 +1,7 @@
 from typing import Dict
 from dataclasses import dataclass
 
-from code.common.error_msgs import print_errors_list
+from src.common.error_msgs import print_errors_list
 
 
 @dataclass

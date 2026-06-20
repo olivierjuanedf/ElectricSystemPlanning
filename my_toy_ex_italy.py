@@ -3,7 +3,7 @@
 First very simple toy Unit Commitment (UC) model of Italy zone - alone -> with PyPSA and ERAA data
 -> you can copy/paste some piece of this code to obtain your my_toy_ex_{country}.py own script
 """
-from code.common.error_msgs import infeas_debugging_hints_msg
+from src.common.error_msgs import infeas_debugging_hints_msg
 
 """
   0) Preliminar functional aspects / technical functions
@@ -11,18 +11,18 @@ from code.common.error_msgs import infeas_debugging_hints_msg
   -> just copy/paste them in your own script
 """
 # (0.a) deactivate some verbose warnings (mainly in pandas, pypsa)
-from code.common.logger import deactivate_verbose_warnings
+from src.common.logger import deactivate_verbose_warnings
 
 deactivate_verbose_warnings(deact_deprecation_warn=True)
 
 # (0.b) Function to get an object describing ERAA dataset (mainly available values)
-from code.common.constants.extract_eraa_data import ERAADatasetDescr
+from src.common.constants.extract_eraa_data import ERAADatasetDescr
 
 
 def get_eraa_data_description() -> ERAADatasetDescr:
-    from code.common.long_term_uc_io import get_json_fixed_params_file
+    from src.common.long_term_uc_io import get_json_fixed_params_file
     json_fixed_params_file = get_json_fixed_params_file()
-    from code.utils.read import check_and_load_json_file
+    from src.utils.read import check_and_load_json_file
     json_params_fixed = check_and_load_json_file(json_file=json_fixed_params_file,
                                                  file_descr='JSON fixed params')
     json_available_values_dummy = {'available_climatic_years': None,
@@ -37,23 +37,23 @@ def get_eraa_data_description() -> ERAADatasetDescr:
 
 # Function to get a few parameters for plot -> only style, in particular to set fixed colors
 # per (aggreg.) production type/country
-from code.common.plot_params import PlotParams, PlotParamsKeysInJson
+from src.common.plot_params import PlotParams, PlotParamsKeysInJson
 
 
 def get_plots_params() -> (PlotParams, PlotParams):
-    from code.utils.read import read_plot_params
+    from src.utils.read import read_plot_params
     per_dim_plot_params = read_plot_params()
-    from code.utils.read import read_given_phase_specific_key_from_plot_params
+    from src.utils.read import read_given_phase_specific_key_from_plot_params
     fig_style = (
         read_given_phase_specific_key_from_plot_params(phase_name=phase_name, param_to_be_set=PlotParamsKeysInJson.fig_style)
     )
-    from code.utils.basic_utils import print_non_default
+    from src.utils.basic_utils import print_non_default
     print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
     return per_dim_plot_params[DataDimensions.agg_prod_type], per_dim_plot_params[DataDimensions.zone]
 
 
 # name of current "phase" (of the course), the one associated to this script: a 1-zone Unit Commitment model
-from code.common.constants.usage_params_json import EnvPhaseNames
+from src.common.constants.usage_params_json import EnvPhaseNames
 
 phase_name = EnvPhaseNames.monozone_toy_uc_model
 
@@ -83,7 +83,7 @@ from datetime import datetime, timedelta
 
 uc_period_start = datetime(year=1900, month=1, day=1)
 uc_period_end = uc_period_start + timedelta(days=14)
-from code.common.constants.prod_types import ProdTypeNames
+from src.common.constants.prod_types import ProdTypeNames
 
 agg_prod_types_selec = [ProdTypeNames.wind_onshore, ProdTypeNames.wind_offshore, ProdTypeNames.solar_pv]
 
@@ -95,7 +95,7 @@ agg_prod_types_selec = [ProdTypeNames.wind_onshore, ProdTypeNames.wind_offshore,
     (2) (ERAA) Dataset
 """
 # (II.a) UC main run parameters (dictionary gathering main characteristics of the pb simulated)
-from code.common.uc_run_params import UCRunParams
+from src.common.uc_run_params import UCRunParams
 
 selected_countries = [country]  # [N-countries] Add other country names
 uc_run_params = UCRunParams(selected_countries=selected_countries, selected_target_year=year,
@@ -105,7 +105,7 @@ uc_run_params = UCRunParams(selected_countries=selected_countries, selected_targ
                             uc_period_end=uc_period_end)
 
 # (II.b) Dataset object
-from code.include.dataset import Dataset
+from src.include.dataset import Dataset
 
 eraa_data_descr = get_eraa_data_description()
 eraa_dataset = Dataset(agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data)
@@ -124,9 +124,9 @@ eraa_dataset.complete_data()
 # (III.2) Accessing the data: globally all is made with pandas dataframes (df)
 # In this case, for ex. decompose aggregated Capacity Factor data into three sub-dictionaries
 # (for following code to be more explicit)
-from code.utils.df_utils import selec_in_df_based_on_list
+from src.utils.df_utils import selec_in_df_based_on_list
 # use global constant names of different production types to be sure of extracting data without any pb
-from code.common.constants.prod_types import ProdTypeNames
+from src.common.constants.prod_types import ProdTypeNames
 
 prod_type_col = 'production_type_agg'
 solar_pv_cf_data = {
@@ -148,7 +148,7 @@ hydro_reservoir_inflows_data = {
 open_loop_pump_sto_inflows_data = {
     country: eraa_dataset.hydro_inflows_data[country][['date', 'cum_nat_inflow_into_pump-storage_reservoirs']]}
 # rename columns to get 'value' column name for all data after this stage
-from code.utils.df_utils import rename_df_columns
+from src.utils.df_utils import rename_df_columns
 
 value_col = 'value'
 hydro_reservoir_inflows_data = \
@@ -176,10 +176,10 @@ open_loop_pump_sto_inflows_data = \
 # -> "encapsulated" in a PypsaModel used in this code project
 print('Initialize PyPSA network')
 # For brevity, set country trigram as the 'id' of your country in following model definition (and observed outputs)
-from code.include.dataset_builder import set_country_trigram
+from src.include.dataset_builder import set_country_trigram
 
 country_trigram = set_country_trigram(country=country)
-from code.include.dataset_builder import PypsaModel
+from src.include.dataset_builder import PypsaModel
 
 pypsa_model = PypsaModel(name=f'my 1-zone {country_trigram} toy model')
 # set a date horizon, to have more explicit axis labels hereafter
@@ -214,7 +214,7 @@ pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # fictive alternative values instead -> plenty infos on Internet on this... sometimes of 'varying' quality! 
 # (keeping format of dataclass - sort of enriched dictionary -, just change values directly in
 # file input/toy_model_params/{country}_parameters.py)
-from code.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES
+from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES
 from input.toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
 
 fuel_sources = set_fuel_sources_from_json()
@@ -281,14 +281,14 @@ print(f'Corresp. to solved {str(optim_pb_characts)}')
     (2) Save data/plot to analyse in detail the obtained solution 
 """
 # (V1.1) Get objective value, and associated optimal decisions / dual variables
-from code.common.constants.optimisation import OPTIM_RESOL_STATUS
+from src.common.constants.optimisation import OPTIM_RESOL_STATUS
 
 optim_status = result[1]
 pypsa_opt_resol_status = OPTIM_RESOL_STATUS.optimal
 # (V1.2) If optimal resolution status, save output data and plot associated figures
 if optim_status == pypsa_opt_resol_status:
     objective_value = pypsa_model.get_opt_value(pypsa_resol_status=pypsa_opt_resol_status)
-    from code.utils.basic_utils import format_with_spaces
+    from src.utils.basic_utils import format_with_spaces
     print(f'Total cost at optimum: {format_with_spaces(number=int(objective_value/1e6))} M€')
     # Look at the following method - decomposed per variable - if you want to see how to access optimal decisions
     # in PyPSA framework
@@ -300,7 +300,7 @@ if optim_status == pypsa_opt_resol_status:
     # Plot 'stack' of optimised production profiles -> key graph to interpret UC solution -> will be
     # saved in file output/long_term_uc/monozone_ita/figures/prod_italy_{year}_{period start, under format %Y-%m-%d}.png
     # get plot parameters associated to aggreg. production types
-    from code.common.constants.datadims import DataDimensions
+    from src.common.constants.datadims import DataDimensions
 
     plot_params_agg_pt, plot_params_zone = get_plots_params()
     # graph with stack production

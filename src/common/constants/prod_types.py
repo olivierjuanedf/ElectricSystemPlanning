@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from code.common.constants.countries import set_country_trigram
+from src.common.constants.countries import set_country_trigram
 
 
 @dataclass
