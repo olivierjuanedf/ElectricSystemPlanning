@@ -110,21 +110,27 @@ HYDRO_DATA_RESAMPLE_METHODS = {DATATYPE_NAMES.hydro_ror: ResampleMethods.uniform
                                DATATYPE_NAMES.hydro_levels_max: ResampleMethods.all_at_first_ts}
 HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e10}
 # TODO: more robust way to complete path from root folder
-INPUT_ERAA_FOLDER = f'{PROJECT_ROOT_FOLDER}/{DATA_FOLDER}/ERAA_2023-2'
+INPUT_ERAA_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "ERAA_2023-2"))
 INPUT_FOLDER = 'input'
-CODE_FOLDER = 'code'
-INPUT_FUEL_SOURCES_FOLDER = f'{PROJECT_ROOT_FOLDER}/{DATA_FOLDER}/fuel_sources'
-INPUT_LT_UC_SUBFOLDER = f'{PROJECT_ROOT_FOLDER}/{INPUT_FOLDER}/long_term_uc'
-INPUT_LT_UC_COUNTRY_SUBFOLDER = f'{INPUT_LT_UC_SUBFOLDER}/countries'
-INPUT_FUNC_PARAMS_SUBFOLDER = f'{PROJECT_ROOT_FOLDER}/{CODE_FOLDER}/functional_params'
+CODE_FOLDER = 'src'
+INPUT_FUEL_SOURCES_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "fuel_sources"))
+INPUT_LT_UC_SUBFOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, INPUT_FOLDER, "long_term_uc"))
+INPUT_LT_UC_COUNTRY_SUBFOLDER = uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, "countries"))
+INPUT_FUNC_PARAMS_SUBFOLDER = (
+    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, CODE_FOLDER, "functional_params"))
+)
 INPUT_DATA_ANALYSIS_SUBFOLDER = f'{INPUT_FOLDER}/data_analysis'
 INTERCO_STR_SEP = '2'
 INPUT_CY_STRESS_TEST_SUBFOLDER = 'cy_stress-test'
+# long-term UC output
 OUTPUT_FOLDER = 'output'
-OUTPUT_FOLDER_LT = f'{OUTPUT_FOLDER}/long_term_uc'
+OUTPUT_FOLDER_LT = (
+    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "long_term_uc"))
+)
 OUTPUT_SUBFOLDER_DATA = 'data'
 OUTPUT_SUBFOLDER_FIG = 'figures'
-OUTPUT_DATA_ANALYSIS_FOLDER = f'{PROJECT_ROOT_FOLDER}/{OUTPUT_FOLDER}/data_analysis'
+OUTPUT_DATA_ANALYSIS_FOLDER = (
+    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "data_analysis")))
 
 
 def check_uc_input_folder_content(all_countries: List[str]):
@@ -249,7 +255,7 @@ def set_full_lt_uc_output_folder(folder_type: str = None, country: str = None, t
     folders_tb_join = [OUTPUT_FOLDER_LT, subfolder]
     if folder_type is not None:
         folders_tb_join.append(OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG)
-    return '/'.join(folders_tb_join)
+    return str(Path(*folders_tb_join))
 
 
 # TODO: merge 2 following functions

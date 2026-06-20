@@ -1,6 +1,8 @@
 import logging
 import os
+import shutil
 from pathlib import Path
+from typing import List, Union
 
 
 def check_file_existence(file: str, file_descr: str = None):
@@ -36,8 +38,33 @@ def delete_files(directory: str, str_in_file: str = None, suffix: str = None):
             file.unlink()
 
 
+def remove_folder(folder_path: Union[str, Path]):
+    if isinstance(folder_path, str):
+        folder_path = Path(folder_path)
+    shutil.rmtree(folder_path)
+
+
+def empty_folder(folder_path: Union[str, Path]):
+    if isinstance(folder_path, str):
+        folder_path = Path(folder_path)
+
+    for item in folder_path.iterdir():
+        if item.is_file() or item.is_symlink():
+            item.unlink()  # suppr. file or link
+        elif item.is_dir():
+            shutil.rmtree(item)  # recursive suppr.
+
+
 def find_project_root(start_path: Path) -> Path:
     for path in [start_path, *start_path.parents]:
         if (path / "pyproject.toml").exists() or (path / ".git").exists():
             return path
     raise RuntimeError("Project root not found")
+
+
+def get_files_from_prefix(folder: str, file_prefix: str, return_full_path: bool = False) -> List[str]:
+    selec_files = [file for file in os.listdir(folder)
+                   if os.path.isfile(os.path.join(folder, file)) and file.startswith(file_prefix)]
+    if return_full_path:
+        selec_files = [os.path.join(folder, file) for file in selec_files]
+    return selec_files
