@@ -48,7 +48,7 @@ M18) Réel intérêt du mode solo vs. europe ou seulement confusant pour les él
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 DATA (D)
 D0) 1900 fictive calendar supposing to start a Monday (the case in reality; check of in ERAA data)?
--> to be specified in data\ERAA_2023-2\data_description.txt
+-> to be specified in data\ERAA_2023-2\data_description.md
 D0bis) Unit of hydro data? Scale accordingly when reading
 -> to be specified in same file
 D1) Add ERAA ed. 2024, with climatic modelling...
