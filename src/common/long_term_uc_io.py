@@ -127,6 +127,9 @@ OUTPUT_FOLDER = 'output'
 OUTPUT_FOLDER_LT = (
     uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "long_term_uc"))
 )
+OUTPUT_FOLDER_TOY_MODEL = (
+    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "toy_model"))
+)
 OUTPUT_SUBFOLDER_DATA = 'data'
 OUTPUT_SUBFOLDER_FIG = 'figures'
 OUTPUT_DATA_ANALYSIS_FOLDER = (
@@ -251,8 +254,9 @@ def get_output_figure(fig_name: str, country: str, year: int, climatic_year: int
 
 
 def set_full_lt_uc_output_folder(folder_type: str = None, country: str = None, toy_model_output: bool = False) -> str:
-    subfolder = f'monozone_{set_country_trigram(country=country)}' if toy_model_output else 'multizones_eur'
-    folders_tb_join = [OUTPUT_FOLDER_LT, subfolder]
+    subfolder = f'{OUTPUT_FOLDER_TOY_MODEL}_{set_country_trigram(country=country)}' if toy_model_output else f'{OUTPUT_FOLDER_LT}'
+    folders_tb_join = [subfolder]
+
     if folder_type is not None:
         folders_tb_join.append(OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG)
     return str(Path(*folders_tb_join))
