@@ -236,8 +236,8 @@ def separate_hydro_extr_levels_data(hydro_extr_levels_data: Dict[str, pd.DataFra
             hydro_min_level_data[country] = df
             hydro_max_level_data[country] = df
         else:
-            df_min_level = df[cols_min_level]
-            df_max_level = df[cols_max_level]
+            df_min_level = df[cols_min_level].copy()
+            df_max_level = df[cols_max_level].copy()
             # TODO: avoid cast to float beforehand of climatic year (because of appli
             #  of ffill method in resample_and_distribute?)
             df_min_level[climatic_year_col] = df_min_level[climatic_year_col].astype(int)
