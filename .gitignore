@@ -163,3 +163,12 @@ cython_debug/
 
 # PyPSA tests
 pypsa_tests/
+
+# outputs
+output/data_analysis/*.log
+output/data_analysis/*.png
+output/data_analysis/*.csv
+output/long_term_uc/multizones_eur/*.log
+output/long_term_uc/multizones_eur/data/*.csv
+output/long_term_uc/multizones_eur/data/*.json
+output/long_term_uc/multizones_eur/figures/*.png

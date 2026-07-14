@@ -443,7 +443,7 @@ class Dataset:
                            datatypes_selec: List[str] = None, subdt_selec: List[str] = None,
                            capas_aggreg_pt_with_cf: Dict[str, int] = None):
         """
-        Get ERAA data necessary for the selected countries
+        Get ERAA data necessary for the selected countries, namely demand, RES capacity factors, installed capacities...
         :param uc_run_params: UC run parameters, from which main reading infos will be obtained
         :param aggreg_prod_types_def: per-datatype definition of aggreg. to indiv. production types
         :param datatypes_selec: list of datatypes for which data must be read
@@ -572,8 +572,14 @@ class Dataset:
                                     f'accounted for: {capas_aggreg_pt_with_cf} -> replaced by values provided in arg, '
                                     f'for net demand calculation only')
                 # get ERAA capas for gen. assets
+                # check if coherent year of data to be read
+                year_for_capa = uc_run_params.target_years_for_capa_data[country]
+                current_suffix_capa = f'{year_for_capa}_{country}'
+                if not year_for_capa == uc_run_params.selected_target_year:
+                    logging.debug(f"Suffix used for capa reading changed "
+                                  f"from {current_suffix} to {current_suffix_capa}")
                 current_df_gen_capa = (
-                    get_installed_gen_capas_data(folder=gen_capas_folder, file_suffix=current_suffix,
+                    get_installed_gen_capas_data(folder=gen_capas_folder, file_suffix=current_suffix_capa,
                                                  country=country,
                                                  aggreg_pt_gen_capa_def=
                                                  aggreg_prod_types_def[DATATYPE_NAMES.installed_capa],
