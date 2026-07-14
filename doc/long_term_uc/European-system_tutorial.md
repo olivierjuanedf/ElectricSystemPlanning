@@ -6,23 +6,26 @@ See [doc/useful_references.md](doc/useful_references.md) file to get
 
 # Tutorial - Long-Term Unit Commitment (UC) part
 
-## Running a N-countries (European) UC model by... only playing with 2 JSON files...
+## Input Files
 
 With the provided code environment you will be able to **run a Unit Commitment model by simply modifying the values in the 2 following files**:
-1) [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
-2) [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite values of preceding file**. This is to make your own country choice. **N.B.** In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighboring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter. 
 
-**(To be discussed later altogether) Importantly, note two distinguished behaviors of the code, whether "solo" or "Europe" mode be considered** - as defined in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), field "mode":
+1) [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
+
+2) [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite values of preceding file**. This is to make your own country choice. **N.B.** In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighboring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter.
+
+## Two modes : Solo mode and Europe mode
+**You can choose between two different code behaviors: "solo" mode or "europe"** - as defined in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), field "mode":
 - if mode is set to **"solo", all country parameters (for your own country, but also for the rest of them) will be read from your own file *{country}.json***. 
 Example: if in [germany.json](../../input/long_term_uc/countries/germany.json) dictionary associated to key "capacities_tb_overwritten" contains "france": {"nuclear": 0}, the French nuclear capacity will be set to 0MW for the UC simulated
 - if mode is **"europe", parameters of each country will be extracted from file *{country}.json*; the rest of the values in this file being not accounted for**. 
 
+## Python script
 **Open and run [my_little_europe_lt_uc.py](../../my_little_europe_lt_uc.py)**: you should get a log "THE END..." in the terminal window. If not, the "checkers" should have indicated you some aspects to be corrected in your - modified - parametrization (e.g., using some unavailable values for country or production types). 
-    - (i) The only remaining bug that has been observed in this environment is when you have assets that can both produce and consume for the cumulated production plot (not possible in this case... will be corrected soon); however the .csv results data will have been saved. 
-    - (ii) Note that run stops correctly - with an explicit error message in the logs - when optimisation problem solved by PyPSA does not have "optimal" status; in this case no output data (neither figures) are obtained.
 
-## ... And directly getting output results for an extended analysis
+Note that run stops correctly - with an explicit error message in the logs - when optimisation problem solved by PyPSA does not have "optimal" status; in this case no output data (neither figures) are obtained.
 
+## Output files
 **Obtained data (resp. plotted figures) results** are given in [output/long_term_uc/multizones_eur/data](../../output/long_term_uc/multizones_eur/data) (resp. [output/long_term_uc/multizones_eur/figures](../../output/long_term_uc/multizones_eur/figures)) folders.
 
 In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
@@ -30,6 +33,8 @@ In detail, and **except if the resolution of PyPSA optimization model was not su
 * (*data/* subfolder) **"prices" for all countries** considered in Europe, in a .csv file. **N.B.** (i) Idem; (ii) Specifically, this prices are the optimal values of dual variables associated to suuply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
 * (*figures/* subfolder) a **"cumulated vision" of the production**, in a .png file per country
 * (*figures/* subfolder) **price curves**, for the different countries in a unique .png file
+
+
 
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
