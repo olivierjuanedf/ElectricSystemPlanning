@@ -1,15 +1,16 @@
 {
-  "allow_adding_interco_capas": "true",
-  "allow_overwriting_eraa_interco_capa_vals": "true",
-  "allow_manually_adding_demand": "false",
-  "allow_manually_adding_generators": "false",
-  "apply_cf_techno_breakthrough": "false",
+  "allow_adding_interco_capas": true,
+  "allow_overwriting_eraa_interco_capa_vals": true,
+  "allow_manually_adding_demand": false,
+  "allow_manually_adding_generators": false,
+  "apply_cf_techno_breakthrough": false,
   "apply_per_country_json_file_params": {
-    "data_analysis": "false",
-    "monozone_toy_uc_model": "true",
-    "multizones_uc_model": "true"
+    "data_analysis": false,
+    "monozone_toy_uc_model": true,
+    "multizones_uc_model": true
   },
   "res_cf_stress_test_folder": null,
   "res_cf_stress_test_cy": null,
+  "use_first_year_capas_for_other_countries": true,
   "log_level": "info"
 }

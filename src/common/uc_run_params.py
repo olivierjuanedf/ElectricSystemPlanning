@@ -58,6 +58,7 @@ class UCRunParams:
     interco_capas_tb_overwritten: Union[Dict[str, float], Dict[Tuple[str, str], float]] = field(default_factory=dict)
     capacities_tb_overwritten: Dict[str, Optional[Dict[str, float]]] = field(default_factory=dict)
     updated_fuel_sources_params: Dict[str, Dict[str, Optional[float]]] = None
+    target_years_for_capa_data: Dict[str, int] = None  # {country: TY to be used for capa data}
     # to indicate that some parameters have been changed compared to the set of the ones used for CP decision-making
     is_stress_test: bool = None
     # some extra-parameters
@@ -287,6 +288,17 @@ class UCRunParams:
             self.uc_period_start = start
         if end is not None:
             self.uc_period_end = end
+
+    def set_target_years_for_capa_data(self, use_first_year_capas_others: bool, init_target_year: int):
+        if self.mode == "europe" or not use_first_year_capas_others:
+            self.target_years_for_capa_data = \
+                {country: self.selected_target_year for country in self.selected_countries}
+        else:  # solo mode and use first year to get prod. capacity data for other countries
+            # use selected target year for current "solo" country
+            self.target_years_for_capa_data = {self.team: self.selected_target_year}
+            # init. year for the other countries
+            self.target_years_for_capa_data |= \
+                {country: init_target_year for country in self.selected_countries if not country == self.team}
 
 
 def overwrite_uc_run_params(uc_run_params: UCRunParams, uc_run_params_2: UCRunParams,

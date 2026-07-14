@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union, Optional, Literal
 
@@ -50,21 +51,30 @@ class UsageParameters:
     overwriting_eraa_interco_capa_vals: bool = False
     manually_adding_demand: bool = False
     manually_adding_generators: bool = False
+    # use data of first year for other countries in solo mode - as if fleet of asset has
+    # not changed from initial situation
+    use_first_year_capas_others: bool = True
     log_level: str = 'info'
     # parameters for climate-based 'sensitivity' tests
     apply_cf_techno_breakthrough: bool = False
     res_cf_stress_test_folder: str = None
     res_cf_stress_test_cy: int = None
 
-    def process(self):
+    def process(self, mode_name: str = None):
         if self.apply_per_country_json_file_params is None:
             self.apply_per_country_json_file_params = {EnvPhaseNames.data_analysis: False,
                                                        EnvPhaseNames.monozone_toy_uc_model: True,
                                                        EnvPhaseNames.multizones_uc_model: True}
-        else:  # from str (in JSON file) to bool
-            self.apply_per_country_json_file_params = \
-                {phase_name: cast_str_to_bool(bool_str=val)
-                 for phase_name, val in self.apply_per_country_json_file_params.items()}
+
+    def check_first_year_capas_for_others(self, mode_name: str = None):
+        """
+        Check that parameter enforcing to use data of first year for capacities is coherent
+        :param mode_name: mode used when simulating Eur. UC (solo or europe)
+        """
+        if mode_name is not None and mode_name == "europe" and self.use_first_year_capas_others:
+            logging.info("As Europe mode is used, simulated year capas data will be used for all countries "
+                         "-> usage param. use_first_year_capas_others set to False")
+            self.use_first_year_capas_others = False
 
     def check_types(self):
         """

@@ -44,6 +44,8 @@ M16) Select only data of considered cys when reading data in dataset.py\get_coun
 M17) Test Jules from Google to rapidly reformat/add tests to this code project?
 -> https://jules.google/
 M18) Réel intérêt du mode solo vs. europe ou seulement confusant pour les élèves ?
+Et déf. leurs valeurs en constantes globales 
+(cf. Mode = Literal['solo', 'europe'] dans extract_eraa_data.py, mais pas utilisé)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 DATA (D)
@@ -117,6 +119,8 @@ E7) Add link congestion calculation -> % of link capa usage
 E8) Add parameter in this file to automatically use a 1-country UC model (cf. T0 above)
 -> to avoid having to fill/force all the intercos capa values to 0 manually in Eur JSON file
 -> some adaptation to be done in the output data/figs for this specific case?
+E9) Allow to set new capacity values for prod types that are not present/with 0 capacity in ERAA data
+(ex lignite/nuclear in 2033 in Germany)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 RUNNER (R) (main_runner.py)

@@ -278,6 +278,12 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
             apply_fixed_uc_run_params(uc_run_params=uc_run_params, fixed_uc_run_params=fixed_uc_run_params,
                                       eraa_data_descr=eraa_data_descr, fixed_run_params_fields=fixed_run_params_fields)
         )
+    # check coherence of parameter enforcing to use first year data for production capacities of other countries
+    usage_params.check_first_year_capas_for_others(mode_name=uc_run_params.mode)
+
+    # set per country target year to be used for prod. capa data read hereafter
+    uc_run_params.set_target_years_for_capa_data(use_first_year_capas_others=usage_params.use_first_year_capas_others,
+                                                 init_target_year=min(eraa_data_descr.available_target_years))
 
     # Get needed data (demand, RES Capa. Factors, installed generation capacities)
     if 'debug_mode' in extra_params:

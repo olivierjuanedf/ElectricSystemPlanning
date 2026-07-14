@@ -70,8 +70,8 @@ def update_country_json_params(countries_data: dict, json_params_tb_modif: dict)
     selected_pt_param_name = CountryJsonParamNames.selected_prod_types
     if len(countries_data[selected_pt_param_name]) > 0:
         for elt_country, new_prod_types in countries_data[selected_pt_param_name].items():
-            logging.info(f'Selected production type(s) overwritten for {elt_country}: {new_prod_types} '
-                         f'(and not all the ones from ERAA)')
+            logging.info(f'Selected production type(s) overwritten for {elt_country} - based on countries'
+                         f'/{elt_country}.json: {new_prod_types} (and not all the ones from ERAA)')
             json_params_tb_modif[selected_pt_param_name][elt_country] = new_prod_types
     # suppress pt selection key in countries data dict, not to have multiple values for same attr.
     # when creating UCRunParams object hereafter
@@ -168,6 +168,9 @@ def set_countries_data(usage_params: UsageParameters, phase_name: str, available
 
 
 def read_usage_params() -> UsageParameters:
+    """
+    Read usage parameters, conditioning the behaviour of some functionalities in this simu. environment
+    """
     # Get JSON usage params, the ones to control the behaviour of the UC run -> UsageParameters object
     return set_usage_params(json_usage_params_data=set_json_usage_params_data())
 
