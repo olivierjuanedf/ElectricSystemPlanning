@@ -173,3 +173,5 @@ output/long_term_uc/multizones_eur/data/*.csv
 output/long_term_uc/multizones_eur/data/*.json
 output/long_term_uc/multizones_eur/data/*.lp
 output/long_term_uc/multizones_eur/figures/*.png
+output/long_term_uc/monozone_*/
+output/toy_model_*/

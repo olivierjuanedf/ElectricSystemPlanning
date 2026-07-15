@@ -117,6 +117,9 @@ eraa_dataset = Dataset(agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_type
 """
 
 # (III.1) Get data for Italy... just for test -> data used when writing PyPSA model will be re-obtained afterwards
+# set per country target year to be used for prod. capa data read hereafter -> current one considered
+uc_run_params.set_target_years_for_capa_data(use_first_year_capas_others=False)
+
 eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                 aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
 eraa_dataset.complete_data()

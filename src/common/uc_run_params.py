@@ -289,7 +289,7 @@ class UCRunParams:
         if end is not None:
             self.uc_period_end = end
 
-    def set_target_years_for_capa_data(self, use_first_year_capas_others: bool, init_target_year: int):
+    def set_target_years_for_capa_data(self, use_first_year_capas_others: bool, init_target_year: int = None):
         if self.mode == "europe" or not use_first_year_capas_others:
             self.target_years_for_capa_data = \
                 {country: self.selected_target_year for country in self.selected_countries}
