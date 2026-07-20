@@ -20,6 +20,14 @@ to their installed capacity - and depending on the (climate and) weather conditi
 - demand -> sum
 - capacity factors -> mean over all market nodes in a country (to average climatic/weather effects in different
 regions - nodes - of this country)
+- (meta-) countries definition - with associated aggregated countries, when relevant 
+  - **benelux**: Belgium and Netherlands (corresponding to ERAA Market Nodes BE00, and NL00) 
+  - **france** (FR00)
+  - **germany** (DE00)
+  - **iberian-peninsula**: Spain and Portugal (ES00, PT00)
+  - **italy** (ITCA, ITCN, ITCS, ITN1, ITS1, ITSA, ITSI)
+  - **poland** (PL00)
+  - **scandinavia**: Denmark, Finland, Norway, and Sweden (DKE1, DKW1, FI00, NOM1, NON1, NOS0, SE01, SE02, SE03, SE04)
 
 **Others**
 * Regarding **hydro inflows data for Scandinavia**, the data have been **taken from ERAA2024 edition** as it was missing
