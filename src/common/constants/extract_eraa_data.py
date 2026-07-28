@@ -51,9 +51,9 @@ class UsageParameters:
     overwriting_eraa_interco_capa_vals: bool = False
     manually_adding_demand: bool = False
     manually_adding_generators: bool = False
-    # use data of first year for other countries in solo mode - as if fleet of asset has
+    # use data of first year for default generation capacity data - as if fleet of asset has
     # not changed from initial situation
-    use_first_year_capas_others: bool = True
+    use_first_year_capas_as_default: bool = True
     log_level: str = 'info'
     # parameters for climate-based 'sensitivity' tests
     apply_cf_techno_breakthrough: bool = False
@@ -65,16 +65,6 @@ class UsageParameters:
             self.apply_per_country_json_file_params = {EnvPhaseNames.data_analysis: False,
                                                        EnvPhaseNames.monozone_toy_uc_model: True,
                                                        EnvPhaseNames.multizones_uc_model: True}
-
-    def check_first_year_capas_for_others(self, mode_name: str = None):
-        """
-        Check that parameter enforcing to use data of first year for capacities is coherent
-        :param mode_name: mode used when simulating Eur. UC (solo or europe)
-        """
-        if mode_name is not None and mode_name == "europe" and self.use_first_year_capas_others:
-            logging.info("As Europe mode is used, simulated year capas data will be used for all countries "
-                         "-> usage param. use_first_year_capas_others set to False")
-            self.use_first_year_capas_others = False
 
     def check_types(self):
         """

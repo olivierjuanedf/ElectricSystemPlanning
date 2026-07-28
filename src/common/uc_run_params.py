@@ -289,16 +289,14 @@ class UCRunParams:
         if end is not None:
             self.uc_period_end = end
 
-    def set_target_years_for_capa_data(self, use_first_year_capas_others: bool, init_target_year: int = None):
-        if self.mode == "europe" or not use_first_year_capas_others:
-            self.target_years_for_capa_data = \
-                {country: self.selected_target_year for country in self.selected_countries}
-        else:  # solo mode and use first year to get prod. capacity data for other countries
-            # use selected target year for current "solo" country
-            self.target_years_for_capa_data = {self.team: self.selected_target_year}
-            # init. year for the other countries
-            self.target_years_for_capa_data |= \
-                {country: init_target_year for country in self.selected_countries if not country == self.team}
+    def set_target_years_for_capa_data(self, use_first_year_capas_as_default: bool, init_target_year: int = None):
+        # use first year to get default prod. capacity data
+        if use_first_year_capas_as_default:
+            common_year_for_capa = init_target_year
+        else:  # the one selected for simulation
+            common_year_for_capa = self.selected_target_year
+        # assign common value to all considered countries
+        self.target_years_for_capa_data = {country: common_year_for_capa for country in self.selected_countries}
 
 
 def overwrite_uc_run_params(uc_run_params: UCRunParams, uc_run_params_2: UCRunParams,

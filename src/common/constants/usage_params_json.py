@@ -20,7 +20,7 @@ class UsageJsonParamNames:  # by alpha. order
     log_level: str = 'log_level'
     res_cf_stress_test_cy: str = 'res_cf_stress_test_cy'
     res_cf_stress_test_folder: str = 'res_cf_stress_test_folder'
-    use_first_year_capas_for_other_countries: str = 'use_first_year_capas_for_other_countries'
+    use_first_year_capas_as_default: str = 'use_first_year_capas_as_default'
 
 
 USAGE_PARAMS_SHORT_NAMES = {
@@ -33,5 +33,5 @@ USAGE_PARAMS_SHORT_NAMES = {
     UsageJsonParamNames.log_level: 'log_level',
     UsageJsonParamNames.res_cf_stress_test_cy: 'res_cf_stress_test_cy', 
     UsageJsonParamNames.res_cf_stress_test_folder: 'res_cf_stress_test_folder',
-    UsageJsonParamNames.use_first_year_capas_for_other_countries: 'use_first_year_capas_others'
+    UsageJsonParamNames.use_first_year_capas_as_default: 'use_first_year_capas_as_default'
 }

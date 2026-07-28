@@ -48,6 +48,6 @@ operations for the students. Per parameter:
   folder from the one in which original CF ERAA data are found)
   - **res_cf_stress_test_cy**: CY to be used for RES CF stress test; for which associated data must be found in 
   the files provided in **res_cf_stress_test_folder** 
-  - **use_first_year_capas_for_other_countries**: in "solo" mode, use first year available (in ERAA data) to set other
-  countries (than team of solo country) generation capas
+  - **use_first_year_capas_as_default**: use first year available (in ERAA data) to set generation capas by default, 
+  i.e. before applying values set in input JSON per-country files
   - **log_level**

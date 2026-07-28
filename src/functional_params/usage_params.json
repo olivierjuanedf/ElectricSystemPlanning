@@ -11,6 +11,6 @@
   },
   "res_cf_stress_test_folder": null,
   "res_cf_stress_test_cy": null,
-  "use_first_year_capas_for_other_countries": true,
+  "use_first_year_capas_as_default": true,
   "log_level": "info"
 }
