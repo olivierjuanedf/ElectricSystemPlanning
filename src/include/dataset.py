@@ -421,6 +421,35 @@ def check_if_from_eraa_data(param_key: str, complem_params_pt: Dict[str, str]) -
     return param_key in complem_params_pt and complem_params_pt[param_key] == 'from_eraa_data'
 
 
+def warning_data_access(data_name: str, country: str, agg_prod_type: str, default_value):
+    logging.warning(f'Issue to access {data_name} data for {country} and {agg_prod_type} -> set to {default_value}')
+
+
+def print_out_agg_warning_gen_units_data(aggreg_warning: Dict[str, Tuple[str, str, float]],
+                                         unique_default_val_per_data_name: bool = True):
+    """
+    Print out aggreg. warning over all country*agg. prod type after having read generation units data
+    :param aggreg_warning: {data name, e.g. "inflows": (country, agg. prod. type, default value)}
+    :param unique_default_val_per_data_name
+    """
+    # If msg structure uses fact that default value is the same for all cases for a given data name
+    # -> check this property
+    if unique_default_val_per_data_name:
+        data_names_with_mult_def_vals = []
+        for name, cases in aggreg_warning.items():
+            if not len(set([default_val for (_, _, default_val) in cases])) == 1:
+                data_names_with_mult_def_vals.append(name)
+        if len(data_names_with_mult_def_vals) > 0:
+            raise Exception(f"Data names with multiple (different) default values: {data_names_with_mult_def_vals}")
+    # Set warning msg
+    warning_msg = "Issue to access following data:"
+    for name, cases in aggreg_warning.items():
+        cases_join = ", ".join([f"({country}, {agg_pt})" for (country, agg_pt, _) in cases])
+        common_default_value = cases[0][2]
+        warning_msg += f"\n- {name} for {cases_join}\n-> set to {common_default_value}"
+    logging.warning(warning_msg)
+
+
 @dataclass
 class Dataset:
     agg_prod_types_with_cf_data: List[str]
@@ -671,13 +700,16 @@ class Dataset:
         return list(set(self.agg_gen_capa_data[country][PROD_TYPE_AGG_COL]))
 
     def get_generation_units_data(self, uc_run_params: UCRunParams, pypsa_unit_params_per_agg_pt: Dict[str, dict],
-                                  units_complem_params_per_agg_pt: Dict[str, Dict[str, str]]):
+                                  units_complem_params_per_agg_pt: Dict[str, Dict[str, str]],
+                                  agg_warn_over_cases: bool = True):
         """
         Get generation units data to create them hereafter
         :param uc_run_params
         :param pypsa_unit_params_per_agg_pt: dict of per aggreg. prod type main Pypsa params
         :param units_complem_params_per_agg_pt: # for each aggreg. prod type, a dict. {complem. param name: source
         - "from_json_tb_modif"/"from_eraa_data"}
+        :param agg_warn_over_cases: aggregate warning over different country * prod type cases? (To avoid having to
+        many of them at each dataset creation)
         """
         # TODO: make subcases per type of generator below to have a more explicit code
         # TODO: marginal costs/efficiency, from FuelSources??
@@ -687,6 +719,7 @@ class Dataset:
         capa_factor_key = 'capa_factors'
         inflow_key = 'inflow'  # TODO: as a constant
         soc_level_extr_key = 'soc_level_extr'
+        aggreg_warning = {}
         self.generation_units_data = {}
         for country in countries:
             logging.debug(f'- for country {country}')
@@ -745,8 +778,17 @@ class Dataset:
                         try:
                             current_inflows_data = np.array(current_pt_inflow_data[inflow_value_col])
                         except:
-                            logging.warning(f'Issue to access inflows data for {country} and {agg_pt} -> set to 0')
-                            current_inflows_data = 0  # Q: ok to set constant float and not vector for this PyPSA attr.?
+                            data_name = "inflows"
+                            default_value = 0
+                            if agg_warn_over_cases:
+                                if data_name not in aggreg_warning:
+                                    aggreg_warning[data_name] = []
+                                aggreg_warning[data_name].append((country, agg_pt, default_value))
+                            else:
+                                warning_data_access(data_name=data_name, country=country,
+                                                    agg_prod_type=agg_pt, default_value=default_value)
+                            # Q: ok to set constant float and not vector for this PyPSA attr.?
+                            current_inflows_data = default_value
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.inflow] = current_inflows_data
                     # add soc extreme levels when it applies
                     if check_if_from_eraa_data(param_key=soc_level_extr_key,
@@ -756,16 +798,32 @@ class Dataset:
                         try:
                             current_soc_level_min_data = np.array(current_pt_soc_level_min_data[COLUMN_NAMES.value])
                         except:
-                            logging.warning(
-                                f'Issue to access SOC level min data for {country} and {agg_pt} -> set to 0')
-                            current_soc_level_min_data = 0  # Q: ok to set constant float and not vector for this PyPSA attr.?
+                            data_name = "SOC level min"
+                            default_value = 0
+                            if agg_warn_over_cases:
+                                if data_name not in aggreg_warning:
+                                    aggreg_warning[data_name] = []
+                                aggreg_warning[data_name].append((country, agg_pt, default_value))
+                            else:
+                                warning_data_access(data_name=data_name, country=country,
+                                                    agg_prod_type=agg_pt, default_value=default_value)
+                            # Q: ok to set constant float and not vector for this PyPSA attr.?
+                            current_soc_level_min_data = default_value
                         current_pt_soc_level_max_data = self.hydro_reservoir_levels_max_data[country]
                         try:
                             current_soc_level_max_data = np.array(current_pt_soc_level_max_data[COLUMN_NAMES.value])
                         except:
-                            logging.warning(
-                                f'Issue to access SOC level min data for {country} and {agg_pt} -> set to 0')
-                            current_soc_level_max_data = 1e12  # Q: ok to set constant float and not a vector for this PyPSA attr.?
+                            data_name = "SOC level max"
+                            default_value = 1e12
+                            if agg_warn_over_cases:
+                                if data_name not in aggreg_warning:
+                                    aggreg_warning[data_name] = []
+                                aggreg_warning[data_name].append((country, agg_pt, default_value))
+                            else:
+                                warning_data_access(data_name=data_name, country=country,
+                                                    agg_prod_type=agg_pt, default_value=default_value)
+                            # Q: ok to set constant float and not a vector for this PyPSA attr.?
+                            current_soc_level_max_data = default_value
                         current_assets_data[agg_pt][GenUnitsCustomParams.soc_min] = current_soc_level_min_data
                         current_assets_data[agg_pt][GenUnitsCustomParams.soc_max] = current_soc_level_max_data
 
@@ -792,6 +850,9 @@ class Dataset:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
 
                 self.generation_units_data[country].append(GenerationUnitData(**current_assets_data[agg_pt]))
+
+        if agg_warn_over_cases and len(aggreg_warning) > 0:
+            print_out_agg_warning_gen_units_data(aggreg_warning=aggreg_warning)
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
         self.generation_units_data = gen_units_data
