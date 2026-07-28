@@ -178,8 +178,11 @@ class PypsaModel:
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=bus_name,
                              co2_emissions=fuel_sources[carrier_name].co2_emissions / 1000)
 
-    def add_generators(self, generators_data: Dict[str, List[GenerationUnitData]]):
+    def add_generators(self, generators_data: Dict[str, List[GenerationUnitData]],
+                       agg_info_over_cases: bool = True):
         logging.info('Add generators - associated to their respective buses')
+        gen_units_with_default_init_soc = []
+        default_init_soc_pu = 0.8
         for country, gen_units_data in generators_data.items():
             country_bus_name = get_country_bus_name(country=country)
             for gen_unit_data in gen_units_data:
@@ -197,7 +200,11 @@ class PypsaModel:
                 if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
                     if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.soc_init, None) is None:
                         # initial SoC fixed to 80% statically here
-                        logging.info(f'Default value set for {pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.name]} init. SOC as 80% of energy storage capa.')
+                        if agg_info_over_cases:
+                            gen_units_with_default_init_soc.append(pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.name])
+                        else:
+                            logging.info(f'Default value set for {pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.name]} '
+                                         f'init. SOC as {int(100*default_init_soc_pu)}% of energy storage capa.')
                         init_soc = (pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa]
                                     * pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8)
                         pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.soc_init] = init_soc
@@ -205,6 +212,10 @@ class PypsaModel:
                 else:
                     self.network.add('Generator', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
         generator_names = self.get_generator_names()
+        if agg_info_over_cases and len(gen_units_with_default_init_soc) > 0:
+            logging.info(f'Default value set for init. SOC as {int(100 * default_init_soc_pu)}% of energy storage '
+                         f'capa. \n-> for {gen_units_with_default_init_soc}')
+
         logging.info(f'Considered generators ({len(generator_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=generator_names)}')
         storage_unit_names = self.get_storage_unit_names()
