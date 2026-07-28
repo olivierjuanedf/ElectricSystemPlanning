@@ -212,9 +212,11 @@ class PypsaModel:
                 else:
                     self.network.add('Generator', bus=f'{country_bus_name}', **pypsa_gen_unit_dict)
         generator_names = self.get_generator_names()
-        if agg_info_over_cases and len(gen_units_with_default_init_soc) > 0:
+        n_gen_with_default_init_soc = len(gen_units_with_default_init_soc)
+        if agg_info_over_cases and n_gen_with_default_init_soc > 0:
             logging.info(f'Default value set for init. SOC as {int(100 * default_init_soc_pu)}% of energy storage '
-                         f'capa. \n-> for {gen_units_with_default_init_soc}')
+                         f'capa. for generators ({n_gen_with_default_init_soc}):'
+                         f'{set_per_bus_asset_msg(asset_names=gen_units_with_default_init_soc)}')
 
         logging.info(f'Considered generators ({len(generator_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=generator_names)}')
