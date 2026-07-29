@@ -165,7 +165,8 @@ def set_final_hydro_key_cols(hydro_dt: str) -> List[str]:
 
 
 def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_year: int,
-                   period: Tuple[datetime, datetime]) -> Optional[Dict[str, pd.DataFrame]]:
+                   period: Tuple[datetime, datetime], agg_warn_over_cases: bool = True) \
+        -> (Optional[Dict[str, pd.DataFrame]], List[str]):
     """
     Get hydro. data - with generic function for the different (sub) datatypes: ror prod., inflows, extreme levels
     Args:
@@ -174,8 +175,10 @@ def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_ye
         countries: to be considered
         climatic_year: idem
         period: idem
+        agg_warn_over_cases: aggregate warning message over all countries (to avoid multiplying them)
 
-    Returns: {country: associated df with date and climatic year - with unique value - as 'key' columns}
+    Returns: {country: associated df with date and climatic year - with unique value - as 'key' columns}, countries wo
+    data (for aggregate warning hereafter)
     """
     logging.debug(f'Get {hydro_dt} data (1 file over all countries and years)')
     df_hydro_data = read_and_process_hydro_data(hydro_dt=hydro_dt, folder=folder)
@@ -194,6 +197,7 @@ def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_ye
     value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
     key_cols = set_final_hydro_key_cols(hydro_dt=hydro_dt)
     per_country_hydro_data = {}
+    countries_wo_data = []
     for country in countries:
         # either day to hours or week to hours
         resample_divisor = 24 if HYDRO_TS_GRANULARITY[hydro_dt] == 'day' else 7 * 24
@@ -210,9 +214,12 @@ def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_ye
                                         fill_na_vals=fill_na_vals, freq='h')
             )
         else:  # no data for current country
-            logging.warning(f'No {hydro_dt} data obtained for country {country}')
+            if agg_warn_over_cases:
+                countries_wo_data.append(country)
+            else:
+                logging.warning(f'No {hydro_dt} data obtained for country {country}')
             per_country_hydro_data[country] = pd.DataFrame()
-    return per_country_hydro_data
+    return per_country_hydro_data, countries_wo_data
 
 
 def separate_hydro_extr_levels_data(hydro_extr_levels_data: Dict[str, pd.DataFrame],
@@ -425,7 +432,7 @@ def warning_data_access(data_name: str, country: str, agg_prod_type: str, defaul
     logging.warning(f'Issue to access {data_name} data for {country} and {agg_prod_type} -> set to {default_value}')
 
 
-def print_out_agg_warning_gen_units_data(aggreg_warning: Dict[str, Tuple[str, str, float]],
+def print_out_agg_warning_gen_units_data(aggreg_warning: Dict[str, List[Tuple[str, str, float]]],
                                          unique_default_val_per_data_name: bool = True):
     """
     Print out aggreg. warning over all country*agg. prod type after having read generation units data
@@ -450,6 +457,19 @@ def print_out_agg_warning_gen_units_data(aggreg_warning: Dict[str, Tuple[str, st
     logging.warning(warning_msg)
 
 
+def print_out_agg_warning_hydro_data(aggreg_warning: Dict[str, List[str]]):
+    """
+    Print out aggreg. warning over all countries after having read hydro data
+    :param aggreg_warning: {data name, e.g. "inflows": countries with missing data}
+    """
+    # Set warning msg
+    warning_msg = "No hydro data obtained for:"
+    for name, countries in aggreg_warning.items():
+        countries_join = ", ".join(countries)
+        warning_msg += f"\n- {name} for {countries_join}"
+    logging.warning(warning_msg)
+
+
 @dataclass
 class Dataset:
     agg_prod_types_with_cf_data: List[str]
@@ -470,7 +490,7 @@ class Dataset:
 
     def get_countries_data(self, uc_run_params: UCRunParams, aggreg_prod_types_def: Dict[str, Dict[str, List[str]]],
                            datatypes_selec: List[str] = None, subdt_selec: List[str] = None,
-                           capas_aggreg_pt_with_cf: Dict[str, int] = None):
+                           capas_aggreg_pt_with_cf: Dict[str, int] = None, agg_warn_over_cases: bool = True):
         """
         Get ERAA data necessary for the selected countries, namely demand, RES capacity factors, installed capacities...
         :param uc_run_params: UC run parameters, from which main reading infos will be obtained
@@ -478,6 +498,7 @@ class Dataset:
         :param datatypes_selec: list of datatypes for which data must be read
         :param subdt_selec: list of sub-datatypes for which data must be read
         :param capas_aggreg_pt_with_cf: capacities of prod types with CF data to be used for prod. values calculation
+        :param agg_warn_over_cases: print out aggregate warning over cases, of one by one (line by line)
         :returns: {country: df with demand of this country}, {country: df with - per aggreg. prod type CF},
         {country: df with installed generation capas}, df with all interconnection capas (for considered 
         countries and year)
@@ -523,33 +544,48 @@ class Dataset:
 
         # hydro. data is concatenated over all countries in hydro data -> read it once
         # TODO: merge/loop (how to for assignment depending on hydro datatype?)
+        aggreg_warning = {}
         if DATATYPE_NAMES.hydro_ror in dts_tb_read:
             if subdt_selec is None or DATATYPE_NAMES.hydro_ror in subdt_selec:
-                self.hydro_ror_data \
+                self.hydro_ror_data, countries_wo_data \
                     = get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_ror, folder=hydro_folder,
                                      countries=uc_run_params.selected_countries,
                                      climatic_year=uc_run_params.selected_climatic_year,
-                                     period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end)
+                                     period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end),
+                                     agg_warn_over_cases=agg_warn_over_cases
                                      )
+                if len(countries_wo_data) > 0:
+                    aggreg_warning[DATATYPE_NAMES.hydro_ror] = countries_wo_data
         if DATATYPE_NAMES.hydro_inflows in dts_tb_read:
-            self.hydro_inflows_data = (
+            self.hydro_inflows_data, countries_wo_data = (
                 get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_inflows, folder=hydro_folder,
                                countries=uc_run_params.selected_countries,
                                climatic_year=uc_run_params.selected_climatic_year,
-                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end))
+                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end),
+                               agg_warn_over_cases=agg_warn_over_cases
+                               )
             )
+            if len(countries_wo_data) > 0:
+                aggreg_warning[DATATYPE_NAMES.hydro_inflows] = countries_wo_data
         # both extr levels data in same file -> get data once
         if DATATYPE_NAMES.hydro_levels_min in dts_tb_read or DATATYPE_NAMES.hydro_levels_max in dts_tb_read:
-            hydro_extr_levels_data = (
+            hydro_extr_levels_data, countries_wo_data = (
                 get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=hydro_folder,
                                countries=uc_run_params.selected_countries,
                                climatic_year=uc_run_params.selected_climatic_year,
-                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end))
+                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end),
+                               agg_warn_over_cases=agg_warn_over_cases
+                               )
             )
+            if len(countries_wo_data) > 0:
+                aggreg_warning[DATATYPE_NAMES.hydro_levels_min] = countries_wo_data
             # from {country: df containing both min and max levels data} to two separate dictionaries
             self.hydro_reservoir_levels_min_data, self.hydro_reservoir_levels_max_data = (
                 separate_hydro_extr_levels_data(hydro_extr_levels_data=hydro_extr_levels_data)
             )
+        if agg_warn_over_cases and len(aggreg_warning) > 0:
+            print_out_agg_warning_hydro_data(aggreg_warning=aggreg_warning)
+
         # loop over countries for per country data files
         for country in uc_run_params.selected_countries:
             logging.info(3 * '#' + f' For country: {country}')
