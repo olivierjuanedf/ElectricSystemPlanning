@@ -946,10 +946,10 @@ class Dataset:
                                                                    unit_types=[ProdTypeNames.hydro_reservoir])
             if len(current_country_hydro_res_data) > 0:
                 current_hydro_soc_min = [elt.soc_min for elt in current_country_hydro_res_data]
-                if any([np.any((elt > 0) & (elt < 1)) for elt in current_hydro_soc_min]):
+                if any([np.any(elt > 0) for elt in current_hydro_soc_min]):
                     return True
                 current_hydro_soc_max = [elt.soc_max for elt in current_country_hydro_res_data]
-                if any([np.any((elt > 0) & (elt < 1)) for elt in current_hydro_soc_max]):
+                if any([np.any(elt > 0) for elt in current_hydro_soc_max]):
                     return True
         return False
 

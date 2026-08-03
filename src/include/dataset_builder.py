@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 import linopy.model
+import xarray as xr
 import pandas as pd
 import numpy as np
 import logging
@@ -17,7 +18,7 @@ from src.common.constants.countries import set_country_trigram
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
-from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS
+from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
 from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
@@ -136,6 +137,23 @@ def set_optim_pb_type(model: linopy.model.Model) -> Optional[str]:
         else:
             return OptimPbTypes.qp
     return None
+
+
+def prepro_extr_soc_params(extr_soc: Dict[str, Union[float, np.ndarray]], energy_capa: Dict[str, float],
+                           n_ts: int) -> Dict[str, np.ndarray]:
+    """
+    Preprocess extreme (min/max) SoC values
+    :param extr_soc: to be processed, made of per asset (name) constant or vectorial value
+    :param energy_capa: of the considered assets
+    :param n_ts: number of time-slots in considered model
+    """
+    # project soc_min/max values on [0, capa.], to induce real constraints (not <0, or bigger than energy capacity)
+    extr_soc = {asset_name: np.maximum(0, np.minimum(energy_capa[asset_name], extr_vect))
+               for asset_name, extr_vect in extr_soc.items()}
+    # cast constant values as vectors. TODO: Q necessary? (or Linopy can broadcast?)
+    extr_soc = {asset_name: extr_vect * np.ones(n_ts) if isinstance(extr_vect, float) else extr_vect
+               for asset_name, extr_vect in extr_soc.items()}
+    return extr_soc
 
 
 @dataclass
@@ -311,16 +329,40 @@ class PypsaModel:
                                             energy_capa: Dict[str, np.ndarray]):
         """
         Add constraint on hydro extreme SOC levels
-        :param soc_min: dict {unit name: soc min vector}
+        :param soc_min: dict {unit name: soc min vector} - with SoC min an absolute value,
+        NOT AS A PERCENTAGE of capacity
         :param soc_max: idem, max
         :param energy_capa: dict {unit name: energy capa value}
         """
-        bob = 1
-        # check if soc_min/max values induce a real constraint (not all 0/bigger than energy capacity)
-        # TODO: loop over bus?
-        # hydro_soc = self.network.model.variables[PypsaOptimVarNames.storage_soc]["battery"]
-        # self.network.model.add_constraints(hydro_soc >= soc_min_profile.values, name="soc_min")
-        # self.network.model.add_constraints(hydro_soc <= soc_max_profile.values, name="soc_max")
+        # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
+        # or bigger than energy capacity), and (ii) unify as vectors
+        n_ts = self.get_n_time_slots()
+        soc_min = prepro_extr_soc_params(extr_soc=soc_min, energy_capa=energy_capa, n_ts=n_ts)
+        soc_max = prepro_extr_soc_params(extr_soc=soc_max, energy_capa=energy_capa, n_ts=n_ts)
+        # set associated constraints in Linopy
+        hydro_soc_var = self.network.model.variables[PypsaOptimVarNames.storage_soc]
+        storage_unit_names = self.get_storage_unit_names()
+        big_hydro_e_capa = 1e2 * max(energy_capa.values())  # to be used for assets wo SoC max const.
+        # TODO: use a mask for assets wo SoC min/max constraints
+        # using DataArray, as std in this modeler
+        soc_max_array = xr.DataArray(
+            np.column_stack([soc_max.get(name, big_hydro_e_capa * np.ones(n_ts)) for name in storage_unit_names]),
+            dims=("snapshot", "StorageUnit"),
+            coords={
+                "snapshot": self.network.snapshots,
+                "StorageUnit": storage_unit_names,
+            },
+        )
+        soc_min_array = xr.DataArray(
+            np.column_stack([soc_min.get(name, np.zeros(n_ts)) for name in storage_unit_names]),
+            dims=("snapshot", "StorageUnit"),
+            coords={
+                "snapshot": self.network.snapshots,
+                "StorageUnit": storage_unit_names,
+            },
+        )
+        self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name="hydro_soc_min")
+        self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name="hydro_soc_max")
     
     def add_hydro_extreme_gen_constraint(self):
         bob = 1
@@ -328,6 +370,9 @@ class PypsaModel:
         # gen_p = m.variables["Generator-p"]["gen"]
         # m.add_constraints(gen_p >= gen_min_profile.values, name="gen_min")
         # m.add_constraints(gen_p <= gen_max_profile.values, name="gen_max")
+
+    def get_n_time_slots(self) -> int:
+        return len(self.network.snapshots)
 
     def get_bus_names(self) -> List[str]:
         return list(set(self.network.buses.index))
