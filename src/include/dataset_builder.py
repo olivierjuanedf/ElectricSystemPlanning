@@ -340,25 +340,24 @@ class PypsaModel:
         soc_min = prepro_extr_soc_params(extr_soc=soc_min, energy_capa=energy_capa, n_ts=n_ts)
         soc_max = prepro_extr_soc_params(extr_soc=soc_max, energy_capa=energy_capa, n_ts=n_ts)
         # set associated constraints in Linopy
+        # version with only assets with such constraints -> TODO: check if order correct, or if mask is to be used
         hydro_soc_var = self.network.model.variables[PypsaOptimVarNames.storage_soc]
-        storage_unit_names = self.get_storage_unit_names()
-        big_hydro_e_capa = 1e2 * max(energy_capa.values())  # to be used for assets wo SoC max const.
-        # TODO: use a mask for assets wo SoC min/max constraints
-        # using DataArray, as std in this modeler
+        assets_with_soc_max_const = list(soc_max)
         soc_max_array = xr.DataArray(
-            np.column_stack([soc_max.get(name, big_hydro_e_capa * np.ones(n_ts)) for name in storage_unit_names]),
+            np.column_stack([max_vect for name, max_vect in soc_max.items()]),
             dims=("snapshot", "StorageUnit"),
             coords={
                 "snapshot": self.network.snapshots,
-                "StorageUnit": storage_unit_names,
+                "StorageUnit": assets_with_soc_max_const,
             },
         )
+        assets_with_soc_min_const = list(soc_min)
         soc_min_array = xr.DataArray(
-            np.column_stack([soc_min.get(name, np.zeros(n_ts)) for name in storage_unit_names]),
+            np.column_stack([min_vect for name, min_vect in soc_min.items()]),
             dims=("snapshot", "StorageUnit"),
             coords={
                 "snapshot": self.network.snapshots,
-                "StorageUnit": storage_unit_names,
+                "StorageUnit": assets_with_soc_min_const,
             },
         )
         self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name="hydro_soc_min")
