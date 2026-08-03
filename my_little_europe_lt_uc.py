@@ -99,7 +99,9 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
     pypsa_model.add_loads(demand=eraa_dataset.demand)
     pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
-    with_hydro_custom_const = False  # TODO: set to True/make it a parameter when adding SOC min/max level in model
+    # Set to True if any considered country with constraining SoC min/SoC max const.
+    # on hydro reservoirs; False otherwise
+    with_hydro_custom_const = eraa_dataset.check_if_any_hydro_extr_level_const()
     with_sum_of_prod_custom_const = len(uc_run_params.sum_prod_constraints) > 0
     if with_hydro_custom_const or with_sum_of_prod_custom_const:
         pypsa_model.build_model_before_adding_custom_const()

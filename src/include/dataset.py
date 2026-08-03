@@ -677,7 +677,8 @@ class Dataset:
                 # selecting only the dates for a given agg. pt (other each date will be repeated...
                 # nber of agg. pt times)
                 current_dates = (
-                    list(agg_cf_data_read.loc[agg_cf_data_read['production_type_agg'] == first_agg_pt, COLUMN_NAMES.date]))
+                    list(agg_cf_data_read.loc[
+                             agg_cf_data_read['production_type_agg'] == first_agg_pt, COLUMN_NAMES.date]))
                 n_dates = len(current_dates)
                 dfs_lst = []
                 for agg_pt, prod_prof in cf_capa_prod.items():
@@ -935,8 +936,25 @@ class Dataset:
         else:
             logging.info('PyPSA NEEDED PARAMETERS FOR GENERATION UNITS CREATION HAVE BEEN LOADED!')
 
+    def check_if_any_hydro_extr_level_const(self) -> bool:
+        """
+        Return True if at least one considered country has a SoC min or SoC max constraint; else otherwise
+        """
+        for country, units_data in self.generation_units_data.items():
+            current_country_hydro_res_data = select_gen_units_data(gen_units_data=units_data,
+                                                                   countries=[set_country_trigram(country=country)],
+                                                                   unit_types=[ProdTypeNames.hydro_reservoir])
+            if len(current_country_hydro_res_data) > 0:
+                current_hydro_soc_min = [elt.soc_min for elt in current_country_hydro_res_data]
+                if any([np.any((elt > 0) & (elt < 1)) for elt in current_hydro_soc_min]):
+                    return True
+                current_hydro_soc_max = [elt.soc_max for elt in current_country_hydro_res_data]
+                if any([np.any((elt > 0) & (elt < 1)) for elt in current_hydro_soc_max]):
+                    return True
+        return False
+
     def get_hydro_params_for_extr_levels_const(self) -> (
-    Dict[str, np.ndarray], Dict[str, np.ndarray], Dict[str, float]):
+            Dict[str, np.ndarray], Dict[str, np.ndarray], Dict[str, float]):
         hydro_reservoirs_data = {country: select_gen_units_data(gen_units_data=units_data,
                                                                 countries=[set_country_trigram(country=country)],
                                                                 unit_types=[ProdTypeNames.hydro_reservoir])
