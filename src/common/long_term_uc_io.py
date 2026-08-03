@@ -6,6 +6,7 @@ from typing import Iterator, List
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
+from src.common.constants.temporal import Timescale
 from src.utils.dir_utils import make_dir, uniformize_path_os, find_project_root
 
 
@@ -67,31 +68,41 @@ DT_SUBFOLDERS = DtSubfolders()
 FILES_FORMAT = FilesFormat()
 GEN_CAPA_SUBDT_COLS = ['power_capacity', 'power_capacity_turbine', 'power_capacity_pumping',
                        'power_capacity_injection', 'power_capacity_offtake', 'energy_capacity']
-# N.B. min/max hydro levels in a unique file -> share same constants below
+# N.B. min/max hydro (gen.) levels in a unique file -> share same constants below
 HYDRO_FILES = {DATATYPE_NAMES.hydro_ror: 'PECD-hydro-daily-ror-generation.csv',
                DATATYPE_NAMES.hydro_inflows: 'PECD-hydro-weekly-inflows.csv',
-               DATATYPE_NAMES.hydro_levels_min: 'PECD-hydro-weekly-reservoir-min-max-levels.csv'}
+               DATATYPE_NAMES.hydro_levels_min: 'PECD-hydro-weekly-reservoir-min-max-levels.csv',
+               DATATYPE_NAMES.hydro_gen_min: 'PECD-hydro-weekly-reservoir-min-max-generation.csv'}
 HYDRO_FILES[DATATYPE_NAMES.hydro_levels_max] = HYDRO_FILES[DATATYPE_NAMES.hydro_levels_min]
+HYDRO_FILES[DATATYPE_NAMES.hydro_gen_max] = HYDRO_FILES[DATATYPE_NAMES.hydro_gen_min]
 HYDRO_KEY_COLUMNS = {DATATYPE_NAMES.hydro_ror:
                          [COLUMN_NAMES.zone, COLUMN_NAMES.day, COLUMN_NAMES.week, COLUMN_NAMES.climatic_year],
                      DATATYPE_NAMES.hydro_inflows: [COLUMN_NAMES.zone, COLUMN_NAMES.week, COLUMN_NAMES.climatic_year],
-                     DATATYPE_NAMES.hydro_levels_min: [COLUMN_NAMES.zone, COLUMN_NAMES.week]
+                     DATATYPE_NAMES.hydro_levels_min: [COLUMN_NAMES.zone, COLUMN_NAMES.week],
+                     DATATYPE_NAMES.hydro_gen_min: [COLUMN_NAMES.zone, COLUMN_NAMES.week, COLUMN_NAMES.climatic_year]
                      }
 HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_levels_min]
+HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_gen_max] = HYDRO_KEY_COLUMNS[DATATYPE_NAMES.hydro_gen_min]
 HYDRO_VALUE_COLUMNS = {DATATYPE_NAMES.hydro_ror: [COLUMN_NAMES.value],
                        DATATYPE_NAMES.hydro_inflows:
                            ['cum_inflow_into_reservoirs', 'cum_nat_inflow_into_pump-storage_reservoirs'],
-                       DATATYPE_NAMES.hydro_levels_min: [COLUMN_NAMES.min_value, COLUMN_NAMES.max_value]}
+                       DATATYPE_NAMES.hydro_levels_min: [COLUMN_NAMES.min_value, COLUMN_NAMES.max_value],
+                       DATATYPE_NAMES.hydro_gen_min: [COLUMN_NAMES.min_value, COLUMN_NAMES.max_value]}
 HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_max] = HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_levels_min]
-HYDRO_TS_GRANULARITY = {DATATYPE_NAMES.hydro_ror: 'day',
-                        DATATYPE_NAMES.hydro_inflows: 'week',
-                        DATATYPE_NAMES.hydro_levels_min: 'week',
-                        DATATYPE_NAMES.hydro_levels_max: 'week'}
+HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_gen_max] = HYDRO_VALUE_COLUMNS[DATATYPE_NAMES.hydro_gen_min]
+HYDRO_TS_GRANULARITY = {DATATYPE_NAMES.hydro_ror: Timescale.day,
+                        DATATYPE_NAMES.hydro_inflows: Timescale.week,
+                        DATATYPE_NAMES.hydro_levels_min: Timescale.week,
+                        DATATYPE_NAMES.hydro_levels_max: Timescale.week,
+                        DATATYPE_NAMES.hydro_gen_min: Timescale.week,
+                        DATATYPE_NAMES.hydro_gen_max: Timescale.week}
 HYDRO_DEFAULT_VALUES = {DATATYPE_NAMES.hydro_ror: {COLUMN_NAMES.value: 0},
                         DATATYPE_NAMES.hydro_inflows:
                             {'cum_inflow_into_reservoirs': 0, 'cum_nat_inflow_into_pump-storage_reservoirs': 0},
                         # extreme values found in ERAA2023.2 data(over all countries)
-                        DATATYPE_NAMES.hydro_levels_min: {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 5}
+                        DATATYPE_NAMES.hydro_levels_min: {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 5},
+                        # max value is very large; will be bounded by power capacity a bit later
+                        DATATYPE_NAMES.hydro_gen_min: {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e8}
                         }
 # method used when resampling from week/day granularity to hourly one -> (uniform) distribution,
 # or all at first hourly time-slot of the week/day - and 0 for the rest (typically for constraints
@@ -107,7 +118,9 @@ class ResampleMethods:
 HYDRO_DATA_RESAMPLE_METHODS = {DATATYPE_NAMES.hydro_ror: ResampleMethods.uniform_distrib,
                                DATATYPE_NAMES.hydro_inflows: ResampleMethods.uniform_distrib,
                                DATATYPE_NAMES.hydro_levels_min: ResampleMethods.all_at_first_ts,
-                               DATATYPE_NAMES.hydro_levels_max: ResampleMethods.all_at_first_ts}
+                               DATATYPE_NAMES.hydro_levels_max: ResampleMethods.all_at_first_ts,
+                               DATATYPE_NAMES.hydro_gen_min: ResampleMethods.all_at_first_ts,  # TODO: check if ok
+                               DATATYPE_NAMES.hydro_gen_max: ResampleMethods.all_at_first_ts}  # TODO: idem
 HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e10}
 # TODO: more robust way to complete path from root folder
 INPUT_ERAA_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "ERAA_2023-2"))

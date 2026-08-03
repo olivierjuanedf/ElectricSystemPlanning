@@ -14,6 +14,7 @@ from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.eraa_data import ERAAParamNames
 from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
+from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER, HYDRO_KEY_COLUMNS, \
@@ -485,6 +486,8 @@ class Dataset:
     hydro_inflows_data: Dict[str, pd.DataFrame] = None  # TODO: typing
     hydro_reservoir_levels_min_data: Dict[str, pd.DataFrame] = None  # TODO: typing
     hydro_reservoir_levels_max_data: Dict[str, pd.DataFrame] = None  # TODO: typing
+    hydro_reservoir_gen_min_data: Dict[str, pd.DataFrame] = None  # TODO: idem?
+    hydro_reservoir_gen_max_data: Dict[str, pd.DataFrame] = None  # TODO: idem?
     # {country: list of associated generation units data}
     generation_units_data: Dict[str, List[GenerationUnitData]] = None
 
@@ -529,6 +532,8 @@ class Dataset:
         self.hydro_inflows_data = {}
         self.hydro_reservoir_levels_min_data = {}
         self.hydro_reservoir_levels_max_data = {}
+        self.hydro_reservoir_gen_min_data = {}
+        self.hydro_reservoir_gen_max_data = {}
 
         dts_tb_read = deepcopy(datatypes_selec)
         # datatypes to be added to list of read ones, to be able to obtain net demand
@@ -582,6 +587,22 @@ class Dataset:
             # from {country: df containing both min and max levels data} to two separate dictionaries
             self.hydro_reservoir_levels_min_data, self.hydro_reservoir_levels_max_data = (
                 separate_hydro_extr_levels_data(hydro_extr_levels_data=hydro_extr_levels_data)
+            )
+        # idem for GENERATION extr levels, both data in same file -> get data once
+        if DATATYPE_NAMES.hydro_gen_min in dts_tb_read or DATATYPE_NAMES.hydro_gen_max in dts_tb_read:
+            hydro_gen_extr_levels_data, countries_wo_data = (
+                get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_gen_min, folder=hydro_folder,
+                               countries=uc_run_params.selected_countries,
+                               climatic_year=uc_run_params.selected_climatic_year,
+                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end),
+                               agg_warn_over_cases=agg_warn_over_cases
+                               )
+            )
+            if len(countries_wo_data) > 0:
+                aggreg_warning[DATATYPE_NAMES.hydro_gen_min] = countries_wo_data
+            # from {country: df containing both min and max gen. levels data} to two separate dictionaries
+            self.hydro_reservoir_gen_min_data, self.hydro_reservoir_gen_max_data = (
+                separate_hydro_extr_levels_data(hydro_extr_levels_data=hydro_gen_extr_levels_data)
             )
         if agg_warn_over_cases and len(aggreg_warning) > 0:
             print_out_agg_warning_hydro_data(aggreg_warning=aggreg_warning)
@@ -732,6 +753,8 @@ class Dataset:
             per_country_data=self.hydro_reservoir_levels_min_data)
         self.hydro_reservoir_levels_max_data = complete_country_data(
             per_country_data=self.hydro_reservoir_levels_max_data)
+        self.hydro_reservoir_gen_min_data = complete_country_data(per_country_data=self.hydro_reservoir_gen_min_data)
+        self.hydro_reservoir_gen_max_data = complete_country_data(per_country_data=self.hydro_reservoir_gen_max_data)
 
     def get_agg_prod_types(self, country: str) -> List[str]:
         return list(set(self.agg_gen_capa_data[country][PROD_TYPE_AGG_COL]))
@@ -756,6 +779,7 @@ class Dataset:
         capa_factor_key = 'capa_factors'
         inflow_key = 'inflow'  # TODO: as a constant
         soc_level_extr_key = 'soc_level_extr'
+        gen_level_extr_key = 'gen_level_extr'
         aggreg_warning = {}
         self.generation_units_data = {}
         for country in countries:
@@ -863,6 +887,42 @@ class Dataset:
                             current_soc_level_max_data = default_value
                         current_assets_data[agg_pt][GenUnitsCustomParams.soc_min] = current_soc_level_min_data
                         current_assets_data[agg_pt][GenUnitsCustomParams.soc_max] = current_soc_level_max_data
+                    # add GENERATION extreme levels when it applies
+                    if check_if_from_eraa_data(param_key=gen_level_extr_key,
+                                               complem_params_pt=units_complem_params_per_agg_pt[agg_pt]):
+                        logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {gen_level_extr_key} (min and max)')
+                        current_pt_gen_level_min_data = self.hydro_reservoir_gen_min_data[country]
+                        try:
+                            current_gen_level_min_data = np.array(current_pt_gen_level_min_data[COLUMN_NAMES.value])
+                        except:
+                            data_name = "gen. level min"
+                            default_value = 0
+                            if agg_warn_over_cases:
+                                if data_name not in aggreg_warning:
+                                    aggreg_warning[data_name] = []
+                                aggreg_warning[data_name].append((country, agg_pt, default_value))
+                            else:
+                                warning_data_access(data_name=data_name, country=country,
+                                                    agg_prod_type=agg_pt, default_value=default_value)
+                            # Q: ok to set constant float and not vector for this PyPSA attr.?
+                            current_gen_level_min_data = default_value
+                        current_pt_gen_level_max_data = self.hydro_reservoir_gen_max_data[country]
+                        try:
+                            current_gen_level_max_data = np.array(current_pt_gen_level_max_data[COLUMN_NAMES.value])
+                        except:
+                            data_name = "gen. level max"
+                            default_value = 1e12
+                            if agg_warn_over_cases:
+                                if data_name not in aggreg_warning:
+                                    aggreg_warning[data_name] = []
+                                aggreg_warning[data_name].append((country, agg_pt, default_value))
+                            else:
+                                warning_data_access(data_name=data_name, country=country,
+                                                    agg_prod_type=agg_pt, default_value=default_value)
+                            # Q: ok to set constant float and not a vector for this PyPSA attr.?
+                            current_soc_level_max_data = default_value
+                        current_assets_data[agg_pt][GenUnitsCustomParams.gen_min] = current_gen_level_min_data
+                        current_assets_data[agg_pt][GenUnitsCustomParams.gen_max] = current_gen_level_max_data
 
                 # specific parameters for failure
                 elif agg_pt == ProdTypeNames.failure:
@@ -945,11 +1005,35 @@ class Dataset:
                                                                    countries=[set_country_trigram(country=country)],
                                                                    unit_types=[ProdTypeNames.hydro_reservoir])
             if len(current_country_hydro_res_data) > 0:
+                # any positive SoC min const?
                 current_hydro_soc_min = [elt.soc_min for elt in current_country_hydro_res_data]
                 if any([np.any(elt > 0) for elt in current_hydro_soc_min]):
                     return True
+                # any SoC max upper bound < capa?
                 current_hydro_soc_max = [elt.soc_max for elt in current_country_hydro_res_data]
-                if any([np.any(elt > 0) for elt in current_hydro_soc_max]):
+                current_hydro_e_capa = [float(elt.max_hours * elt.p_nom) for elt in current_country_hydro_res_data]
+                if any([np.any(elt < current_hydro_e_capa[i]) for i, elt in enumerate(current_hydro_soc_max)]):
+                    return True
+        return False
+
+    def check_if_any_hydro_gen_level_const(self, gen_const_period: str = Timescale.week) -> bool:
+        """
+        Return True if at least one considered country has a SoC min or SoC max constraint; else otherwise
+        """
+        for country, units_data in self.generation_units_data.items():
+            current_country_hydro_res_data = select_gen_units_data(gen_units_data=units_data,
+                                                                   countries=[set_country_trigram(country=country)],
+                                                                   unit_types=[ProdTypeNames.hydro_reservoir])
+            if len(current_country_hydro_res_data) > 0:
+                # any positive gen. min bound?
+                current_hydro_gen_min = [elt.gen_min for elt in current_country_hydro_res_data]
+                if any([np.any(elt > 0) for elt in current_hydro_gen_min]):
+                    return True
+                # any upper bound lower than max gen. feasible?
+                current_hydro_gen_max = [elt.gen_max for elt in current_country_hydro_res_data]
+                n_ts_in_period = 168 if gen_const_period == Timescale.week else 24
+                current_hydro_max_gen_feas = [elt.p_nom * n_ts_in_period for elt in current_country_hydro_res_data]
+                if any([np.any(elt < current_hydro_max_gen_feas[i]) for i, elt in enumerate(current_hydro_gen_max)]):
                     return True
         return False
 
@@ -967,3 +1051,18 @@ class Dataset:
         hydro_e_capa = {elt.name: float(elt.max_hours * elt.p_nom)
                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
         return hydro_soc_min, hydro_soc_max, hydro_e_capa
+
+    def get_hydro_params_for_gen_levels_const(self) -> (
+            Dict[str, np.ndarray], Dict[str, np.ndarray], Dict[str, float]):
+        hydro_reservoirs_data = {country: select_gen_units_data(gen_units_data=units_data,
+                                                                countries=[set_country_trigram(country=country)],
+                                                                unit_types=[ProdTypeNames.hydro_reservoir])
+                                 for country, units_data in self.generation_units_data.items()}
+        hydro_gen_min = {elt.name: elt.gen_min
+                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
+        hydro_gen_max = {elt.name: elt.gen_max
+                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
+        # power capacity
+        hydro_p_capa = {elt.name: elt.p_nom
+                        for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
+        return hydro_gen_min, hydro_gen_max, hydro_p_capa

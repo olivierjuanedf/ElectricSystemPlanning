@@ -19,6 +19,7 @@ from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER
     OptimPbCharacteristics, OptimPbTypes
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames
+from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
 from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
@@ -48,6 +49,9 @@ class GenerationUnitData:
     inflow: np.ndarray = None
     soc_min: np.ndarray = None
     soc_max: np.ndarray = None
+    # extreme generation levels, over an aggregate temporal period - typically week in ERAA data for hydro. reservoirs
+    gen_min: np.ndarray = None
+    gen_max: np.ndarray = None
     state_of_charge_initial: float = None
 
     def get_non_none_attr_names(self):
@@ -61,7 +65,7 @@ class GenerationUnitData:
         return unit_data_dict
 
 
-def select_gen_units_data(gen_units_data: List[GenerationUnitData], countries: List[str], 
+def select_gen_units_data(gen_units_data: List[GenerationUnitData], countries: List[str],
                           unit_types: List[str]) -> List[GenerationUnitData]:
     return [elt for elt in gen_units_data
             if get_country_from_unit_name(elt.name) in countries and elt.type in unit_types]
@@ -139,21 +143,21 @@ def set_optim_pb_type(model: linopy.model.Model) -> Optional[str]:
     return None
 
 
-def prepro_extr_soc_params(extr_soc: Dict[str, Union[float, np.ndarray]], energy_capa: Dict[str, float],
-                           n_ts: int) -> Dict[str, np.ndarray]:
+def prepro_bound_params(bound_values: Dict[str, Union[float, np.ndarray]], max_feas_bound: Dict[str, float],
+                        n_ts: int) -> Dict[str, np.ndarray]:
     """
     Preprocess extreme (min/max) SoC values
-    :param extr_soc: to be processed, made of per asset (name) constant or vectorial value
-    :param energy_capa: of the considered assets
+    :param bound_values: to be processed, made of per asset (name) constant or vectorial value
+    :param max_feas_bound: of the considered assets
     :param n_ts: number of time-slots in considered model
     """
     # project soc_min/max values on [0, capa.], to induce real constraints (not <0, or bigger than energy capacity)
-    extr_soc = {asset_name: np.maximum(0, np.minimum(energy_capa[asset_name], extr_vect))
-               for asset_name, extr_vect in extr_soc.items()}
+    bound_values = {asset_name: np.maximum(0, np.minimum(max_feas_bound[asset_name], extr_vect))
+                    for asset_name, extr_vect in bound_values.items()}
     # cast constant values as vectors. TODO: Q necessary? (or Linopy can broadcast?)
-    extr_soc = {asset_name: extr_vect * np.ones(n_ts) if isinstance(extr_vect, float) else extr_vect
-               for asset_name, extr_vect in extr_soc.items()}
-    return extr_soc
+    bound_values = {asset_name: extr_vect * np.ones(n_ts) if isinstance(extr_vect, float) else extr_vect
+                    for asset_name, extr_vect in bound_values.items()}
+    return bound_values
 
 
 @dataclass
@@ -222,7 +226,7 @@ class PypsaModel:
                             gen_units_with_default_init_soc.append(pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.name])
                         else:
                             logging.info(f'Default value set for {pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.name]} '
-                                         f'init. SOC as {int(100*default_init_soc_pu)}% of energy storage capa.')
+                                         f'init. SOC as {int(100 * default_init_soc_pu)}% of energy storage capa.')
                         init_soc = (pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.power_capa]
                                     * pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.max_hours] * 0.8)
                         pypsa_gen_unit_dict[GEN_UNITS_PYPSA_PARAMS.soc_init] = init_soc
@@ -325,8 +329,9 @@ class PypsaModel:
         logging.warning(f'Add custom sum of prod constraints (sum over z,t coeff(z,t) * prod(z, t) <= ub, or >=, =; '
                         f'used, e.g. for max CO2 emissions) -> to be coded')
 
-    def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, np.ndarray], soc_max: Dict[str, np.ndarray], 
-                                            energy_capa: Dict[str, np.ndarray]):
+    def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
+                                            soc_max: Dict[str, Union[float, np.ndarray]],
+                                            energy_capa: Dict[str, float]):
         """
         Add constraint on hydro extreme SOC levels
         :param soc_min: dict {unit name: soc min vector} - with SoC min an absolute value,
@@ -337,8 +342,8 @@ class PypsaModel:
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than energy capacity), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
-        soc_min = prepro_extr_soc_params(extr_soc=soc_min, energy_capa=energy_capa, n_ts=n_ts)
-        soc_max = prepro_extr_soc_params(extr_soc=soc_max, energy_capa=energy_capa, n_ts=n_ts)
+        soc_min = prepro_bound_params(bound_values=soc_min, max_feas_bound=energy_capa, n_ts=n_ts)
+        soc_max = prepro_bound_params(bound_values=soc_max, max_feas_bound=energy_capa, n_ts=n_ts)
         # set associated constraints in Linopy
         # version with only assets with such constraints -> TODO: check if order correct, or if mask is to be used
         hydro_soc_var = self.network.model.variables[PypsaOptimVarNames.storage_soc]
@@ -362,13 +367,29 @@ class PypsaModel:
         )
         self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name="hydro_soc_min")
         self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name="hydro_soc_max")
-    
-    def add_hydro_extreme_gen_constraint(self):
-        bob = 1
-        # # Generator production constraints
-        # gen_p = m.variables["Generator-p"]["gen"]
-        # m.add_constraints(gen_p >= gen_min_profile.values, name="gen_min")
-        # m.add_constraints(gen_p <= gen_max_profile.values, name="gen_max")
+
+    def add_hydro_extreme_gen_constraint(self, generation_min: Dict[str, np.ndarray],
+                                         generation_max: Dict[str, np.ndarray], power_capa: Dict[str, float],
+                                         extr_gen_temp_period: str = Timescale.week):
+        """
+        :param generation_min: per asset vector/value with min generation over each of/all the periods
+        :param generation_max: idem
+        :param power_capa: of the assets, to check/make the bound feasible
+        :param extr_gen_temp_period: either day, or week
+        """
+        # TODO: rolling sum - of size dependent on extr_gen_temp_period
+        # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
+        # or bigger than power capacity * nber of ts in considered period), and (ii) unify as vectors
+        n_ts = self.get_n_time_slots()
+        n_ts_in_period = 168 if extr_gen_temp_period == Timescale.week else 24
+        generation_min = prepro_bound_params(bound_values=generation_min,
+                                             max_feas_bound=power_capa * n_ts_in_period, n_ts=n_ts)
+        generation_max = prepro_bound_params(bound_values=generation_max,
+                                             max_feas_bound=power_capa * n_ts_in_period, n_ts=n_ts)
+        # Generator production constraints, NOT CONSIDERING charging part
+        hydro_gen_var = self.network.model.variables[PypsaOptimVarNames.storage_p_dispatch]
+        self.network.model.add_constraints(hydro_gen_var >= generation_min, name="hydro_gen_min")
+        self.network.model.add_constraints(hydro_gen_var <= generation_max, name="hydro_gen_max")
 
     def get_n_time_slots(self) -> int:
         return len(self.network.snapshots)
@@ -490,7 +511,7 @@ class PypsaModel:
 
     def get_opt_value(self, pypsa_resol_status: str) -> float:
         objective_value = get_network_obj_value(network=self.network)
-        objective_value_refmted = format_with_spaces(number=int(objective_value/1e6))
+        objective_value_refmted = format_with_spaces(number=int(objective_value / 1e6))
         logging.info(
             f'Optimisation resolution status is {pypsa_resol_status} with objective value (cost) = '
             f'{objective_value_refmted} (M€) -> output data (resp. figures) can be generated')

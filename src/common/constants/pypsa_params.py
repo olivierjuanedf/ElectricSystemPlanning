@@ -31,6 +31,8 @@ GEN_UNITS_PYPSA_PARAMS = GenUnitsPypsaParams()
 class GenUnitsCustomParams:
     soc_min: str = 'soc_min'
     soc_max: str = 'soc_max'
+    gen_min: str = 'gen_min'
+    gen_max: str = 'gen_max'
     
 
 @dataclass

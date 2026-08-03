@@ -16,6 +16,8 @@ class DatatypesNames:
     hydro_inflows: str = 'hydro_inflows'
     hydro_levels_min: str = 'hydro_levels_min'
     hydro_levels_max: str = 'hydro_levels_max'
+    hydro_gen_min: str = 'hydro_gen_min'
+    hydro_gen_max: str = 'hydro_gen_max'
 
 
 DATATYPE_NAMES = DatatypesNames()

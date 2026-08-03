@@ -101,16 +101,22 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
     # Set to True if any considered country with constraining SoC min/SoC max const.
     # on hydro reservoirs; False otherwise
-    with_hydro_custom_const = eraa_dataset.check_if_any_hydro_extr_level_const()
+    with_hydro_extr_level_const = eraa_dataset.check_if_any_hydro_extr_level_const()
+    with_hydro_gen_level_const = eraa_dataset.check_if_any_hydro_gen_level_const()
+    with_hydro_custom_const = with_hydro_extr_level_const or with_hydro_gen_level_const
     with_sum_of_prod_custom_const = len(uc_run_params.sum_prod_constraints) > 0
     if with_hydro_custom_const or with_sum_of_prod_custom_const:
         pypsa_model.build_model_before_adding_custom_const()
-    if with_hydro_custom_const:
+    if with_hydro_extr_level_const:
         # get reservoir extreme generation and level values, as well as energy capacities
         # (to see if constraints will be useless)
         hydro_soc_min, hydro_soc_max, hydro_e_capa = eraa_dataset.get_hydro_params_for_extr_levels_const()
         pypsa_model.add_hydro_extreme_levels_constraint(soc_min=hydro_soc_min, soc_max=hydro_soc_max,
                                                         energy_capa=hydro_e_capa)
+    if with_hydro_gen_level_const:
+        hydro_gen_min, hydro_gen_max, hydro_p_capa = eraa_dataset.get_hydro_params_for_gen_levels_const()
+        pypsa_model.add_hydro_extreme_gen_constraint(generation_min=hydro_gen_min, generation_max=hydro_gen_max,
+                                                     power_capa=hydro_p_capa)
     if with_sum_of_prod_custom_const:
         pypsa_model.add_sum_of_prod_custom_const()
     logging.info(f'PyPSA network main properties: {pypsa_model.network}')

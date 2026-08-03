@@ -271,6 +271,7 @@
       "energy_capa": "from_eraa_data",
       "inflow": "from_eraa_data",
       "soc_level_extr": "from_eraa_data",
+      "gen_level_extr":  "from_eraa_data",
       "init_soc_pu": "from_json_tb_modif"
     },
     "nuclear": {
