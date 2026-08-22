@@ -230,7 +230,8 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
     eraa_data_descr = set_eraa_data_descr(json_params_fixed=set_json_params_fixed())
 
     # check that the content of folders containing files to be modified by students is coherent
-    check_uc_input_folder_content(all_countries=eraa_data_descr.available_countries)
+    check_uc_input_folder_content(all_countries=eraa_data_descr.available_countries,
+                                  all_years=eraa_data_descr.available_target_years)
 
     # Set countries data, applying data selection/overwriting based on JSON file with values to be modified
     countries_data, json_params_tb_modif = None, None

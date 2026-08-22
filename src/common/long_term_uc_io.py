@@ -1,13 +1,14 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime
+from itertools import product
 from pathlib import Path
 from typing import Iterator, List
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.temporal import Timescale
-from src.utils.dir_utils import make_dir, uniformize_path_os, find_project_root
+from src.utils.dir_utils import make_dir, uniformize_path_os, find_project_root, get_files_in_dir
 
 
 @dataclass
@@ -75,6 +76,14 @@ HYDRO_FILES = {DATATYPE_NAMES.hydro_ror: 'PECD-hydro-daily-ror-generation.csv',
                DATATYPE_NAMES.hydro_gen_min: 'PECD-hydro-weekly-reservoir-min-max-generation.csv'}
 HYDRO_FILES[DATATYPE_NAMES.hydro_levels_max] = HYDRO_FILES[DATATYPE_NAMES.hydro_levels_min]
 HYDRO_FILES[DATATYPE_NAMES.hydro_gen_max] = HYDRO_FILES[DATATYPE_NAMES.hydro_gen_min]
+HYDRO_FILES_PREFIX_IN_INPUT_FOLDER = {DATATYPE_NAMES.hydro_ror: 'hydro-daily-ror-generation',
+                                      DATATYPE_NAMES.hydro_inflows: 'hydro-weekly-inflows',
+                                      DATATYPE_NAMES.hydro_levels_min: 'hydro-weekly-reservoir-min-max-levels',
+                                      DATATYPE_NAMES.hydro_gen_min: 'hydro-weekly-reservoir-min-max-generation'}
+HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[DATATYPE_NAMES.hydro_levels_max] = (
+    HYDRO_FILES_PREFIX_IN_INPUT_FOLDER)[DATATYPE_NAMES.hydro_levels_min]
+HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[DATATYPE_NAMES.hydro_gen_max] = (
+    HYDRO_FILES_PREFIX_IN_INPUT_FOLDER)[DATATYPE_NAMES.hydro_gen_min]
 HYDRO_KEY_COLUMNS = {DATATYPE_NAMES.hydro_ror:
                          [COLUMN_NAMES.zone, COLUMN_NAMES.day, COLUMN_NAMES.week, COLUMN_NAMES.climatic_year],
                      DATATYPE_NAMES.hydro_inflows: [COLUMN_NAMES.zone, COLUMN_NAMES.week, COLUMN_NAMES.climatic_year],
@@ -104,6 +113,8 @@ HYDRO_DEFAULT_VALUES = {DATATYPE_NAMES.hydro_ror: {COLUMN_NAMES.value: 0},
                         # max value is very large; will be bounded by power capacity a bit later
                         DATATYPE_NAMES.hydro_gen_min: {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e8}
                         }
+
+
 # method used when resampling from week/day granularity to hourly one -> (uniform) distribution,
 # or all at first hourly time-slot of the week/day - and 0 for the rest (typically for constraints
 # on min/max reservoir levels)
@@ -129,6 +140,7 @@ CODE_FOLDER = 'src'
 INPUT_FUEL_SOURCES_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "fuel_sources"))
 INPUT_LT_UC_SUBFOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, INPUT_FOLDER, "long_term_uc"))
 INPUT_LT_UC_COUNTRY_SUBFOLDER = uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, "countries"))
+INPUT_LT_UC_OPTIONAL_SUBFOLDER = "optional"
 INPUT_FUNC_PARAMS_SUBFOLDER = (
     uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, CODE_FOLDER, "functional_params"))
 )
@@ -149,13 +161,28 @@ OUTPUT_DATA_ANALYSIS_FOLDER = (
     uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "data_analysis")))
 
 
-def check_uc_input_folder_content(all_countries: List[str]):
+def check_uc_input_folder_content(all_countries: List[str], all_years: List[int] = None):
     uc_countries_folder = uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'countries'))
-    files = os.listdir(uc_countries_folder)
+    files = get_files_in_dir(my_dir=uc_countries_folder)
     gitignore_file = '.gitignore'
     if gitignore_file in files:
         files.remove(gitignore_file)
-    allowed_files = set([f'{country}.json' for country in all_countries])
+    allowed_files = [f'{country}.json' for country in all_countries]
+    # optional sub-folder may be present in this folder
+    if INPUT_LT_UC_OPTIONAL_SUBFOLDER in os.listdir(uc_countries_folder):
+        if all_years is None:
+            raise Exception(f"Available years must be provided to check the content of input folder when "
+                            f"{INPUT_LT_UC_OPTIONAL_SUBFOLDER} is present")
+        optional_folder = os.path.join(uc_countries_folder, INPUT_LT_UC_OPTIONAL_SUBFOLDER)
+        optional_files = get_files_in_dir(my_dir=optional_folder)
+        files.extend(optional_files)
+        # add hydro allowed files over all (country, year) cases
+        hydro_datatypes = [DATATYPE_NAMES.hydro_ror, DATATYPE_NAMES.hydro_inflows, DATATYPE_NAMES.hydro_levels_min,
+                           DATATYPE_NAMES.hydro_gen_min]
+        available_cases = product(hydro_datatypes, all_years, all_countries)
+        allowed_files.extend([f"{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv"
+                              for (hydro_dt, year, country) in available_cases])
+    allowed_files = set(allowed_files)
     unknown_files = list(set(files) - allowed_files)
     if len(unknown_files) > 0:
         raise Exception(f'Unknown files in UC input folder {uc_countries_folder}: {unknown_files}. '
@@ -296,25 +323,25 @@ def get_json_file_named(name: str, country: str, year: int, climatic_year: int, 
 
 def get_opt_power_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                        toy_model_output: bool = False) -> str:
-    return get_csv_file_named(name='opt_power', country=country, year=year, climatic_year=climatic_year, 
+    return get_csv_file_named(name='opt_power', country=country, year=year, climatic_year=climatic_year,
                               start_horizon=start_horizon, toy_model_output=toy_model_output)
 
 
 def get_storage_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                              toy_model_output: bool = False) -> str:
-    return get_csv_file_named(name='storage_opt_decisions', country=country, year=year, climatic_year=climatic_year, 
+    return get_csv_file_named(name='storage_opt_decisions', country=country, year=year, climatic_year=climatic_year,
                               start_horizon=start_horizon, toy_model_output=toy_model_output)
 
 
 def get_link_flow_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
-                               toy_model_output: bool= False) -> str:
-    return get_csv_file_named(name='link-flow_opt_decisions', country=country, year=year, climatic_year=climatic_year, 
+                               toy_model_output: bool = False) -> str:
+    return get_csv_file_named(name='link-flow_opt_decisions', country=country, year=year, climatic_year=climatic_year,
                               start_horizon=start_horizon, toy_model_output=toy_model_output)
-    
+
 
 def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                              toy_model_output: bool = False) -> str:
-    return get_csv_file_named(name='marginal_prices', country=country, year=year, climatic_year=climatic_year, 
+    return get_csv_file_named(name='marginal_prices', country=country, year=year, climatic_year=climatic_year,
                               start_horizon=start_horizon, toy_model_output=toy_model_output)
 
 

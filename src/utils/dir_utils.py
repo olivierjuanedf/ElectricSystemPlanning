@@ -62,6 +62,13 @@ def find_project_root(start_path: Path) -> Path:
     raise RuntimeError("Project root not found")
 
 
+def get_files_in_dir(my_dir: str, return_full_path: bool = False) -> List[str]:
+    files = [elt for elt in os.listdir(my_dir) if os.path.isfile(os.path.join(my_dir, elt))]
+    if return_full_path:
+        files = [os.path.join(my_dir, file) for file in files]
+    return files
+
+
 def get_files_from_prefix(folder: str, file_prefix: str, return_full_path: bool = False) -> List[str]:
     selec_files = [file for file in os.listdir(folder)
                    if os.path.isfile(os.path.join(folder, file)) and file.startswith(file_prefix)]

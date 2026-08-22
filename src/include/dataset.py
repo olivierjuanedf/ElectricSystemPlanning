@@ -18,7 +18,8 @@ from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER, HYDRO_KEY_COLUMNS, \
-    HYDRO_VALUE_COLUMNS, HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS
+    HYDRO_VALUE_COLUMNS, HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS, \
+    INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset_builder import GenerationUnitData, select_gen_units_data
 from src.utils.basic_utils import get_intersection_of_lists
@@ -26,7 +27,7 @@ from src.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on
     create_dict_from_df_row, resample_and_distribute
 from src.utils.dir_utils import uniformize_path_os
 from src.utils.eraa_data_reader import filter_input_data, gen_capa_pt_str_sanitizer, select_interco_capas, \
-    set_aggreg_cf_prod_types_data, read_and_process_hydro_data
+    set_aggreg_cf_prod_types_data, read_and_process_hydro_data, read_and_process_hydro_data_from_input_folder
 from src.utils.write import json_dump
 
 N_SPACES_MSG = 2
@@ -165,24 +166,12 @@ def set_final_hydro_key_cols(hydro_dt: str) -> List[str]:
     return key_cols
 
 
-def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_year: int,
-                   period: Tuple[datetime, datetime], agg_warn_over_cases: bool = True) \
+def process_hydro_data(hydro_dt: str, df_hydro_data: pd.DataFrame, countries: List[str], climatic_year: int,
+                       period: Tuple[datetime, datetime], agg_warn_over_cases: bool = True) \
         -> (Optional[Dict[str, pd.DataFrame]], List[str]):
     """
-    Get hydro. data - with generic function for the different (sub) datatypes: ror prod., inflows, extreme levels
-    Args:
-        hydro_dt: hydro datatype considered
-        folder: in which data is to be read
-        countries: to be considered
-        climatic_year: idem
-        period: idem
-        agg_warn_over_cases: aggregate warning message over all countries (to avoid multiplying them)
-
-    Returns: {country: associated df with date and climatic year - with unique value - as 'key' columns}, countries wo
-    data (for aggregate warning hereafter)
+    Process hydro data - common operations to the different types of data
     """
-    logging.debug(f'Get {hydro_dt} data (1 file over all countries and years)')
-    df_hydro_data = read_and_process_hydro_data(hydro_dt=hydro_dt, folder=folder)
     date_col = COLUMN_NAMES.date
     period_start = period[0]
     period_end = period[1]
@@ -220,6 +209,64 @@ def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_ye
             else:
                 logging.warning(f'No {hydro_dt} data obtained for country {country}')
             per_country_hydro_data[country] = pd.DataFrame()
+    return per_country_hydro_data, countries_wo_data
+
+
+def get_hydro_data(hydro_dt: str, folder: str, countries: List[str], climatic_year: int,
+                   period: Tuple[datetime, datetime], agg_warn_over_cases: bool = True) \
+        -> (Optional[Dict[str, pd.DataFrame]], List[str]):
+    """
+    Get hydro. data - with generic function for the different (sub) datatypes: ror prod., inflows, extreme levels
+    Args:
+        hydro_dt: hydro datatype considered
+        folder: in which data is to be read
+        countries: to be considered
+        climatic_year: idem
+        period: idem
+        agg_warn_over_cases: aggregate warning message over all countries (to avoid multiplying them)
+
+    Returns: {country: associated df with date and climatic year - with unique value - as 'key' columns}, countries wo
+    data (for aggregate warning hereafter)
+    """
+    logging.debug(f'Get {hydro_dt} data (1 file over all countries and years)')
+    df_hydro_data = read_and_process_hydro_data(hydro_dt=hydro_dt, folder=folder)
+    per_country_hydro_data, countries_wo_data = (
+        process_hydro_data(hydro_dt=hydro_dt, df_hydro_data=df_hydro_data, countries=countries,
+                           climatic_year=climatic_year, period=period, agg_warn_over_cases=agg_warn_over_cases)
+    )
+
+    return per_country_hydro_data, countries_wo_data
+
+
+def get_hydro_data_from_input_folder(hydro_dt: str, folder: str, countries: List[str], year: int, climatic_year: int,
+                                     period: Tuple[datetime, datetime], agg_warn_over_cases: bool = True) \
+        -> (Optional[Dict[str, pd.DataFrame]], List[str]):
+    """
+    Get hydro. data - with generic function for the different (sub) datatypes: ror prod., inflows, extreme levels;
+    from INPUT folder accessible to the students. Slight differences with preceding function get_hydro_data is that
+    (i) There is one file per country and target year (following formats used by students); and (ii) zone column no
+    more present inside the files (as info obtained from filename)
+    Args:
+        hydro_dt: hydro datatype considered
+        folder: in which data is to be read
+        countries: to be considered
+        year: idem
+        climatic_year: idem
+        period: idem
+        agg_warn_over_cases: aggregate warning message over all countries (to avoid multiplying them)
+
+    Returns: {country: associated df with date and climatic year - with unique value - as 'key' columns}, countries wo
+    data (for aggregate warning hereafter)
+    """
+    logging.debug(f'Get {hydro_dt} data FROM INPUT FOLDER (1 file per country and year)')
+    df_hydro_data = (
+        read_and_process_hydro_data_from_input_folder(hydro_dt=hydro_dt, folder=folder, countries=countries, year=year)
+    )
+    per_country_hydro_data, countries_wo_data = (
+        process_hydro_data(hydro_dt=hydro_dt, df_hydro_data=df_hydro_data, countries=countries,
+                           climatic_year=climatic_year, period=period, agg_warn_over_cases=agg_warn_over_cases)
+    )
+
     return per_country_hydro_data, countries_wo_data
 
 
@@ -473,6 +520,9 @@ def print_out_agg_warning_hydro_data(aggreg_warning: Dict[str, List[str]]):
 
 @dataclass
 class Dataset:
+    # get min./max. (generation) levels params from data (1 file common to all countries, directly in ERAA format
+    # -> easier if provided by teachers)? Or input folder alternatively (for students to modify these infos)
+    GET_HYDRAU_RESERVOIR_OPT_CONST_FROM_DATA_FOLDER = False
     agg_prod_types_with_cf_data: List[str]
     source: str = 'eraa_2023.2'
     is_stress_test: bool = False
@@ -521,7 +571,10 @@ class Dataset:
         res_cf_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.res_capa_factors)
         gen_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.generation_capas)
         interco_capas_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.interco_capas)
-        hydro_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.hydro)
+        if self.GET_HYDRAU_RESERVOIR_OPT_CONST_FROM_DATA_FOLDER:
+            hydro_folder = os.path.join(INPUT_ERAA_FOLDER, DT_SUBFOLDERS.hydro)
+        else:
+            hydro_folder = os.path.join(INPUT_LT_UC_SUBFOLDER, INPUT_LT_UC_OPTIONAL_SUBFOLDER)
 
         self.demand = {}
         self.fatal_prod = {}
@@ -574,14 +627,25 @@ class Dataset:
                 aggreg_warning[DATATYPE_NAMES.hydro_inflows] = countries_wo_data
         # both extr levels data in same file -> get data once
         if DATATYPE_NAMES.hydro_levels_min in dts_tb_read or DATATYPE_NAMES.hydro_levels_max in dts_tb_read:
-            hydro_extr_levels_data, countries_wo_data = (
-                get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=hydro_folder,
-                               countries=uc_run_params.selected_countries,
-                               climatic_year=uc_run_params.selected_climatic_year,
-                               period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end),
-                               agg_warn_over_cases=agg_warn_over_cases
-                               )
-            )
+            # get from data folder -> on "teachers' side"
+            if self.GET_HYDRAU_RESERVOIR_OPT_CONST_FROM_DATA_FOLDER:
+                hydro_extr_levels_data, countries_wo_data = (
+                    get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=hydro_folder,
+                                   countries=uc_run_params.selected_countries,
+                                   climatic_year=uc_run_params.selected_climatic_year,
+                                   period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end),
+                                   agg_warn_over_cases=agg_warn_over_cases
+                                   )
+                )
+            # from input/long_term_uc/countries/optional -> on "students' side"
+            else:
+                get_hydro_data_from_input_folder(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=hydro_folder,
+                                                 countries=uc_run_params.selected_countries,
+                                                 year=uc_run_params.selected_target_year,
+                                                 climatic_year=uc_run_params.selected_climatic_year,
+                                                 period=(uc_run_params.uc_period_start, uc_run_params.uc_period_end),
+                                                 agg_warn_over_cases=agg_warn_over_cases
+                                                 )
             if len(countries_wo_data) > 0:
                 aggreg_warning[DATATYPE_NAMES.hydro_levels_min] = countries_wo_data
             # from {country: df containing both min and max levels data} to two separate dictionaries

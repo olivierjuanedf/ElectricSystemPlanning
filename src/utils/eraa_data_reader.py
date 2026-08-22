@@ -7,14 +7,14 @@ from datetime import datetime
 from src.common.constants.aggreg_operations import AggregOpeNames
 from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT, FILES_FORMAT, HYDRO_VALUE_COLUMNS, HYDRO_FILES, \
-    HYDRO_KEY_COLUMNS, HYDRO_DEFAULT_VALUES
+    HYDRO_KEY_COLUMNS, HYDRO_DEFAULT_VALUES, HYDRO_FILES_PREFIX_IN_INPUT_FOLDER
 from src.utils.basic_utils import str_sanitizer, robust_cast_str_to_float
 from src.utils.dates import set_date_from_year_and_iso_idx, set_date_from_year_and_day_idx
 from src.utils.df_utils import cast_df_col_as_date, concatenate_dfs, selec_in_df_based_on_list, \
     get_subdf_from_date_range, replace_none_values_in_df
 
 
-def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, period_start: datetime, 
+def filter_input_data(df: pd.DataFrame, date_col: str, climatic_year_col: str, period_start: datetime,
                       period_end: datetime, climatic_year: int) -> pd.DataFrame:
     # If ERAA date format not automatically cast by pd
     first_date = df[date_col].iloc[0]
@@ -43,7 +43,7 @@ def set_aggreg_cf_prod_types_data(df_cf_list: List[pd.DataFrame], pt_agg_col: st
 def gen_capa_pt_str_sanitizer(gen_capa_prod_type: str) -> str:
     # very ad-hoc operation
     sanitized_gen_capa_pt = gen_capa_prod_type.replace(' - ', ' ')
-    sanitized_gen_capa_pt = str_sanitizer(raw_str=sanitized_gen_capa_pt, 
+    sanitized_gen_capa_pt = str_sanitizer(raw_str=sanitized_gen_capa_pt,
                                           ad_hoc_replacements={'gas_': 'gas', '(': '', ')': ''})
     return sanitized_gen_capa_pt
 
@@ -54,7 +54,7 @@ def select_interco_capas(df_intercos_capa: pd.DataFrame, countries: List[str]) -
     origin_col = COLUMN_NAMES.zone_origin
     destination_col = COLUMN_NAMES.zone_destination
     df_intercos_capa[selection_col] = \
-        df_intercos_capa.apply(lambda col: 1 if (col[origin_col] in countries 
+        df_intercos_capa.apply(lambda col: 1 if (col[origin_col] in countries
                                                  and col[destination_col] in countries) else 0, axis=1)
     # keep only lines with both origin and destination zones in the list of available countries
     df_intercos_capa = df_intercos_capa[df_intercos_capa[selection_col] == 1]
@@ -63,6 +63,47 @@ def select_interco_capas(df_intercos_capa: pd.DataFrame, countries: List[str]) -
     all_cols.remove(selection_col)
     df_intercos_capa = df_intercos_capa[all_cols]
     return df_intercos_capa
+
+
+def process_hydro_df(df: pd.DataFrame, hydro_dt: str, rm_week_and_day_cols: bool = True) -> pd.DataFrame:
+    # robust cast to numeric values -> got some pbs with data... TODO: fix this more properly
+    value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
+    for col in value_cols:
+        df[col] = df[col].apply(robust_cast_str_to_float)
+    # replace none values by default ones
+    df = replace_none_values_in_df(df=df, per_col_repl_values=HYDRO_DEFAULT_VALUES[hydro_dt],
+                                   key_cols=HYDRO_KEY_COLUMNS[hydro_dt])
+    # specific treatment for hydro weekly/daily data -> set date column based on week(/and day) values
+    df_cols = list(df.columns)
+    week_col = COLUMN_NAMES.week
+    day_col = COLUMN_NAMES.day
+    date_col = COLUMN_NAMES.date
+    if day_col not in df_cols:  # set date from week index only
+        # add day column with 1 for all (i.e. Monday)
+        df[day_col] = 1
+        df_cols.append(day_col)
+        # remove rows with invalid week idx (> 52)
+        init_len = len(df)
+        df = df[df[week_col] < 53]
+        new_len = len(df)
+        if new_len < init_len:
+            logging.warning(f'{init_len - new_len} rows suppressed in {hydro_dt} data due to invalid week idx (> 52)')
+        # set date column based on week and day=1 index values
+        df[date_col] = (
+            df.apply(lambda row:
+                     set_date_from_year_and_iso_idx(year=1900, week_idx=row[week_col], day_idx=row[day_col]),
+                     axis=1)
+        )
+    else:  # only from day index from 1 to 365
+        df[date_col] = (df[day_col]
+                        .apply(lambda x: set_date_from_year_and_day_idx(year=1900, day_idx=x))
+                        )
+    if rm_week_and_day_cols:
+        cols_tb_rmed = [week_col]
+        if day_col in df_cols:
+            cols_tb_rmed.append(day_col)
+        df.drop(columns=cols_tb_rmed, inplace=True)
+    return df
 
 
 def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols: bool = True) \
@@ -78,41 +119,34 @@ def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols
         return None
 
     df_hydro = pd.read_csv(hydro_file, sep=FILES_FORMAT.column_sep, decimal=FILES_FORMAT.decimal_sep)
-    # robust cast to numeric values -> got some pbs with data... TODO: fix this more properly
-    value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
-    for col in value_cols:
-        df_hydro[col] = df_hydro[col].apply(robust_cast_str_to_float)
-    # replace none values by default ones
-    df_hydro = replace_none_values_in_df(df=df_hydro, per_col_repl_values=HYDRO_DEFAULT_VALUES[hydro_dt],
-                                         key_cols=HYDRO_KEY_COLUMNS[hydro_dt])
-    # specific treatment for hydro weekly/daily data -> set date column based on week(/and day) values
-    df_cols = list(df_hydro.columns)
-    week_col = COLUMN_NAMES.week
-    day_col = COLUMN_NAMES.day
-    date_col = COLUMN_NAMES.date
-    if day_col not in df_cols:  # set date from week index only
-        # add day column with 1 for all (i.e. Monday)
-        df_hydro[day_col] = 1
-        df_cols.append(day_col)
-        # remove rows with invalid week idx (> 52)
-        init_len = len(df_hydro)
-        df_hydro = df_hydro[df_hydro[week_col] < 53]
-        new_len = len(df_hydro)
-        if new_len < init_len:
-            logging.warning(f'{init_len - new_len} rows suppressed in {hydro_dt} data due to invalid week idx (> 52)')
-        # set date column based on week and day=1 index values
-        df_hydro[date_col] = (
-            df_hydro.apply(lambda row:
-                           set_date_from_year_and_iso_idx(year=1900, week_idx=row[week_col], day_idx=row[day_col]),
-                           axis=1)
-        )
-    else:  # only from day index from 1 to 365
-        df_hydro[date_col] = (df_hydro[day_col]
-                                       .apply(lambda x: set_date_from_year_and_day_idx(year=1900, day_idx=x))
-                                       )
-    if rm_week_and_day_cols:
-        cols_tb_rmed = [week_col]
-        if day_col in df_cols:
-            cols_tb_rmed.append(day_col)
-        df_hydro.drop(columns=cols_tb_rmed, inplace=True)
+    df_hydro = process_hydro_df(df=df_hydro, hydro_dt=hydro_dt, rm_week_and_day_cols=rm_week_and_day_cols)
     return df_hydro
+
+
+def read_and_process_hydro_data_from_input_folder(hydro_dt: str, folder: str, countries: List[str], year: int,
+                                                  rm_week_and_day_cols: bool = True) -> Optional[pd.DataFrame]:
+    """
+    Read and process hydro data files FROM INPUT FOLDER (accessible to the students) -> that share some common
+    structure (in particular with only week - and day - idx values, i.o. dates)
+    Returns: df with read data
+    """
+    zone_col = "zone"
+    country_hydro_dfs = []
+    countries_with_data = []
+    for country in countries:
+        hydro_file = f'{folder}/{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv'
+        if os.path.exists(hydro_file):
+            countries_with_data.append(country)
+            df_hydro = pd.read_csv(hydro_file, sep=FILES_FORMAT.column_sep, decimal=FILES_FORMAT.decimal_sep)
+            df_hydro = process_hydro_df(df=df_hydro, hydro_dt=hydro_dt, rm_week_and_day_cols=rm_week_and_day_cols)
+            # add zone column to prepare concatenation
+            df_hydro[zone_col] = country
+            ordered_cols = [country] + list(df_hydro.columns)
+            df_hydro = df_hydro[ordered_cols]
+            country_hydro_dfs.append(df_hydro)
+    if len(country_hydro_dfs) == 0:
+        logging.warning(f"No data {hydro_dt} obtained in folder {folder} for countries {countries} and year {year} "
+                        f"-> None returned")
+        return None
+    logging.info(f"Countries with hydro {hydro_dt} data read from input folder: {countries_with_data}")
+    return concatenate_dfs(dfs=country_hydro_dfs)
