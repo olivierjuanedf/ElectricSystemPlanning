@@ -76,6 +76,9 @@ HYDRO_FILES = {DATATYPE_NAMES.hydro_ror: 'PECD-hydro-daily-ror-generation.csv',
                DATATYPE_NAMES.hydro_gen_min: 'PECD-hydro-weekly-reservoir-min-max-generation.csv'}
 HYDRO_FILES[DATATYPE_NAMES.hydro_levels_max] = HYDRO_FILES[DATATYPE_NAMES.hydro_levels_min]
 HYDRO_FILES[DATATYPE_NAMES.hydro_gen_max] = HYDRO_FILES[DATATYPE_NAMES.hydro_gen_min]
+# hydro datatypes for which data can be optionally obtained from input folder, in which students can do some modifs
+HYDRO_DTS_OPT_FROM_INPUT_FOLDER = [DATATYPE_NAMES.hydro_gen_min, DATATYPE_NAMES.hydro_gen_max,
+                                   DATATYPE_NAMES.hydro_levels_min, DATATYPE_NAMES.hydro_levels_max]
 HYDRO_FILES_PREFIX_IN_INPUT_FOLDER = {DATATYPE_NAMES.hydro_ror: 'hydro-daily-ror-generation',
                                       DATATYPE_NAMES.hydro_inflows: 'hydro-weekly-inflows',
                                       DATATYPE_NAMES.hydro_levels_min: 'hydro-weekly-reservoir-min-max-levels',
