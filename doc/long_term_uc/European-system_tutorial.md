@@ -35,7 +35,6 @@ In detail, and **except if the resolution of PyPSA optimization model was not su
 * (*figures/* subfolder) **price curves**, for the different countries in a unique .png file
 
 
-
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
 **Based on the numeric results obtained for each of the simulated configurations you can start "designing" (i.e. sizing the capacities) your own country** (if in "solo" mode)/European ("Europe" mode) system. Consider different:
@@ -99,3 +98,32 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
 - **[NOT TO BE MODIFIED]** [pypsa_static_params.json](../../input/long_term_uc/pypsa_static_params.json):  
     - "<span style="color:#32B032; font-weight:bold">min_unit_params_per_agg_pt</span>": list of minimal parameters to be provided when creating different types of generators in PyPSA
     - "<span style="color:#32B032; font-weight:bold">generator_params_default_vals</span>": default values applied when creating PyPSA generators
+
+## Optional functionalities
+
+### Hydraulic assets: a more realistic modelling
+
+TODO[teachers]: see if mode ok (students completing existing *data/.../PECD-hydro-weekly-reservoir-min-max-generation.csv* file...
+or as proposed below with a file per country in input/long_term_uc/countries/optional subfolder)
+
+In order to get a dispatch of hydraulic assets closer to the one observed in reality - especially for (meta-)countries 
+in which it represents a significant part of the capacities (e.g., Scandinavia!), it may be useful to specify:
+    - **min/max generation levels**: adding and completing a file [hydro-weekly-reservoir-min-max-generation_{year}_{country}.csv](../../input/long_term_uc/countries/optional/hydro-weekly-reservoir-min-max-generation_2033_italy.csv),
+    cf. here the case of Italy.
+    **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
+      - "week": index in 1, ..., 53
+      - "climatic_year": at least the value used for simulation
+      - "min_value" (resp. "max_value"): min (resp. max) WEEKLY generation level (MWh). In turn, the sum of production
+      decisions in the week will be lower- (resp. upper-) bounded by this value
+    - **min/max generation levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/countries/optional/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
+    cf. here the case of France
+    **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
+      - "week": index in 1, ..., 53
+      - "min_value" (resp. "max_value"): min (resp. max) END-OF-WEEK reservoir charging level (%). In turn, the end-of-week 
+      SoC, i.e. the start-of-week SoC + sum of production - consumption decisions in the week  will be lower- 
+      (resp. upper-) bounded by this value
+      N.B. On the contrary to the data in generation level, here the provided parameters are the same whatever the CY 
+      (this is aligned on data provided in ERAA2023)
+
+Note that **for both these inputs, the presence of a file for considered year, and country, will imply that such constraints will be 
+added to the UC model** simulated (if file in proper format!).
