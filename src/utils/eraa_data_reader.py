@@ -84,7 +84,7 @@ def process_hydro_df(df: pd.DataFrame, hydro_dt: str, rm_week_and_day_cols: bool
         df_cols.append(day_col)
         # remove rows with invalid week idx (> 52)
         init_len = len(df)
-        df = df[df[week_col] < 53]
+        df = df[df[week_col] < 53].copy()
         new_len = len(df)
         if new_len < init_len:
             logging.warning(f'{init_len - new_len} rows suppressed in {hydro_dt} data due to invalid week idx (> 52)')
