@@ -8,7 +8,7 @@ from typing import Iterator, List
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.temporal import Timescale
-from src.utils.dir_utils import make_dir, uniformize_path_os, find_project_root, get_files_in_dir
+from src.utils.dir_utils import make_dir, uniformize_path_os, find_project_root, get_files_in_dir, get_folders_in_dir
 
 
 @dataclass
@@ -164,31 +164,57 @@ OUTPUT_DATA_ANALYSIS_FOLDER = (
     uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "data_analysis")))
 
 
+def get_input_lt_uc_optional_files(optional_subfolder: str, all_years: List[int],
+                                   all_countries: List[str]) -> List[str]:
+    """
+    Get list of allowed optional files for a given subfolder, e.g. "hydro"
+    :param optional_subfolder
+    """
+    # hydro allowed files over all (country, year) cases
+    if optional_subfolder == DT_SUBFOLDERS.hydro:
+        hydro_datatypes = [DATATYPE_NAMES.hydro_ror, DATATYPE_NAMES.hydro_inflows, DATATYPE_NAMES.hydro_levels_min,
+                           DATATYPE_NAMES.hydro_gen_min]
+        available_cases = product(hydro_datatypes, all_years, all_countries)
+        return [f"{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv"
+                for (hydro_dt, year, country) in available_cases]
+
+
 def check_uc_input_folder_content(all_countries: List[str], all_years: List[int] = None):
     uc_countries_folder = uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'countries'))
     files = get_files_in_dir(my_dir=uc_countries_folder)
     gitignore_file = '.gitignore'
     if gitignore_file in files:
         files.remove(gitignore_file)
-    allowed_files = [f'{country}.json' for country in all_countries]
+    allowed_files = set([f'{country}.json' for country in all_countries])
+    unknown_files = list(set(files) - allowed_files)
+    per_fold_unknown_files = {}
+    if len(unknown_files) > 0:
+        per_fold_unknown_files["root"] = unknown_files
     # optional sub-folder may be present in this folder
     if INPUT_LT_UC_OPTIONAL_SUBFOLDER in os.listdir(uc_countries_folder):
         if all_years is None:
             raise Exception(f"Available years must be provided to check the content of input folder when "
                             f"{INPUT_LT_UC_OPTIONAL_SUBFOLDER} is present")
         optional_folder = os.path.join(uc_countries_folder, INPUT_LT_UC_OPTIONAL_SUBFOLDER)
-        optional_files = get_files_in_dir(my_dir=optional_folder)
-        files.extend(optional_files)
-        # add hydro allowed files over all (country, year) cases
-        hydro_datatypes = [DATATYPE_NAMES.hydro_ror, DATATYPE_NAMES.hydro_inflows, DATATYPE_NAMES.hydro_levels_min,
-                           DATATYPE_NAMES.hydro_gen_min]
-        available_cases = product(hydro_datatypes, all_years, all_countries)
-        allowed_files.extend([f"{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv"
-                              for (hydro_dt, year, country) in available_cases])
-    allowed_files = set(allowed_files)
-    unknown_files = list(set(files) - allowed_files)
-    if len(unknown_files) > 0:
-        raise Exception(f'Unknown files in UC input folder {uc_countries_folder}: {unknown_files}. '
+        # check coherence of optional subfolder names
+        allowed_optional_subfolders = {DT_SUBFOLDERS.hydro}
+        optional_subfolders = get_folders_in_dir(my_dir=optional_folder)
+        unknown_subfolders = list(set(optional_subfolders) - allowed_optional_subfolders)
+        if len(unknown_subfolders) > 0:
+            per_fold_unknown_files["optional"] = unknown_subfolders
+        # then names of file in each of the optional (allowed) subfolders
+        for subfold in allowed_optional_subfolders:
+            if subfold in optional_subfolders:
+                optional_folder_path = os.path.join(optional_folder, subfold)
+                files = get_files_in_dir(my_dir=optional_folder_path)
+                allowed_files = set(get_input_lt_uc_optional_files(optional_subfolder=subfold,
+                                                                   all_years=all_years, all_countries=all_countries)
+                                    )
+                unknown_files = list(set(files) - allowed_files)
+                if len(unknown_files) > 0:
+                    per_fold_unknown_files[f"optional/{subfold}"] = unknown_files
+    if len(per_fold_unknown_files) > 0:
+        raise Exception(f'Unknown files in UC input (sub-)folder(s) {uc_countries_folder}: {per_fold_unknown_files}. '
                         f'Remove then and re-run')
 
 

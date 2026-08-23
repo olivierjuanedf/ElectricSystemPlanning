@@ -5,7 +5,6 @@ import pandas as pd
 from datetime import datetime
 
 from src.common.constants.aggreg_operations import AggregOpeNames
-from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT, FILES_FORMAT, HYDRO_VALUE_COLUMNS, HYDRO_FILES, \
     HYDRO_KEY_COLUMNS, HYDRO_DEFAULT_VALUES, HYDRO_FILES_PREFIX_IN_INPUT_FOLDER
 from src.utils.basic_utils import str_sanitizer, robust_cast_str_to_float
@@ -70,6 +69,7 @@ def process_hydro_df(df: pd.DataFrame, hydro_dt: str, rm_week_and_day_cols: bool
     value_cols = HYDRO_VALUE_COLUMNS[hydro_dt]
     for col in value_cols:
         df[col] = df[col].apply(robust_cast_str_to_float)
+
     # replace none values by default ones
     df = replace_none_values_in_df(df=df, per_col_repl_values=HYDRO_DEFAULT_VALUES[hydro_dt],
                                    key_cols=HYDRO_KEY_COLUMNS[hydro_dt])
@@ -91,13 +91,12 @@ def process_hydro_df(df: pd.DataFrame, hydro_dt: str, rm_week_and_day_cols: bool
         # set date column based on week and day=1 index values
         df[date_col] = (
             df.apply(lambda row:
-                     set_date_from_year_and_iso_idx(year=1900, week_idx=row[week_col], day_idx=row[day_col]),
+                     set_date_from_year_and_iso_idx(year=1900, week_idx=int(row[week_col]), day_idx=int(row[day_col])),
                      axis=1)
         )
     else:  # only from day index from 1 to 365
-        df[date_col] = (df[day_col]
-                        .apply(lambda x: set_date_from_year_and_day_idx(year=1900, day_idx=x))
-                        )
+        df[date_col] = df[day_col].apply(lambda x: set_date_from_year_and_day_idx(year=1900, day_idx=x))
+
     if rm_week_and_day_cols:
         cols_tb_rmed = [week_col]
         if day_col in df_cols:
@@ -113,7 +112,7 @@ def read_and_process_hydro_data(hydro_dt: str, folder: str, rm_week_and_day_cols
     values, i.o. dates)
     Returns: df with read data
     """
-    hydro_file = f'{folder}/{HYDRO_FILES[hydro_dt]}'
+    hydro_file = os.path.join(folder, HYDRO_FILES[hydro_dt])
     if not os.path.exists(hydro_file):
         logging.warning(f'{hydro_dt.capitalize()} data file does not exist: not accounted for here')
         return None
@@ -134,14 +133,15 @@ def read_and_process_hydro_data_from_input_folder(hydro_dt: str, folder: str, co
     country_hydro_dfs = []
     countries_with_data = []
     for country in countries:
-        hydro_file = f'{folder}/{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv'
+        hydro_file = os.path.join(folder, f"{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv")
         if os.path.exists(hydro_file):
             countries_with_data.append(country)
             df_hydro = pd.read_csv(hydro_file, sep=FILES_FORMAT.column_sep, decimal=FILES_FORMAT.decimal_sep)
             df_hydro = process_hydro_df(df=df_hydro, hydro_dt=hydro_dt, rm_week_and_day_cols=rm_week_and_day_cols)
             # add zone column to prepare concatenation
+            df_cols_init = list(df_hydro.columns)
             df_hydro[zone_col] = country
-            ordered_cols = [country] + list(df_hydro.columns)
+            ordered_cols = [zone_col] + df_cols_init
             df_hydro = df_hydro[ordered_cols]
             country_hydro_dfs.append(df_hydro)
     if len(country_hydro_dfs) == 0:

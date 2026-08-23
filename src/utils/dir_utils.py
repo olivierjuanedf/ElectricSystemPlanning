@@ -69,6 +69,13 @@ def get_files_in_dir(my_dir: str, return_full_path: bool = False) -> List[str]:
     return files
 
 
+def get_folders_in_dir(my_dir: str, return_full_path: bool = False) -> List[str]:
+    folders = [elt for elt in os.listdir(my_dir) if os.path.isdir(os.path.join(my_dir, elt))]
+    if return_full_path:
+        folders = [os.path.join(my_dir, folder) for folder in folders]
+    return folders
+
+
 def get_files_from_prefix(folder: str, file_prefix: str, return_full_path: bool = False) -> List[str]:
     selec_files = [file for file in os.listdir(folder)
                    if os.path.isfile(os.path.join(folder, file)) and file.startswith(file_prefix)]
