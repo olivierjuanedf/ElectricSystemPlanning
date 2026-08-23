@@ -151,13 +151,24 @@ def prepro_bound_params(bound_values: Dict[str, Union[float, np.ndarray]], max_f
     :param max_feas_bound: of the considered assets
     :param n_ts: number of time-slots in considered model
     """
-    # project soc_min/max values on [0, capa.], to induce real constraints (not <0, or bigger than energy capacity)
+    # project bound min/max values on [0, capa.], to induce real constraints (not <0, or bigger than energy capacity)
     bound_values = {asset_name: np.maximum(0, np.minimum(max_feas_bound[asset_name], extr_vect))
                     for asset_name, extr_vect in bound_values.items()}
     # cast constant values as vectors. TODO: Q necessary? (or Linopy can broadcast?)
-    bound_values = {asset_name: extr_vect * np.ones(n_ts) if isinstance(extr_vect, float) else extr_vect
+    bound_values = {asset_name: extr_vect if isinstance(extr_vect, np.ndarray) else extr_vect * np.ones(n_ts)
                     for asset_name, extr_vect in bound_values.items()}
     return bound_values
+
+
+def stack_per_storage_bound_as_xarray(per_gen_bound: Dict[str, np.ndarray], snapshots) -> xr.DataArray:
+    return xr.DataArray(
+        np.column_stack([bound_vect for pu_name, bound_vect in per_gen_bound.items()]),
+        dims=("snapshot", "StorageUnit"),
+        coords={
+            "snapshot": snapshots,
+            "StorageUnit": list(per_gen_bound),
+        },
+    )
 
 
 @dataclass
@@ -347,24 +358,9 @@ class PypsaModel:
         # set associated constraints in Linopy
         # version with only assets with such constraints -> TODO: check if order correct, or if mask is to be used
         hydro_soc_var = self.network.model.variables[PypsaOptimVarNames.storage_soc]
-        assets_with_soc_max_const = list(soc_max)
-        soc_max_array = xr.DataArray(
-            np.column_stack([max_vect for name, max_vect in soc_max.items()]),
-            dims=("snapshot", "StorageUnit"),
-            coords={
-                "snapshot": self.network.snapshots,
-                "StorageUnit": assets_with_soc_max_const,
-            },
-        )
-        assets_with_soc_min_const = list(soc_min)
-        soc_min_array = xr.DataArray(
-            np.column_stack([min_vect for name, min_vect in soc_min.items()]),
-            dims=("snapshot", "StorageUnit"),
-            coords={
-                "snapshot": self.network.snapshots,
-                "StorageUnit": assets_with_soc_min_const,
-            },
-        )
+        # cast dict of bound values as xarray - format to be used in Linopy
+        soc_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_min, snapshots=self.network.snapshots)
+        soc_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_max, snapshots=self.network.snapshots)
         self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name="hydro_soc_min")
         self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name="hydro_soc_max")
 
@@ -387,8 +383,14 @@ class PypsaModel:
         generation_max = prepro_bound_params(bound_values=generation_max, max_feas_bound=max_feas_bound, n_ts=n_ts)
         # Generator production constraints, NOT CONSIDERING charging part
         hydro_gen_var = self.network.model.variables[PypsaOptimVarNames.storage_p_dispatch]
-        self.network.model.add_constraints(hydro_gen_var >= generation_min, name="hydro_gen_min")
-        self.network.model.add_constraints(hydro_gen_var <= generation_max, name="hydro_gen_max")
+        # And convert bounds as xarray, to be used in Linopy
+        # cast dict of bound values as xarray - format to be used in Linopy
+        generation_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=generation_min,
+                                                                 snapshots=self.network.snapshots)
+        generation_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=generation_max,
+                                                                 snapshots=self.network.snapshots)
+        self.network.model.add_constraints(hydro_gen_var >= generation_min_array, name="hydro_gen_min")
+        self.network.model.add_constraints(hydro_gen_var <= generation_max_array, name="hydro_gen_max")
 
     def get_n_time_slots(self) -> int:
         return len(self.network.snapshots)
