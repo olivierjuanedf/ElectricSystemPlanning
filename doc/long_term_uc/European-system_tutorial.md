@@ -108,14 +108,14 @@ or as proposed below with a file per country in input/long_term_uc/countries/opt
 
 In order to get a dispatch of hydraulic assets closer to the one observed in reality - especially for (meta-)countries 
 in which it represents a significant part of the capacities (e.g., Scandinavia!), it may be useful to specify:
-    - **min/max generation levels**: adding and completing a file [hydro-weekly-reservoir-min-max-generation_{year}_{country}.csv](../../input/long_term_uc/countries/optional/hydro-weekly-reservoir-min-max-generation_2033_italy.csv),
+    - **min/max generation levels**: adding and completing a file [hydro-weekly-reservoir-min-max-generation_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-generation_2033_italy.csv),
     cf. here the case of Italy.
     **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
       - "week": index in 1, ..., 53
       - "climatic_year": at least the value used for simulation
       - "min_value" (resp. "max_value"): min (resp. max) WEEKLY generation level (MWh). In turn, the sum of production
       decisions in the week will be lower- (resp. upper-) bounded by this value
-    - **min/max generation levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/countries/optional/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
+    - **min/max generation levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
     cf. here the case of France
     **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
       - "week": index in 1, ..., 53
