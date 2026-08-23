@@ -382,10 +382,9 @@ class PypsaModel:
         # or bigger than power capacity * nber of ts in considered period), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
         n_ts_in_period = 168 if extr_gen_temp_period == Timescale.week else 24
-        generation_min = prepro_bound_params(bound_values=generation_min,
-                                             max_feas_bound=power_capa * n_ts_in_period, n_ts=n_ts)
-        generation_max = prepro_bound_params(bound_values=generation_max,
-                                             max_feas_bound=power_capa * n_ts_in_period, n_ts=n_ts)
+        max_feas_bound = {pu_name: capa * n_ts_in_period for pu_name, capa in power_capa.items()}
+        generation_min = prepro_bound_params(bound_values=generation_min, max_feas_bound=max_feas_bound, n_ts=n_ts)
+        generation_max = prepro_bound_params(bound_values=generation_max, max_feas_bound=max_feas_bound, n_ts=n_ts)
         # Generator production constraints, NOT CONSIDERING charging part
         hydro_gen_var = self.network.model.variables[PypsaOptimVarNames.storage_p_dispatch]
         self.network.model.add_constraints(hydro_gen_var >= generation_min, name="hydro_gen_min")
