@@ -1048,7 +1048,7 @@ class Dataset:
                                 warning_data_access(data_name=data_name, country=country,
                                                     agg_prod_type=agg_pt, default_value=default_value)
                             # Q: ok to set constant float and not a vector for this PyPSA attr.?
-                            current_soc_level_max_data = default_value
+                            current_gen_level_max_data = default_value
                         current_assets_data[agg_pt][GenUnitsCustomParams.gen_min] = current_gen_level_min_data
                         current_assets_data[agg_pt][GenUnitsCustomParams.gen_max] = current_gen_level_max_data
 
