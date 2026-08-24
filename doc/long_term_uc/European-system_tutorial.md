@@ -101,10 +101,10 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
 
 ## Optional functionalities
 
-### Hydraulic assets: a more realistic modelling
+To integrate these additional functionalities - at this stage constraints, it consists in adding/filling files in
+[optional input folder](../../input/long_term_uc/optional)
 
-TODO[teachers]: see if mode ok (students completing existing *data/.../PECD-hydro-weekly-reservoir-min-max-generation.csv* file...
-or as proposed below with a file per country in input/long_term_uc/countries/optional subfolder)
+### Hydraulic assets: a more realistic modelling
 
 In order to get a dispatch of hydraulic assets closer to the one observed in reality - especially for (meta-)countries 
 in which it represents a significant part of the capacities (e.g., Scandinavia!), it may be useful to specify:
