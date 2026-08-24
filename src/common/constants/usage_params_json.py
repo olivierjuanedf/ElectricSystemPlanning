@@ -17,6 +17,7 @@ class UsageJsonParamNames:  # by alpha. order
     allow_overwriting_eraa_interco_capa_vals: str = 'allow_overwriting_eraa_interco_capa_vals'
     apply_cf_techno_breakthrough: str = 'apply_cf_techno_breakthrough'
     apply_per_country_json_file_params: str = 'apply_per_country_json_file_params'
+    get_optional_const_from_data_folder: str = 'get_optional_const_from_data_folder'
     log_level: str = 'log_level'
     res_cf_stress_test_cy: str = 'res_cf_stress_test_cy'
     res_cf_stress_test_folder: str = 'res_cf_stress_test_folder'
@@ -30,6 +31,7 @@ USAGE_PARAMS_SHORT_NAMES = {
     UsageJsonParamNames.allow_overwriting_eraa_interco_capa_vals: 'overwriting_eraa_interco_capa_vals',
     UsageJsonParamNames.apply_cf_techno_breakthrough: 'apply_cf_techno_breakthrough',
     UsageJsonParamNames.apply_per_country_json_file_params: 'apply_per_country_json_file_params',
+    UsageJsonParamNames.get_optional_const_from_data_folder: 'get_optional_const_from_data_folder',
     UsageJsonParamNames.log_level: 'log_level',
     UsageJsonParamNames.res_cf_stress_test_cy: 'res_cf_stress_test_cy', 
     UsageJsonParamNames.res_cf_stress_test_folder: 'res_cf_stress_test_folder',

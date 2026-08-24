@@ -9,6 +9,7 @@
     "monozone_toy_uc_model": true,
     "multizones_uc_model": true
   },
+  "get_optional_const_from_data_folder": false,
   "res_cf_stress_test_folder": null,
   "res_cf_stress_test_cy": null,
   "use_first_year_capas_as_default": true,

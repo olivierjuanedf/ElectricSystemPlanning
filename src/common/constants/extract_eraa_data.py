@@ -59,6 +59,8 @@ class UsageParameters:
     apply_cf_techno_breakthrough: bool = False
     res_cf_stress_test_folder: str = None
     res_cf_stress_test_cy: int = None
+    # for optional constraint parameters
+    get_optional_const_from_data_folder: bool = False
 
     def process(self, mode_name: str = None):
         if self.apply_per_country_json_file_params is None:

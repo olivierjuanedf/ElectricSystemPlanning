@@ -562,12 +562,14 @@ def set_per_dt_hydro_folders(get_hydro_reservoir_opt_const_from_data_folder: boo
 
 @dataclass
 class Dataset:
-    # get min./max. (generation) levels params from data (1 file common to all countries, directly in ERAA format
-    # -> easier if provided by teachers)? Or input folder alternatively (for students to modify these infos)
-    GET_HYDRO_OPTIONAL_CONST_FROM_DATA_FOLDER = False
     agg_prod_types_with_cf_data: List[str]
     source: str = 'eraa_2023.2'
     is_stress_test: bool = False
+    # get optional data from ERAA data folder?
+    # A this stage only min./max. (generation) levels params from data (1 file common to all countries, directly in
+    # ERAA format -> easier if provided by teachers)? Or input folder alternatively (for students to modify these infos)
+    get_optional_const_from_data_folder: bool = False
+    # data to be read hereafter
     demand: Dict[str, pd.DataFrame] = None  # {country: df of data}
     net_demand: Dict[str, pd.DataFrame] = None  # idem
     fatal_prod: Dict[str, pd.DataFrame] = None  # idem
@@ -616,7 +618,7 @@ class Dataset:
         # set per hydro. datatype folder path to be used to get data (may be in data/input depending on the cases)
         per_hydro_dt_folder = (
             set_per_dt_hydro_folders(get_hydro_reservoir_opt_const_from_data_folder=
-                                     self.GET_HYDRO_OPTIONAL_CONST_FROM_DATA_FOLDER)
+                                     self.get_optional_const_from_data_folder)
         )
 
         self.demand = {}
@@ -674,7 +676,7 @@ class Dataset:
         if DATATYPE_NAMES.hydro_levels_min in dts_tb_read or DATATYPE_NAMES.hydro_levels_max in dts_tb_read:
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_levels_min]
             # get from data folder -> on "teachers' side"
-            if self.GET_HYDRO_OPTIONAL_CONST_FROM_DATA_FOLDER:
+            if self.get_optional_const_from_data_folder:
                 hydro_extr_levels_data, countries_wo_data = (
                     get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=current_folder,
                                    countries=uc_run_params.selected_countries,
@@ -705,7 +707,7 @@ class Dataset:
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_gen_min]
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_levels_min]
             # get from data folder -> on "teachers' side"
-            if self.GET_HYDRO_OPTIONAL_CONST_FROM_DATA_FOLDER:
+            if self.get_optional_const_from_data_folder:
                 hydro_gen_extr_levels_data, countries_wo_data = (
                     get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_gen_min, folder=current_folder,
                                    countries=uc_run_params.selected_countries,

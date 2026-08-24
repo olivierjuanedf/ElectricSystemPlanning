@@ -28,14 +28,16 @@ from src.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_s
                             read_plot_params, read_usage_params, read_solver_params)
 
 
-def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr,
-                         debug_mode: bool = False, debug_output_folder: str = None) -> Dataset:
+def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr, debug_mode: bool = False,
+                         debug_output_folder: str = None, get_optional_const_from_data_folder: bool = False) -> Dataset:
     """
     Get ERAA data which is needed for current UC simulation; extracted from the data folder of this project
     :param uc_run_params
     :param eraa_data_descr
     :param debug_mode: to save some intermediate data in (JSON) files to more easily debug
     :param debug_output_folder: in which intermediate data must be saved
+    :param get_optional_const_from_data_folder: get optional constraint parameters from ERAA data folder? Alternatively
+    read from input folder - in which students can make modifications
     """
     logging.info(f'{TITLE_LOG_SEP} II)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data {TITLE_LOG_SEP}')
     uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
@@ -45,7 +47,8 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     # initialize dataset object
     eraa_dataset = Dataset(source=f'eraa_{eraa_data_descr.eraa_edition}',
                            agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data,
-                           is_stress_test=uc_run_params.is_stress_test)
+                           is_stress_test=uc_run_params.is_stress_test,
+                           get_optional_const_from_data_folder=get_optional_const_from_data_folder)
 
     eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                     aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
@@ -298,7 +301,8 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     else:
         debug_mode = False
     eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr,
-                                        debug_mode=debug_mode, debug_output_folder=output_folder)
+                                        debug_mode=debug_mode, debug_output_folder=output_folder,
+                                        get_optional_const_from_data_folder=False)
     # and check that minimal parameters needed for model creation have been provided
     # -> to avoid 'obscure crash' hereafter
     check_min_pypsa_params_provided(eraa_dataset=eraa_dataset)
