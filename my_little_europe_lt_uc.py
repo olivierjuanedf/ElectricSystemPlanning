@@ -121,7 +121,8 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
         pypsa_model.add_hydro_extreme_gen_constraint(generation_min=hydro_gen_min, generation_max=hydro_gen_max,
                                                      power_capa=hydro_p_capa)
     if with_sum_of_prod_custom_const:
-        pypsa_model.add_sum_of_prod_custom_const()
+        for sum_prod_const in uc_run_params.sum_prod_constraints:
+            pypsa_model.add_sum_of_prod_custom_const(prod_sum_const=sum_prod_const)
     logging.info(f'PyPSA network main properties: {pypsa_model.network}')
     # plot network  
     # name of current "phase" (of the course), the one associated to this script:

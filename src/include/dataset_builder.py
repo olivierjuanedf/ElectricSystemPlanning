@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
-    OptimPbCharacteristics, OptimPbTypes
+    OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames
 from src.common.constants.temporal import Timescale
@@ -25,7 +25,7 @@ from src.common.fuel_sources import FuelSource
 from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
 from src.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
 from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
-                                   format_with_spaces)
+                                   format_with_spaces, get_default_values)
 from src.utils.dir_utils import make_dir
 from src.utils.pypsa_utils import get_network_obj_value
 from src.utils.serializer import array_serializer
@@ -331,14 +331,33 @@ class PypsaModel:
         # TODO: see if deactivate resolution logs, in cmd windows/log file
         self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
 
-    def add_sum_of_prod_custom_const(self):
+    def add_sum_of_prod_custom_const(self, prod_sum_const: ZoneAndTempProdSumConstraint):
         """
         Add sum-of-production custom constraints, of the form sum_{z, t} coeff(z, t) * production(z, t) <= ub (or >=, =)
         N.B. Can be applied to CO2 max emission constraints
+        :param weights: corresp. between unit names and coeffs to be applied - that can be time-dependent (if np array
+        provided) or constant (if float)
+        :param bound_value: if dict, per-zone constraint will be applied; otherwise over all zones
+        :param const_direction: 'lower', 'equal' or 'upper'
+        :param const_name: only to enrich log, if provided
+        :param
         Returns:
         """
-        logging.warning(f'Add custom sum of prod constraints (sum over z,t coeff(z,t) * prod(z, t) <= ub, or >=, =; '
-                        f'used, e.g. for max CO2 emissions) -> to be coded')
+        const_dir_msg = {CustomConstraintDirection.equal: "= TARGET",
+                         CustomConstraintDirection.lower: "<= UB",
+                         CustomConstraintDirection.upper: ">= LB"}
+        # TODO: update msg
+        # are_coeffs_time_constant = all([isinstance(weight_val, float) for weight_val in list(weights.values())])
+        # coeff_msg = "coeff(z)" if are_coeffs_time_constant else "coeff(z,t)"
+        # per_zone_const = isinstance(bound_value, dict)
+        # const_prefix_msg = "forall z, sum_(prod. unit i in z, t)" if per_zone_const else "sum_(prod. unit i,t)"
+        # bound_arg_msg = "(z)" if per_zone_const else ""
+        # const_name_msg = f" (here for {const_name})" if const_name is not None else ""
+        # logging.info(f'Add custom sum of prod constraints: {const_prefix_msg} {coeff_msg} * prod(i, t) '
+        #              f'{const_dir_msg}{bound_arg_msg}{const_name_msg}')
+        # prod_sum_const.mult_coeff_name -> provide coeff to be used (var cost/CO2 emissions)
+        generators_prod_var = self.network.model.variables[PypsaOptimVarNames.generators_p]
+        # self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name="hydro_soc_max")
 
     def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
                                             soc_max: Dict[str, Union[float, np.ndarray]],
@@ -350,6 +369,7 @@ class PypsaModel:
         :param soc_max: idem, max
         :param energy_capa: dict {unit name: energy capa value}
         """
+        logging.info("Add hydro extreme SoC levels constraints")
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than energy capacity), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
@@ -373,6 +393,7 @@ class PypsaModel:
         :param power_capa: of the assets, to check/make the bound feasible
         :param extr_gen_temp_period: either day, or week
         """
+        logging.info("Add hydro extreme GENERATION levels constraints")
         # TODO: rolling sum - of size dependent on extr_gen_temp_period
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than power capacity * nber of ts in considered period), and (ii) unify as vectors
