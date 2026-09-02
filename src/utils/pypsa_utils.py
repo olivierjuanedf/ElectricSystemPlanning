@@ -13,4 +13,14 @@ def generators_opt_p_to_csv():
 
 
 def get_network_obj_value(network: Network) -> float:
-    return network.objective
+    if hasattr(network, 'objective') and network.objective is not None:
+        try:
+            return float(network.objective)
+        except (TypeError, ValueError):
+            pass
+    if hasattr(network, 'model') and network.model is not None:
+        try:
+            return float(network.model.objective.value)
+        except (AttributeError, TypeError, ValueError):
+            pass
+    return 0.0

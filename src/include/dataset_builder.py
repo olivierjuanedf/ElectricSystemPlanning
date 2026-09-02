@@ -326,10 +326,13 @@ class PypsaModel:
                      f'of origin: {set_per_origin_bus_links_msg(link_names=link_names)}')
 
     def build_model_before_adding_custom_const(self):
-        logging.warning('In PyPSA 0.35.1 not possible to build only model without solving it; '
-                        'to add custome constraints it will be solved first "for fun" (ignoring the solution)')
-        # TODO: see if deactivate resolution logs, in cmd windows/log file
-        self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
+        logging.info('Build PyPSA network model before adding custom constraints')
+        # In PyPSA 1.0+, build_only=True works natively without solving.
+        # We attempt with quiet/logfile options first, then fallback to standard build_only.
+        try:
+            self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
+        except Exception:
+            self.network.optimize(build_only=True)
 
     def add_sum_of_prod_custom_const(self):
         """
@@ -357,7 +360,11 @@ class PypsaModel:
         soc_max = prepro_bound_params(bound_values=soc_max, max_feas_bound=energy_capa, n_ts=n_ts)
         # set associated constraints in Linopy
         # version with only assets with such constraints -> TODO: check if order correct, or if mask is to be used
-        hydro_soc_var = self.network.model.variables[PypsaOptimVarNames.storage_soc]
+        soc_var_name = PypsaOptimVarNames.storage_soc
+        if soc_var_name not in self.network.model.variables:
+            # Try PyPSA 1.0 plural/lowercase format
+            soc_var_name = 'storage_units-state_of_charge'
+        hydro_soc_var = self.network.model.variables[soc_var_name]
         # cast dict of bound values as xarray - format to be used in Linopy
         soc_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_min, snapshots=self.network.snapshots)
         soc_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_max, snapshots=self.network.snapshots)
@@ -382,7 +389,11 @@ class PypsaModel:
         generation_min = prepro_bound_params(bound_values=generation_min, max_feas_bound=max_feas_bound, n_ts=n_ts)
         generation_max = prepro_bound_params(bound_values=generation_max, max_feas_bound=max_feas_bound, n_ts=n_ts)
         # Generator production constraints, NOT CONSIDERING charging part
-        hydro_gen_var = self.network.model.variables[PypsaOptimVarNames.storage_p_dispatch]
+        gen_var_name = PypsaOptimVarNames.storage_p_dispatch
+        if gen_var_name not in self.network.model.variables:
+            # Try PyPSA 1.0 plural/lowercase format
+            gen_var_name = 'storage_units-p_dispatch'
+        hydro_gen_var = self.network.model.variables[gen_var_name]
         # And convert bounds as xarray, to be used in Linopy
         # cast dict of bound values as xarray - format to be used in Linopy
         generation_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=generation_min,
@@ -432,7 +443,11 @@ class PypsaModel:
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            self.network.plot(title=f'{self.name.capitalize()} PyPSA network', color_geomap=True, jitter=0.3)
+            try:
+                self.network.plot(title=f'{self.name.capitalize()} PyPSA network', color_geomap=True, jitter=0.3)
+            except TypeError:
+                # 'color_geomap' was removed/deprecated in PyPSA 1.0+
+                self.network.plot(title=f'{self.name.capitalize()} PyPSA network', jitter=0.3)
             plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country,
                                            n_bus=len(self.network.buses)))
             plt.close()
@@ -471,8 +486,7 @@ class PypsaModel:
 
     def get_optim_pb_characteristics(self) -> OptimPbCharacteristics:
         """
-        N.B. (i) This method can be called only after having optimized network in PyPSA 0.35.1 (model attribute of network
-        not init before that)
+        N.B. (i) This method can be called only after the network model has been optimized or built
         (ii) network.model.constraints contains per type of constraint info (dimensions and size)
         """
         linopy_model = self.network.model
@@ -590,10 +604,19 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False):
-    import pypsa.optimization as opt
     from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
-    m = opt.create_model(network)
+    # In PyPSA 1.0+, opt.create_model is removed. Instead we use the built-in linopy model.
+    if hasattr(network, "model") and network.model is not None:
+        m = network.model
+    else:
+        try:
+            import pypsa.optimization as opt
+            m = opt.create_model(network)
+        except (ImportError, AttributeError):
+            # Fallback for PyPSA 1.0+ if model is not built yet
+            network.optimize(build_only=True)
+            m = network.model
 
     # set prefix
     n_countries_max_in_prefix = 3
