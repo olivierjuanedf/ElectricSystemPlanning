@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import List, Dict
 
-from include.dataset_builder import PypsaModel
+from .dataset_builder import PypsaModel
 
 
 # TODO: heritage? Per type of stress test

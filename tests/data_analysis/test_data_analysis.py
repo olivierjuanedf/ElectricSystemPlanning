@@ -10,8 +10,7 @@ TEST_INPUT_DIR = os.path.join(os.path.dirname(__file__), "input")
 
 # mapping params -> output file to be generated; no assertion if None
 TEST_OUTPUT_FILES = {"plot_1.json": "demand_france_2025_cy1985.png",
-                     # 2 -> PB: name generated res_capa-factors_italy_2025_cy1989_3-aggpts.png...
-                     "plot_2.json": "res_capa-factors_solar_pv_italy_2025_cy1989.png",
+                     "plot_2.json": "res_capa-factors_italy_2025_cy1989_3-aggpts.png",
                      "plot_3.json": "net_demand_france_2025_cy1985.png",
                      "plot_4.json": "demand_fra-ger_2025_cy1985_duration_curve.png",
                      "plot_5.json": "demand_france_2025-33_cy1985_duration_curve.png",
