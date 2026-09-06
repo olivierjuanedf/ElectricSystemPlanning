@@ -61,6 +61,7 @@ DEFAULT_OPTIM_SOLVER_PARAMS = SolverParams(name=OptimSolvers.highs)
 @dataclass
 class CustomConstraintNames:
     max_co2_emissions: str = 'max_co2_emissions'
+    max_prod_cost: str = 'max_prod_cost'
 
 
 @dataclass

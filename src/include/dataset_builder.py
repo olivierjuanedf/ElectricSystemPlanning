@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
-    OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint
+    OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames
 from src.common.constants.temporal import Timescale
@@ -169,6 +169,15 @@ def stack_per_storage_bound_as_xarray(per_gen_bound: Dict[str, np.ndarray], snap
             "StorageUnit": list(per_gen_bound),
         },
     )
+
+
+def set_sum_of_prod_const_name(const_type: str, temporal_granularity: str, direction: str) -> str:
+    # remove prefix (min/max) from constraint type
+    for prefix in ["min_", "max_"]:
+        if const_type.startswith(prefix):
+            const_type = const_type[len(prefix):]
+
+    return f"{const_type}_{temporal_granularity}_{direction}"
 
 
 @dataclass
@@ -327,37 +336,74 @@ class PypsaModel:
 
     def build_model_before_adding_custom_const(self):
         logging.warning('In PyPSA 0.35.1 not possible to build only model without solving it; '
-                        'to add custome constraints it will be solved first "for fun" (ignoring the solution)')
+                        'to add customed constraints it will be solved first "for fun" (ignoring the solution)')
         # TODO: see if deactivate resolution logs, in cmd windows/log file
         self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
 
     def add_sum_of_prod_custom_const(self, prod_sum_const: ZoneAndTempProdSumConstraint):
         """
         Add sum-of-production custom constraints, of the form sum_{z, t} coeff(z, t) * production(z, t) <= ub (or >=, =)
-        N.B. Can be applied to CO2 max emission constraints
-        :param weights: corresp. between unit names and coeffs to be applied - that can be time-dependent (if np array
-        provided) or constant (if float)
-        :param bound_value: if dict, per-zone constraint will be applied; otherwise over all zones
-        :param const_direction: 'lower', 'equal' or 'upper'
-        :param const_name: only to enrich log, if provided
-        :param
-        Returns:
+        N.B. Can be applied to CO2 max emission constraints ; max production cost
+        :param prod_sum_const: object with attrs
+            - type: name of the type of constraint, e.g. co2_emis
+            - direction: either upper (zone-and-temp sum prod. <= bound) or lower (idem >= bound)
+            or equal (idem = bound)
+            - mult_coeff_name: name of the multiplicative coeffs to be used, in {'co2_emis_factor', 'variable_cost'}
+            - temporal_granularity: associated to this constraint
+            - countries: over which constraints is to be imposed
+            - bound: np.ndarray, one value per period
+            - (optional) name: of the constraint. Default: None
         """
-        const_dir_msg = {CustomConstraintDirection.equal: "= TARGET",
-                         CustomConstraintDirection.lower: "<= UB",
-                         CustomConstraintDirection.upper: ">= LB"}
-        # TODO: update msg
-        # are_coeffs_time_constant = all([isinstance(weight_val, float) for weight_val in list(weights.values())])
-        # coeff_msg = "coeff(z)" if are_coeffs_time_constant else "coeff(z,t)"
-        # per_zone_const = isinstance(bound_value, dict)
-        # const_prefix_msg = "forall z, sum_(prod. unit i in z, t)" if per_zone_const else "sum_(prod. unit i,t)"
-        # bound_arg_msg = "(z)" if per_zone_const else ""
-        # const_name_msg = f" (here for {const_name})" if const_name is not None else ""
-        # logging.info(f'Add custom sum of prod constraints: {const_prefix_msg} {coeff_msg} * prod(i, t) '
-        #              f'{const_dir_msg}{bound_arg_msg}{const_name_msg}')
-        # prod_sum_const.mult_coeff_name -> provide coeff to be used (var cost/CO2 emissions)
-        generators_prod_var = self.network.model.variables[PypsaOptimVarNames.generators_p]
-        # self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name="hydro_soc_max")
+        const_name = set_sum_of_prod_const_name(const_type=prod_sum_const.type,
+                                                temporal_granularity=prod_sum_const.temporal_granularity,
+                                                direction=prod_sum_const.direction)
+        logging.info(f'Add custom sum of prod constraints {const_name}')
+        # countries selected for this constraint - using bus names (country trigrams) in PyPSA
+        selec_countries = [get_country_bus_name(country=elt) for elt in prod_sum_const.countries]
+        prod_var = self.network.model.variables[PypsaOptimVarNames.generators_p]
+        # generators selected for this constraint
+        selec_gens = self.network.generators.index[self.network.generators.bus.isin(selec_countries)]
+
+        if prod_sum_const.type == CustomConstraintNames.max_co2_emissions:
+            factor = (
+                self.network.generators.carrier
+                .map(self.network.carriers.co2_emissions)
+                .fillna(0.0)
+            )
+        elif prod_sum_const.type == CustomConstraintNames.max_prod_cost:
+            factor = self.network.generators.marginal_cost
+
+        snapshot_weights = self.network.snapshot_weightings.generators  # time-slots (snapshots) weights
+        expr = ((prod_var.loc[:, selec_gens]
+                * factor.loc[selec_gens]
+                * snapshot_weights)
+                .sum("Generator")
+                )
+
+        if prod_sum_const.temporal_granularity == Timescale.day:
+            periods = xr.DataArray(
+                self.network.snapshots.normalize(),
+                dims="snapshot",
+                coords={"snapshot": self.network.snapshots},
+            )
+        elif prod_sum_const.temporal_granularity == Timescale.week:
+            periods = xr.DataArray(
+                self.network.snapshots.to_period("W").start_time,
+                dims="snapshot",
+                coords={"snapshot": self.network.snapshots},
+            )
+
+        expr_period = expr.groupby(periods).sum()
+
+        rhs = xr.DataArray(prod_sum_const.bound, dims=expr_period.dims, coords=expr_period.coords)
+
+        per_dir_const = {
+            CustomConstraintDirection.lower: expr_period >= rhs,
+            CustomConstraintDirection.equal: expr_period == rhs,
+            CustomConstraintDirection.upper: expr_period <= rhs,
+        }
+
+        self.network.model.add_constraints(per_dir_const[prod_sum_const.direction], name=const_name)
 
     def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
                                             soc_max: Dict[str, Union[float, np.ndarray]],
