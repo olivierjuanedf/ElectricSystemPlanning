@@ -380,30 +380,48 @@ class PypsaModel:
                 .sum("Generator")
                 )
 
-        if prod_sum_const.temporal_granularity == Timescale.day:
-            periods = xr.DataArray(
+        if prod_sum_const.temporal_granularity == Timescale.week:
+            periods = pd.Series(
+                self.network.snapshots.to_period("W"),
+                index=self.network.snapshots,
+            )
+        elif prod_sum_const.temporal_granularity == Timescale.day:
+            periods = pd.Series(
                 self.network.snapshots.normalize(),
-                dims="snapshot",
-                coords={"snapshot": self.network.snapshots},
-            )
-        elif prod_sum_const.temporal_granularity == Timescale.week:
-            periods = xr.DataArray(
-                self.network.snapshots.to_period("W").start_time,
-                dims="snapshot",
-                coords={"snapshot": self.network.snapshots},
+                index=self.network.snapshots,
             )
 
-        expr_period = expr.groupby(periods).sum()
+        # get and check number of periods in data
+        period_values = list(set(periods.values))
+        period_values.sort()
+        n_periods = len(period_values)
+        n_bound_values = len(prod_sum_const.bound)
+        if not n_periods == n_bound_values:
+            raise Exception(f"Number of {prod_sum_const.temporal_granularity}ly periods in data {n_periods} does not "
+                            f"correspond to the size of provided bound {n_bound_values} -> update either bound size, "
+                            f"or optimization period")
+        # check if all periods contain all time-slots (snapshots) in model - otherwise bias on constraint def. (bound
+        # may be applied to a partial sum)
+        n_snapshots = len(self.network.snapshots)
+        n_ts_in_period = 168 if prod_sum_const.temporal_granularity == Timescale.week else 24
+        n_ts_full_const_def = n_periods * n_ts_in_period
+        if not n_snapshots == n_ts_full_const_def:
+            logging.warning(f"The number of snapshots in optim. model {n_snapshots} does not cover coincide with the "
+                            f"number of time-slots in {n_periods} {prod_sum_const.temporal_granularity}ly periods "
+                            f"considered (i.e. {n_ts_full_const_def}) -> there may be a bias in the writing of some "
+                            f"constraints with bound corresponding to a bigger sum than the one written")
+        if prod_sum_const.temporal_granularity == Timescale.week:
+            logging.info(f"Following weekly start-of-periods (Monday) used for constraints: {period_values}")
 
-        rhs = xr.DataArray(prod_sum_const.bound, dims=expr_period.dims, coords=expr_period.coords)
-
-        per_dir_const = {
-            CustomConstraintDirection.lower: expr_period >= rhs,
-            CustomConstraintDirection.equal: expr_period == rhs,
-            CustomConstraintDirection.upper: expr_period <= rhs,
-        }
-
-        self.network.model.add_constraints(per_dir_const[prod_sum_const.direction], name=const_name)
+        for i, (period, snaps) in enumerate(periods.groupby(periods)):
+            lhs = expr.loc[snaps.index].sum()
+            rhs = prod_sum_const.bound[i]
+            per_dir_const = {
+                CustomConstraintDirection.lower: lhs >= rhs,
+                CustomConstraintDirection.equal: lhs == rhs,
+                CustomConstraintDirection.upper: lhs <= rhs,
+            }
+            self.network.model.add_constraints(per_dir_const[prod_sum_const.direction], name=f"{const_name}_{period}")
 
     def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
                                             soc_max: Dict[str, Union[float, np.ndarray]],
