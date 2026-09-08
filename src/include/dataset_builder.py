@@ -354,6 +354,7 @@ class PypsaModel:
             - bound: np.ndarray, one value per period
             - (optional) name: of the constraint. Default: None
         """
+        # TODO: make this method functional in the case of monthly const.
         const_name = set_sum_of_prod_const_name(const_type=prod_sum_const.type,
                                                 temporal_granularity=prod_sum_const.temporal_granularity,
                                                 direction=prod_sum_const.direction)
@@ -375,53 +376,50 @@ class PypsaModel:
 
         snapshot_weights = self.network.snapshot_weightings.generators  # time-slots (snapshots) weights
         expr = ((prod_var.loc[:, selec_gens]
-                * factor.loc[selec_gens]
-                * snapshot_weights)
+                 * factor.loc[selec_gens]
+                 * snapshot_weights)
                 .sum("Generator")
                 )
 
-        if prod_sum_const.temporal_granularity == Timescale.week:
-            periods = pd.Series(
-                self.network.snapshots.to_period("W"),
-                index=self.network.snapshots,
-            )
-        elif prod_sum_const.temporal_granularity == Timescale.day:
-            periods = pd.Series(
-                self.network.snapshots.normalize(),
-                index=self.network.snapshots,
-            )
-
-        # get and check number of periods in data
-        period_values = list(set(periods.values))
-        period_values.sort()
-        n_periods = len(period_values)
-        n_bound_values = len(prod_sum_const.bound)
-        if not n_periods == n_bound_values:
-            raise Exception(f"Number of {prod_sum_const.temporal_granularity}ly periods in data {n_periods} does not "
-                            f"correspond to the size of provided bound {n_bound_values} -> update either bound size, "
-                            f"or optimization period")
-        # check if all periods contain all time-slots (snapshots) in model - otherwise bias on constraint def. (bound
-        # may be applied to a partial sum)
-        n_snapshots = len(self.network.snapshots)
-        n_ts_in_period = 168 if prod_sum_const.temporal_granularity == Timescale.week else 24
-        n_ts_full_const_def = n_periods * n_ts_in_period
-        if not n_snapshots == n_ts_full_const_def:
-            logging.warning(f"The number of snapshots in optim. model {n_snapshots} does not cover coincide with the "
-                            f"number of time-slots in {n_periods} {prod_sum_const.temporal_granularity}ly periods "
-                            f"considered (i.e. {n_ts_full_const_def}) -> there may be a bias in the writing of some "
-                            f"constraints with bound corresponding to a bigger sum than the one written")
-        if prod_sum_const.temporal_granularity == Timescale.week:
-            logging.info(f"Following weekly start-of-periods (Monday) used for constraints: {period_values}")
-
-        for i, (period, snaps) in enumerate(periods.groupby(periods)):
-            lhs = expr.loc[snaps.index].sum()
-            rhs = prod_sum_const.bound[i]
+        # temporal aggregation/sum -> over whole period
+        if prod_sum_const.temporal_granularity == Timescale.whole_period:
+            lhs = expr.sum()
+            rhs = prod_sum_const.bound
             per_dir_const = {
                 CustomConstraintDirection.lower: lhs >= rhs,
                 CustomConstraintDirection.equal: lhs == rhs,
                 CustomConstraintDirection.upper: lhs <= rhs,
             }
-            self.network.model.add_constraints(per_dir_const[prod_sum_const.direction], name=f"{const_name}_{period}")
+            self.network.model.add_constraints(per_dir_const[prod_sum_const.direction], name=const_name)
+        else:  # per period constraint
+            if prod_sum_const.temporal_granularity == Timescale.week:
+                periods = pd.Series(
+                    self.network.snapshots.to_period("W"),
+                    index=self.network.snapshots,
+                )
+            elif prod_sum_const.temporal_granularity == Timescale.day:
+                periods = pd.Series(
+                    self.network.snapshots.normalize(),
+                    index=self.network.snapshots,
+                )
+
+            # get start of periods dates
+            period_values = list(set(periods.values))
+            period_values.sort()
+            if prod_sum_const.temporal_granularity in [Timescale.week, Timescale.month]:
+                logging.info(f"Following {prod_sum_const.temporal_granularity}ly start-of-periods (Monday) used "
+                             f"for constraints: {period_values}")
+
+            for i, (period, snaps) in enumerate(periods.groupby(periods)):
+                lhs = expr.loc[snaps.index].sum()
+                rhs = prod_sum_const.bound[i]
+                per_dir_const = {
+                    CustomConstraintDirection.lower: lhs >= rhs,
+                    CustomConstraintDirection.equal: lhs == rhs,
+                    CustomConstraintDirection.upper: lhs <= rhs,
+                }
+                self.network.model.add_constraints(per_dir_const[prod_sum_const.direction],
+                                                   name=f"{const_name}_{period}")
 
     def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
                                             soc_max: Dict[str, Union[float, np.ndarray]],

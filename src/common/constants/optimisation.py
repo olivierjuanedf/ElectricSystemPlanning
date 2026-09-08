@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from typing import List
 
 import numpy as np
@@ -8,6 +9,7 @@ from src.common.constants.countries import set_country_trigram
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list, unknown_value_error
 from src.utils.basic_utils import format_with_spaces, get_repeated_elts_in_lst, get_default_values
+from src.utils.dates import set_period_starts, get_hours_nber_between_dates
 
 
 @dataclass
@@ -118,12 +120,20 @@ class ZoneAndTempProdSumConstraint:
         else:
             self.name = f'{n_countries}-countries'
 
-    def process(self):
+    def process(self, optim_start: datetime = None, optim_end: datetime = None):
         # add name if not provided
         if self.name is None:
             self.set_name()
+        # cast bound as vector if per period constraint and float is provided
+        if (self.temporal_granularity in [Timescale.day, Timescale.week, Timescale.month]
+                and isinstance(self.bound, float)):
+            logging.info(f"Bound cast as - constant - vector for constraint {self.name}, as per "
+                         f"{self.temporal_granularity}ly period applied")
+            period_start_dates = set_period_starts(start_date=optim_start, end_date=optim_end,
+                                                   granularity=self.temporal_granularity)
+            self.bound = len(period_start_dates) * [self.bound]
 
-    def check(self, available_countries: List[str]):
+    def check(self, available_countries: List[str], optim_start: datetime = None, optim_end: datetime = None):
         const_def_errors = []
         # 1. All known countries?
         unknown_countries = list(set(self.countries) - set(available_countries))
@@ -153,6 +163,36 @@ class ZoneAndTempProdSumConstraint:
                 const_def_errors.append(unknown_value_error(var_name=attr_name, value=val,
                                                             available_values=avail_vals)
                                         )
+
+        # check type of bound when summing over whole period
+        if self.temporal_granularity == Timescale.whole_period and not isinstance(self.bound, float):
+            const_def_errors.append(f"For sum-of-prod constraint over {Timescale.whole_period} bound must be a float")
+        # check that size of bound be coherent with number of daily/weekly periods in optimisation horizon considered
+        # N.B. case when bound is float and a constraint is applied per period has been processed before to make bound
+        # a vector of coherent size
+        if self.temporal_granularity in [Timescale.day, Timescale.week, Timescale.month]:
+            period_start_dates = set_period_starts(start_date=optim_start, end_date=optim_end,
+                                                   granularity=self.temporal_granularity)
+            n_periods = len(period_start_dates)
+            n_bound_values = len(self.bound)
+            if not n_periods == n_bound_values:
+                error_msg = f"Number of {self.temporal_granularity}ly periods in data {n_periods} does not "\
+                            f"correspond to the size of provided bound {n_bound_values} -> update either bound size, "\
+                            f"or optimization period"
+                const_def_errors.append(error_msg)
+        # check if all periods contain all time-slots in model - otherwise bias on constraint def.
+        # (bound may be applied to a partial sum)
+        n_ts_in_optim = get_hours_nber_between_dates(start_date=optim_start, end_date=optim_end)
+        # TODO: make this test fully coherent in the case of month
+        n_ts_in_period = 4*168 if self.temporal_granularity == Timescale.month else \
+            168 if self.temporal_granularity == Timescale.week else 24
+        n_ts_full_const_def = n_periods * n_ts_in_period
+        if not n_ts_in_optim == n_ts_full_const_def:
+            logging.warning(
+                f"The number of time-slots in optim. model {n_ts_in_optim} does not cover coincide with the "
+                f"number of time-slots in {n_periods} {self.temporal_granularity}ly periods "
+                f"considered (i.e. {n_ts_full_const_def}) -> there may be a bias in the writing of some "
+                f"constraints with bound corresponding to a bigger sum than the one written")
 
         if len(const_def_errors) > 0:
             print_errors_list(error_name=f'in {str(self)}', errors_list=const_def_errors)
