@@ -9,3 +9,4 @@ pypsa>=1.0.0
 cartopy
 Requests
 gurobipy
+jupyter

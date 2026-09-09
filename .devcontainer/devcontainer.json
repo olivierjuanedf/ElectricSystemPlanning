@@ -1,7 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/python:3.11-bookworm",
 
-  "postCreateCommand": "pip3 install --user -r requirements.txt",
+  "postCreateCommand": "pip3 install --user -r requirements.txt  && python -m ipykernel install --user --name=project",
   "customizations": {
     "vscode": {
       "extensions": [
