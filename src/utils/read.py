@@ -120,6 +120,7 @@ def set_json_fuel_sources_tb_modif() -> dict:
 
 def set_usage_params(json_usage_params_data: dict) -> UsageParameters:
     usage_params = UsageParameters(**json_usage_params_data)
+    usage_params.check()
     usage_params.process()
     return usage_params
 

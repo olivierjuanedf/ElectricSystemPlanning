@@ -29,7 +29,8 @@ from src.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_s
 
 
 def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr, debug_mode: bool = False,
-                         debug_output_folder: str = None, get_optional_const_from_data_folder: bool = False) -> Dataset:
+                         debug_output_folder: str = None, get_optional_const_from_data_folder: Dict[str, bool] = None) \
+        -> Dataset:
     """
     Get ERAA data which is needed for current UC simulation; extracted from the data folder of this project
     :param uc_run_params
@@ -37,7 +38,8 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     :param debug_mode: to save some intermediate data in (JSON) files to more easily debug
     :param debug_output_folder: in which intermediate data must be saved
     :param get_optional_const_from_data_folder: get optional constraint parameters from ERAA data folder? Alternatively
-    read from input folder - in which students can make modifications
+    read from input folder - in which students can make modifications. This property is specified per optional
+    constraint names
     """
     logging.info(f'{TITLE_LOG_SEP} II)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data {TITLE_LOG_SEP}')
     uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
@@ -303,7 +305,8 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
         debug_mode = False
     eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr,
                                         debug_mode=debug_mode, debug_output_folder=output_folder,
-                                        get_optional_const_from_data_folder=False)
+                                        get_optional_const_from_data_folder=
+                                        usage_params.get_optional_const_from_data_folder)
     # and check that minimal parameters needed for model creation have been provided
     # -> to avoid 'obscure crash' hereafter
     check_min_pypsa_params_provided(eraa_dataset=eraa_dataset)

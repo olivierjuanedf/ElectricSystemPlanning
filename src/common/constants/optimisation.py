@@ -62,6 +62,7 @@ DEFAULT_OPTIM_SOLVER_PARAMS = SolverParams(name=OptimSolvers.highs)
 
 @dataclass
 class CustomConstraintNames:
+    hydro: str = 'hydro'
     max_co2_emissions: str = 'max_co2_emissions'
     max_prod_cost: str = 'max_prod_cost'
 
@@ -189,7 +190,7 @@ class ZoneAndTempProdSumConstraint:
         n_ts_full_const_def = n_periods * n_ts_in_period
         if not n_ts_in_optim == n_ts_full_const_def:
             logging.warning(
-                f"The number of time-slots in optim. model {n_ts_in_optim} does not cover coincide with the "
+                f"The number of time-slots in optim. model {n_ts_in_optim} does not coincide with the "
                 f"number of time-slots in {n_periods} {self.temporal_granularity}ly periods "
                 f"considered (i.e. {n_ts_full_const_def}) -> there may be a bias in the writing of some "
                 f"constraints with bound corresponding to a bigger sum than the one written")

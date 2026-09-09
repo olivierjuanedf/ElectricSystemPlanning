@@ -12,6 +12,7 @@ from src.common.constants.aggreg_operations import AggregOpeNames
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.eraa_data import ERAAParamNames
+from src.common.constants.optimisation import CustomConstraintNames
 from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
 from src.common.constants.temporal import Timescale
@@ -568,7 +569,7 @@ class Dataset:
     # get optional data from ERAA data folder?
     # A this stage only min./max. (generation) levels params from data (1 file common to all countries, directly in
     # ERAA format -> easier if provided by teachers)? Or input folder alternatively (for students to modify these infos)
-    get_optional_const_from_data_folder: bool = False
+    get_optional_const_from_data_folder: Dict[str, bool] = None
     # data to be read hereafter
     demand: Dict[str, pd.DataFrame] = None  # {country: df of data}
     net_demand: Dict[str, pd.DataFrame] = None  # idem
@@ -618,7 +619,7 @@ class Dataset:
         # set per hydro. datatype folder path to be used to get data (may be in data/input depending on the cases)
         per_hydro_dt_folder = (
             set_per_dt_hydro_folders(get_hydro_reservoir_opt_const_from_data_folder=
-                                     self.get_optional_const_from_data_folder)
+                                     self.get_optional_const_from_data_folder[CustomConstraintNames.hydro])
         )
 
         self.demand = {}
@@ -676,7 +677,7 @@ class Dataset:
         if DATATYPE_NAMES.hydro_levels_min in dts_tb_read or DATATYPE_NAMES.hydro_levels_max in dts_tb_read:
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_levels_min]
             # get from data folder -> on "teachers' side"
-            if self.get_optional_const_from_data_folder:
+            if self.get_optional_const_from_data_folder[CustomConstraintNames.hydro]:
                 hydro_extr_levels_data, countries_wo_data = (
                     get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=current_folder,
                                    countries=uc_run_params.selected_countries,
@@ -707,7 +708,7 @@ class Dataset:
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_gen_min]
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_levels_min]
             # get from data folder -> on "teachers' side"
-            if self.get_optional_const_from_data_folder:
+            if self.get_optional_const_from_data_folder[CustomConstraintNames.hydro]:
                 hydro_gen_extr_levels_data, countries_wo_data = (
                     get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_gen_min, folder=current_folder,
                                    countries=uc_run_params.selected_countries,

@@ -44,6 +44,10 @@ operations for the students. Per parameter:
     - **monozone_toy_uc_model**: true
     - **multizones_uc_model**: true
   Q: still useful? (in multizones_uc_model case, behaviour dependently on the chosen mode solo/europe)
+  - **get_optional_const_from_data_folder**: get data for optional constraints from data folder (available only to the 
+  teachers) or input one (in which students can do some modifications)? Can be either a boolean, or a dictionary to 
+  specifiy this property per type of constraint; in this latter case available keys are "hydro", "max_co2_emissions", 
+  and "max_prod_cost"
   - **res_cf_stress_test_folder**: folder in which RES CF of the "stress test" will be found (different 
   folder from the one in which original CF ERAA data are found)
   - **res_cf_stress_test_cy**: CY to be used for RES CF stress test; for which associated data must be found in 

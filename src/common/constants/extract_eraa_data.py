@@ -2,8 +2,9 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Union, Optional, Literal
 
+from src.common.constants.optimisation import CustomConstraintNames
 from src.common.constants.usage_params_json import EnvPhaseNames
-from src.utils.basic_utils import is_str_bool, cast_str_to_bool
+from src.utils.basic_utils import is_str_bool, cast_str_to_bool, get_default_values
 from src.utils.eraa_utils import set_interco_to_tuples
 from src.utils.type_checker import apply_params_type_check
 
@@ -44,6 +45,7 @@ RAW_TYPES_FOR_CHECK = {'eraa_dataset_descr':
 
 @dataclass
 class UsageParameters:
+    DEFAULT_OPTIONAL_CONST_FOLDER = "data"
     adding_interco_capas: bool = False
     # apply per country JSON file data selection/overwriting params?
     # N.B. {str: str} in JSON file; {str: bool} after parsing
@@ -60,13 +62,43 @@ class UsageParameters:
     res_cf_stress_test_folder: str = None
     res_cf_stress_test_cy: int = None
     # for optional constraint parameters
-    get_optional_const_from_data_folder: bool = False
+    get_optional_const_from_data_folder: Union[bool, Dict[str, bool]] = None
+
+    def check(self):
+        # that optional constraint names are known
+        optional_const_names = get_default_values(obj=CustomConstraintNames)
+        if self.get_optional_const_from_data_folder is not None and isinstance(self.get_optional_const_from_data_folder, dict):
+            unknown_const_names = set(self.get_optional_const_from_data_folder) - set(optional_const_names)
+            if len(unknown_const_names) > 0:
+                logging.warning(f"There are unknown optional constraint name in usage param "
+                                f"'get_optional_const_from_data_folder' {list(unknown_const_names)} "
+                                f"- they will not be used hereafter")
+                self.get_optional_const_from_data_folder = \
+                    {const_name: value for const_name, value in self.get_optional_const_from_data_folder.items()
+                     if const_name in optional_const_names}
 
     def process(self, mode_name: str = None):
         if self.apply_per_country_json_file_params is None:
             self.apply_per_country_json_file_params = {EnvPhaseNames.data_analysis: False,
                                                        EnvPhaseNames.monozone_toy_uc_model: True,
                                                        EnvPhaseNames.multizones_uc_model: True}
+        # Optional constraint folder to be used
+        # If boolean provided or None -> cast as dict of boolean, to possibly get one choice per type of optional
+        # constraint
+        optional_const_names = get_default_values(obj=CustomConstraintNames)
+        optional_const_bool = self.DEFAULT_OPTIONAL_CONST_FOLDER == "data"
+        if (self.get_optional_const_from_data_folder is None
+                or isinstance(self.get_optional_const_from_data_folder, bool)):
+            # overload value by the one specified in JSON - to be applied for all constraints
+            if isinstance(self.get_optional_const_from_data_folder, bool):
+                optional_const_bool = self.get_optional_const_from_data_folder
+            self.get_optional_const_from_data_folder = \
+                {const_name: optional_const_bool for const_name in optional_const_names}
+        # If dict complete for missing constraint names
+        if (isinstance(self.get_optional_const_from_data_folder, dict)
+                and not set(self.get_optional_const_from_data_folder) == set(optional_const_names)):
+            for const_name in set(optional_const_names) - set(self.get_optional_const_from_data_folder):
+                self.get_optional_const_from_data_folder[const_name] = optional_const_bool
 
     def check_types(self):
         """
