@@ -3,18 +3,20 @@ This code will help you simulate your own european electric system. It is writte
 ## Requirements 
 
 * A **Github account**: If not the case, go https://github.com/ and sign up
-* **Enroll the classroom** as a student: go [enroll](https://classroom.github.com/a/M_bX8C28)
-![step 1n, enrolling](/.assets/img/enroll1.png)
-* **Click to accept** the assignment
+
 
 ## Setup
 
-### Preferred: Run remotely with Github Codespaces
-Start your Codespace (an online vscode running in github infrastructures)
-![step 2, starting your codespace](/.assets/img/enroll2.png)
+### Preferred: Run remotely with Github Codespaces (an online vscode running in github infrastructures)
+
+Select the Codespaces tab.
+
+Click Create codespace on main (or another branch).
+
+
 
 Your Codespace is configuring... Please wait
-![step 3, building your codespace](/.assets/img/building_codespace.png)
+
 
 Your Codespace is ready, you can open the python file example and run it
 ![step 4, ready](/.assets/img/ready.png)
@@ -36,16 +38,16 @@ You have to install Python and VSCode.
 
 #### Python
 
-Install a compatible Python version 3.10
+Install a compatible Python version 3.11
 
 <details>
   <summary>On windows</summary>
 
 Either:
 ```
-winget install Python.Python.3.10
+winget install Python.Python.3.11
 ```
-or download and install  https://www.python.org/ftp/python/3.10.10/python-3.10.10-amd64.exe
+or download and install  https://www.python.org/ftp/python/3.11.0/python-3.11.0rc2-amd64.exe
 </details>
 
 <details>
@@ -53,9 +55,9 @@ or download and install  https://www.python.org/ftp/python/3.10.10/python-3.10.1
 
 If you have Homebrew installed:
 ```
-brew install python@3.10
+brew install python@3.11
 ```
-or download and install https://www.python.org/ftp/python/3.10.10/python-3.10.10-macos11.pkg
+or download and install from https://www.python.org/downloads/mac-osx/
 </details>
 
 <details>
@@ -91,6 +93,7 @@ install requirements
 
 pip install -r requirements.txt
 
+python -m ipykernel install --user --name uc_env --display-name "Python (uc_env)"
 
 ```
 
