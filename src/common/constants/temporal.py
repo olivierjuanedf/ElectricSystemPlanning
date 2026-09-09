@@ -17,3 +17,4 @@ class Timescale:
     day: str = 'day'
     week: str = 'week'
     month: str = 'month'
+    whole_period: str = 'whole_period'

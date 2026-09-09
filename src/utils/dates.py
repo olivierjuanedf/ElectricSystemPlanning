@@ -6,7 +6,7 @@ from math import ceil
 
 import pandas as pd
 
-from src.common.constants.temporal import DAY_OF_WEEK
+from src.common.constants.temporal import DAY_OF_WEEK, Timescale
 from src.common.long_term_uc_io import DATE_FORMAT_PRINT
 
 ALLOWED_DATE_FMTS = ['%Y/%m/%d', '%m/%d', '%Y-%m-%d', '%m-%d']
@@ -165,3 +165,53 @@ def get_n_months_in_period(start: datetime, end: datetime) -> int:
 
 def get_n_days_in_month(year: int, month: int) -> int:
     return calendar.monthrange(year, month)[1]
+
+
+def set_period_starts(start_date: datetime, end_date: datetime, granularity: str) -> List[datetime]:
+    dates = []
+
+    if granularity == Timescale.day:
+        current = start_date
+        while current <= end_date:
+            dates.append(current)
+            current += timedelta(days=1)
+
+    elif granularity == Timescale.week:
+        # First Monday on or before start_date
+        current = start_date - timedelta(days=start_date.weekday())
+
+        while current <= end_date:
+            dates.append(current)
+            current += timedelta(weeks=1)
+
+    elif granularity == Timescale.month:
+        # First day of the month containing start_date
+        year, month = start_date.year, start_date.month
+
+        while True:
+            first_day = date(year, month, 1)
+
+            if first_day > end_date:
+                break
+
+            # Monday of the week containing the first day of the month
+            monday = first_day - timedelta(days=first_day.weekday())
+
+            if monday >= start_date:
+                dates.append(monday)
+
+            # Next month
+            if month == 12:
+                year += 1
+                month = 1
+            else:
+                month += 1
+
+    else:
+        raise ValueError(f"granularity must be {Timescale.day}, {Timescale.week}, or {Timescale.month}")
+
+    return dates
+
+
+def get_hours_nber_between_dates(start_date: datetime, end_date: datetime) -> int:
+    return int((end_date - start_date).total_seconds() / 3600)

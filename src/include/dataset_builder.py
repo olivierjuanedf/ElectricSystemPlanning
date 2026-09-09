@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
-    OptimPbCharacteristics, OptimPbTypes
+    OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames
 from src.common.constants.temporal import Timescale
@@ -25,7 +25,7 @@ from src.common.fuel_sources import FuelSource
 from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
 from src.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
 from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
-                                   format_with_spaces)
+                                   format_with_spaces, get_default_values)
 from src.utils.dir_utils import make_dir
 from src.utils.pypsa_utils import get_network_obj_value
 from src.utils.serializer import array_serializer
@@ -169,6 +169,15 @@ def stack_per_storage_bound_as_xarray(per_gen_bound: Dict[str, np.ndarray], snap
             "StorageUnit": list(per_gen_bound),
         },
     )
+
+
+def set_sum_of_prod_const_name(const_type: str, temporal_granularity: str, direction: str) -> str:
+    # remove prefix (min/max) from constraint type
+    for prefix in ["min_", "max_"]:
+        if const_type.startswith(prefix):
+            const_type = const_type[len(prefix):]
+
+    return f"{const_type}_{temporal_granularity}_{direction}"
 
 
 @dataclass
@@ -327,18 +336,90 @@ class PypsaModel:
 
     def build_model_before_adding_custom_const(self):
         logging.warning('In PyPSA 0.35.1 not possible to build only model without solving it; '
-                        'to add custome constraints it will be solved first "for fun" (ignoring the solution)')
+                        'to add customed constraints it will be solved first "for fun" (ignoring the solution)')
         # TODO: see if deactivate resolution logs, in cmd windows/log file
         self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
 
-    def add_sum_of_prod_custom_const(self):
+    def add_sum_of_prod_custom_const(self, prod_sum_const: ZoneAndTempProdSumConstraint):
         """
         Add sum-of-production custom constraints, of the form sum_{z, t} coeff(z, t) * production(z, t) <= ub (or >=, =)
-        N.B. Can be applied to CO2 max emission constraints
-        Returns:
+        N.B. Can be applied to CO2 max emission constraints ; max production cost
+        :param prod_sum_const: object with attrs
+            - type: name of the type of constraint, e.g. co2_emis
+            - direction: either upper (zone-and-temp sum prod. <= bound) or lower (idem >= bound)
+            or equal (idem = bound)
+            - mult_coeff_name: name of the multiplicative coeffs to be used, in {'co2_emis_factor', 'variable_cost'}
+            - temporal_granularity: associated to this constraint
+            - countries: over which constraints is to be imposed
+            - bound: np.ndarray, one value per period
+            - (optional) name: of the constraint. Default: None
         """
-        logging.warning(f'Add custom sum of prod constraints (sum over z,t coeff(z,t) * prod(z, t) <= ub, or >=, =; '
-                        f'used, e.g. for max CO2 emissions) -> to be coded')
+        # TODO: make this method functional in the case of monthly const.
+        const_name = set_sum_of_prod_const_name(const_type=prod_sum_const.type,
+                                                temporal_granularity=prod_sum_const.temporal_granularity,
+                                                direction=prod_sum_const.direction)
+        logging.info(f'Add custom sum of prod constraints {const_name}')
+        # countries selected for this constraint - using bus names (country trigrams) in PyPSA
+        selec_countries = [get_country_bus_name(country=elt) for elt in prod_sum_const.countries]
+        prod_var = self.network.model.variables[PypsaOptimVarNames.generators_p]
+        # generators selected for this constraint
+        selec_gens = self.network.generators.index[self.network.generators.bus.isin(selec_countries)]
+
+        if prod_sum_const.type == CustomConstraintNames.max_co2_emissions:
+            factor = (
+                self.network.generators.carrier
+                .map(self.network.carriers.co2_emissions)
+                .fillna(0.0)
+            )
+        elif prod_sum_const.type == CustomConstraintNames.max_prod_cost:
+            factor = self.network.generators.marginal_cost
+
+        snapshot_weights = self.network.snapshot_weightings.generators  # time-slots (snapshots) weights
+        expr = ((prod_var.loc[:, selec_gens]
+                 * factor.loc[selec_gens]
+                 * snapshot_weights)
+                .sum("Generator")
+                )
+
+        # temporal aggregation/sum -> over whole period
+        if prod_sum_const.temporal_granularity == Timescale.whole_period:
+            lhs = expr.sum()
+            rhs = prod_sum_const.bound
+            per_dir_const = {
+                CustomConstraintDirection.lower: lhs >= rhs,
+                CustomConstraintDirection.equal: lhs == rhs,
+                CustomConstraintDirection.upper: lhs <= rhs,
+            }
+            self.network.model.add_constraints(per_dir_const[prod_sum_const.direction], name=const_name)
+        else:  # per period constraint
+            if prod_sum_const.temporal_granularity == Timescale.week:
+                periods = pd.Series(
+                    self.network.snapshots.to_period("W"),
+                    index=self.network.snapshots,
+                )
+            elif prod_sum_const.temporal_granularity == Timescale.day:
+                periods = pd.Series(
+                    self.network.snapshots.normalize(),
+                    index=self.network.snapshots,
+                )
+
+            # get start of periods dates
+            period_values = list(set(periods.values))
+            period_values.sort()
+            if prod_sum_const.temporal_granularity in [Timescale.week, Timescale.month]:
+                logging.info(f"Following {prod_sum_const.temporal_granularity}ly start-of-periods (Monday) used "
+                             f"for constraints: {period_values}")
+
+            for i, (period, snaps) in enumerate(periods.groupby(periods)):
+                lhs = expr.loc[snaps.index].sum()
+                rhs = prod_sum_const.bound[i]
+                per_dir_const = {
+                    CustomConstraintDirection.lower: lhs >= rhs,
+                    CustomConstraintDirection.equal: lhs == rhs,
+                    CustomConstraintDirection.upper: lhs <= rhs,
+                }
+                self.network.model.add_constraints(per_dir_const[prod_sum_const.direction],
+                                                   name=f"{const_name}_{period}")
 
     def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
                                             soc_max: Dict[str, Union[float, np.ndarray]],
@@ -350,6 +431,7 @@ class PypsaModel:
         :param soc_max: idem, max
         :param energy_capa: dict {unit name: energy capa value}
         """
+        logging.info("Add hydro extreme SoC levels constraints")
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than energy capacity), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
@@ -373,6 +455,7 @@ class PypsaModel:
         :param power_capa: of the assets, to check/make the bound feasible
         :param extr_gen_temp_period: either day, or week
         """
+        logging.info("Add hydro extreme GENERATION levels constraints")
         # TODO: rolling sum - of size dependent on extr_gen_temp_period
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than power capacity * nber of ts in considered period), and (ii) unify as vectors
