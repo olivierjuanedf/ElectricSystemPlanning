@@ -131,6 +131,16 @@ Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.
 
 </details>
 
+
+## Structure of the repository
+
+* Source code for European UC : `code`
+* Input data (ERAA data) : `data`
+* Input parameters for European mode : `input/long_term_uc/`
+* Toy model parameters : `input/toy_model_params/` 
+* Outputs (figures and files) : `output`
+
+
 ## Quick start: European mode 
 
 * Main entry point : `my_little_europe_lt_uc.py`
@@ -141,14 +151,6 @@ Adapt [input/long_term_uc/solver_params.json](/input/long_term_uc/solver_params.
 and `input/long_term_uc/countries/{country}.json` with "country" the name of your considered country
 
 * See tutorials for more details : `doc/long_term_uc/`
-
-## Structure of the repository
-
-* Source code for European UC : `code`
-* Input data (ERAA data) : `data`
-* Input parameters for European mode : `input/long_term_uc/`
-* Toy model parameters : `input/toy_model_params/` 
-* Outputs (figures and files) : `output`
 
 
 ## For teachers

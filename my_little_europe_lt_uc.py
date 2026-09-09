@@ -6,36 +6,38 @@ import pandas as pd
 import time
 from datetime import datetime
 
-from code.common.constants.datadims import DataDimensions
-from code.common.constants.extract_eraa_data import ERAADatasetDescr
-from code.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams
-from code.common.constants.plots import PlotNames
-from code.common.constants.usage_params_json import EnvPhaseNames
-from code.common.error_msgs import infeas_debugging_hints_msg
-from code.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
-from code.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
-from code.common.long_term_uc_io import set_full_lt_uc_output_folder
-from code.common.plot_params import PlotParamsKeysInJson
-from code.common.uc_run_params import UCRunParams
-from code.include.dataset import Dataset
-from code.include.dataset_builder import PypsaModel
-from code.include.uc_postprocessing import UCSummaryMetrics
-from code.include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
-from code.utils.basic_utils import print_non_default
-from code.utils.dates import get_period_str
-from code.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_static_params,
-                        read_given_phase_specific_key_from_plot_params,
-                        read_plot_params, read_usage_params, read_solver_params)
+from src.common.constants.datadims import DataDimensions
+from src.common.constants.extract_eraa_data import ERAADatasetDescr
+from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams
+from src.common.constants.plots import PlotNames
+from src.common.constants.usage_params_json import EnvPhaseNames
+from src.common.error_msgs import infeas_debugging_hints_msg
+from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
+from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
+from src.common.long_term_uc_io import set_full_lt_uc_output_folder
+from src.common.plot_params import PlotParamsKeysInJson
+from src.common.uc_run_params import UCRunParams
+from src.include.dataset import Dataset
+from src.include.dataset_builder import PypsaModel
+from src.include.uc_postprocessing import UCSummaryMetrics
+from src.include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
+from src.utils.basic_utils import print_non_default
+from src.utils.dates import get_period_str
+from src.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_static_params,
+                            read_given_phase_specific_key_from_plot_params,
+                            read_plot_params, read_usage_params, read_solver_params)
 
 
-def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr,
-                         debug_mode: bool = False, debug_output_folder: str = None) -> Dataset:
+def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr, debug_mode: bool = False,
+                         debug_output_folder: str = None, get_optional_const_from_data_folder: bool = False) -> Dataset:
     """
     Get ERAA data which is needed for current UC simulation; extracted from the data folder of this project
     :param uc_run_params
     :param eraa_data_descr
     :param debug_mode: to save some intermediate data in (JSON) files to more easily debug
     :param debug_output_folder: in which intermediate data must be saved
+    :param get_optional_const_from_data_folder: get optional constraint parameters from ERAA data folder? Alternatively
+    read from input folder - in which students can make modifications
     """
     logging.info(f'{TITLE_LOG_SEP} II)1) Read needed ERAA ({eraa_data_descr.eraa_edition}) data {TITLE_LOG_SEP}')
     uc_period_msg = get_period_str(period_start=uc_run_params.uc_period_start,
@@ -45,7 +47,8 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     # initialize dataset object
     eraa_dataset = Dataset(source=f'eraa_{eraa_data_descr.eraa_edition}',
                            agg_prod_types_with_cf_data=eraa_data_descr.agg_prod_types_with_cf_data,
-                           is_stress_test=uc_run_params.is_stress_test)
+                           is_stress_test=uc_run_params.is_stress_test,
+                           get_optional_const_from_data_folder=get_optional_const_from_data_folder)
 
     eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                     aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
@@ -99,18 +102,27 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
     pypsa_model.add_loads(demand=eraa_dataset.demand)
     pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
-    with_hydro_custom_const = False  # TODO: set to True/make it a parameter when adding SOC min/max level in model
+    # Set to True if any considered country with constraining SoC min/SoC max const.
+    # on hydro reservoirs; False otherwise
+    with_hydro_extr_level_const = eraa_dataset.check_if_any_hydro_extr_level_const()
+    with_hydro_gen_level_const = eraa_dataset.check_if_any_hydro_gen_level_const()
+    with_hydro_custom_const = with_hydro_extr_level_const or with_hydro_gen_level_const
     with_sum_of_prod_custom_const = len(uc_run_params.sum_prod_constraints) > 0
     if with_hydro_custom_const or with_sum_of_prod_custom_const:
         pypsa_model.build_model_before_adding_custom_const()
-    if with_hydro_custom_const:
+    if with_hydro_extr_level_const:
         # get reservoir extreme generation and level values, as well as energy capacities
         # (to see if constraints will be useless)
         hydro_soc_min, hydro_soc_max, hydro_e_capa = eraa_dataset.get_hydro_params_for_extr_levels_const()
         pypsa_model.add_hydro_extreme_levels_constraint(soc_min=hydro_soc_min, soc_max=hydro_soc_max,
                                                         energy_capa=hydro_e_capa)
+    if with_hydro_gen_level_const:
+        hydro_gen_min, hydro_gen_max, hydro_p_capa = eraa_dataset.get_hydro_params_for_gen_levels_const()
+        pypsa_model.add_hydro_extreme_gen_constraint(generation_min=hydro_gen_min, generation_max=hydro_gen_max,
+                                                     power_capa=hydro_p_capa)
     if with_sum_of_prod_custom_const:
-        pypsa_model.add_sum_of_prod_custom_const()
+        for sum_prod_const in uc_run_params.sum_prod_constraints:
+            pypsa_model.add_sum_of_prod_custom_const(prod_sum_const=sum_prod_const)
     logging.info(f'PyPSA network main properties: {pypsa_model.network}')
     # plot network  
     # name of current "phase" (of the course), the one associated to this script:
@@ -279,13 +291,19 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
                                       eraa_data_descr=eraa_data_descr, fixed_run_params_fields=fixed_run_params_fields)
         )
 
+    # set per country target year to be used for prod. capa data read hereafter
+    uc_run_params.set_target_years_for_capa_data(
+        use_first_year_capas_as_default=usage_params.use_first_year_capas_as_default,
+        init_target_year=min(eraa_data_descr.available_target_years))
+
     # Get needed data (demand, RES Capa. Factors, installed generation capacities)
     if 'debug_mode' in extra_params:
         debug_mode = extra_params['debug_mode']
     else:
         debug_mode = False
     eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr,
-                                        debug_mode=debug_mode, debug_output_folder=output_folder)
+                                        debug_mode=debug_mode, debug_output_folder=output_folder,
+                                        get_optional_const_from_data_folder=False)
     # and check that minimal parameters needed for model creation have been provided
     # -> to avoid 'obscure crash' hereafter
     check_min_pypsa_params_provided(eraa_dataset=eraa_dataset)

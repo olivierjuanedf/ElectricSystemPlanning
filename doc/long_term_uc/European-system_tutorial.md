@@ -6,23 +6,26 @@ See [doc/useful_references.md](doc/useful_references.md) file to get
 
 # Tutorial - Long-Term Unit Commitment (UC) part
 
-## Running a N-countries (European) UC model by... only playing with 2 JSON files...
+## Input Files
 
 With the provided code environment you will be able to **run a Unit Commitment model by simply modifying the values in the 2 following files**:
-1) [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
-2) [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite values of preceding file**. This is to make your own country choice. **N.B.** In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighboring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter. 
 
-**(To be discussed later altogether) Importantly, note two distinguished behaviors of the code, whether "solo" or "Europe" mode be considered** - as defined in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), field "mode":
+1) [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
+
+2) [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite values of preceding file**. This is to make your own country choice. **N.B.** In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighboring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter.
+
+## Two modes : Solo mode and Europe mode
+**You can choose between two different code behaviors: "solo" mode or "europe"** - as defined in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), field "mode":
 - if mode is set to **"solo", all country parameters (for your own country, but also for the rest of them) will be read from your own file *{country}.json***. 
 Example: if in [germany.json](../../input/long_term_uc/countries/germany.json) dictionary associated to key "capacities_tb_overwritten" contains "france": {"nuclear": 0}, the French nuclear capacity will be set to 0MW for the UC simulated
 - if mode is **"europe", parameters of each country will be extracted from file *{country}.json*; the rest of the values in this file being not accounted for**. 
 
+## Python script
 **Open and run [my_little_europe_lt_uc.py](../../my_little_europe_lt_uc.py)**: you should get a log "THE END..." in the terminal window. If not, the "checkers" should have indicated you some aspects to be corrected in your - modified - parametrization (e.g., using some unavailable values for country or production types). 
-    - (i) The only remaining bug that has been observed in this environment is when you have assets that can both produce and consume for the cumulated production plot (not possible in this case... will be corrected soon); however the .csv results data will have been saved. 
-    - (ii) Note that run stops correctly - with an explicit error message in the logs - when optimisation problem solved by PyPSA does not have "optimal" status; in this case no output data (neither figures) are obtained.
 
-## ... And directly getting output results for an extended analysis
+Note that run stops correctly - with an explicit error message in the logs - when optimisation problem solved by PyPSA does not have "optimal" status; in this case no output data (neither figures) are obtained.
 
+## Output files
 **Obtained data (resp. plotted figures) results** are given in [output/long_term_uc/multizones_eur/data](../../output/long_term_uc/multizones_eur/data) (resp. [output/long_term_uc/multizones_eur/figures](../../output/long_term_uc/multizones_eur/figures)) folders.
 
 In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
@@ -30,6 +33,7 @@ In detail, and **except if the resolution of PyPSA optimization model was not su
 * (*data/* subfolder) **"prices" for all countries** considered in Europe, in a .csv file. **N.B.** (i) Idem; (ii) Specifically, this prices are the optimal values of dual variables associated to suuply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
 * (*figures/* subfolder) a **"cumulated vision" of the production**, in a .png file per country
 * (*figures/* subfolder) **price curves**, for the different countries in a unique .png file
+
 
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
@@ -94,3 +98,78 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
 - **[NOT TO BE MODIFIED]** [pypsa_static_params.json](../../input/long_term_uc/pypsa_static_params.json):  
     - "<span style="color:#32B032; font-weight:bold">min_unit_params_per_agg_pt</span>": list of minimal parameters to be provided when creating different types of generators in PyPSA
     - "<span style="color:#32B032; font-weight:bold">generator_params_default_vals</span>": default values applied when creating PyPSA generators
+
+## Optional functionalities
+
+To integrate these additional functionalities - at this stage constraints, it consists in adding/filling files in
+[optional input folder](../../input/long_term_uc/optional)
+
+### Hydraulic assets: a more realistic modelling
+
+In order to get a dispatch of hydraulic assets closer to the one observed in reality - especially for (meta-)countries 
+in which it represents a significant part of the capacities (e.g., Scandinavia!), it may be useful to specify:
+    - **min/max generation levels**: adding and completing a file [hydro-weekly-reservoir-min-max-generation_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-generation_2033_italy.csv),
+    cf. here the case of Italy.
+    **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
+      - "week": index in 1, ..., 53
+      - "climatic_year": at least the value used for simulation
+      - "min_value" (resp. "max_value"): min (resp. max) WEEKLY generation level (MWh). In turn, the sum of production
+      decisions in the week will be lower- (resp. upper-) bounded by this value
+    - **min/max generation levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
+    cf. here the case of France
+    **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
+      - "week": index in 1, ..., 53
+      - "min_value" (resp. "max_value"): min (resp. max) END-OF-WEEK reservoir charging level (%). In turn, the end-of-week 
+      SoC, i.e. the start-of-week SoC + sum of production - consumption decisions in the week  will be lower- 
+      (resp. upper-) bounded by this value
+      N.B. On the contrary to the data in generation level, here the provided parameters are the same whatever the CY 
+      (this is aligned on data provided in ERAA2023)
+
+Note that **for both these inputs, the presence of a file for considered year, and country, will imply that such constraints will be 
+added to the UC model** simulated (if file in proper format!).
+
+### "Sumprod" constraints
+
+Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
+problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost
+
+N.B. Both can be expressed on subset(s) of zones.
+
+These constraints can be added in the proposed environment, adding a dictionary in file 
+[input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json): 
+   - in "extra_params" dict.
+   - with following fields
+     - **max_co2_emis_constraints** (resp. **xxx**) for an upper bound on CO2 emissions (resp. UC cost)
+       - **temporal_granularity**: "day", "week" or "whole_period". N.B. When weekly periods are considered they 
+       are starting on Mondays
+       - **cases**: on which this sumprod constraint is to be applied, each of them consisting in a dict. with fields
+         - **countries**: list of countries on which the sum must be calculated - in addition to the temporal sum done 
+         on day/week/whole period
+         - **upper_bound**: can be either a float, or list of values. If float either it corresponds to a case with 
+         temporal_granularity=whole_period, or in which the same bound will be applied to each period. N.B. (i) It can 
+         be replaced by **lower_bound** resp **xxx**) if a lower bound (resp. equality) constraint is to be applied. 
+         (ii) If a vector is provided its size must correspond to the number of (daily/weekly) periods in considered
+         optimization period. If not the case, or the number of time-slots in considered model does not correspond 
+         the code will raise an error/warning. 
+         
+```json
+{
+  "max_co2_emis_constraints": {
+    "temporal_granularity": "week",
+    "cases": [
+      {
+        "countries": [
+          "france",
+          "germany"
+        ],
+        "upper_bound": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    ]
+  }
+}
+```
