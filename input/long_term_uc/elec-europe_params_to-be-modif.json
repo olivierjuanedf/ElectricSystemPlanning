@@ -40,25 +40,5 @@
     "scandinavia2italy": 0,
     "scandinavia2iberian-peninsula": 0,
     "germany2italy": 0
-  },
-  "extra_params": {
-    "max_co2_emis_constraints": {
-      "temporal_granularity": "week",
-      "cases": [
-        {
-          "countries": [
-            "france",
-            "germany"
-          ],
-          "upper_bound": [
-            1,
-            2,
-            3,
-            4
-          ]
-        }
-      ]
-    },
-    "co2_emis_price": 10
   }
 }
