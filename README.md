@@ -21,6 +21,15 @@ Your Codespace is configuring... Please wait
 Your Codespace is ready, you can open the python file example and run it
 ![step 4, ready](/.assets/img/ready.png)
 
+
+#### For the data crunch notebook
+
+* Select kernel
+
+* Choose Python Environnement
+
+* Select the global env (Python 3.11.16)
+
 ### Unsupported (almost): Run locally
 
 <details>
