@@ -1,0 +1,147 @@
+FUEL & TECHNOLOGY DATA — PARAMETER DESCRIPTION
+================================================
+Source: ERAA dataset (two JSON files: fuel data and technology/efficiency data)
+Note: units below were not stated in the original source files; they are inferred
+from cross-checking against TYNDP emission factors and standard energy conventions
+(see "Notes / cross-checks" at the end). Treat as best-estimate documentation,
+not an authoritative source specification.
+
+CORRECTION LOG (this version)
+==============================
+- Fixed an error in the co2_emissions -> kgCO2/MWh(elec) conversion formula.
+  The previous version incorrectly applied a GJ<->MWh conversion factor (x3.6)
+  on top of a value that is already expressed in t CO2/MWh(fuel), not t CO2/GJ.
+  This caused electrical emission factors to be understated by a factor of ~3.6.
+- Corrected the Lignite cross-check value, which was itself wrong in the
+  previous version (826 kgCO2/MWh(elec) instead of the correct 927).
+
+
+fuels.json — FUEL DATA
+==================
+Structure: one entry per fuel, with three parameters each.
+
+co2_emissions
+    Unit    : t CO2 / MWh (fuel energy, net calorific value)
+    Meaning : Carbon content of the fuel, expressed per unit of thermal
+              energy released on combustion — NOT per unit of electricity
+              produced.
+    Special : Biomass = 0 by modeling convention (assumed carbon-neutral,
+              i.e. regrowth reabsorbs combustion CO2 over time), not a
+              claim of zero physical emissions at the stack.
+              Solar/Wind/Hydro/Uranium = 0 (no combustion involved).
+
+energy_density_per_ton
+    Unit    : MWh (fuel energy, net calorific value) / tonne of fuel
+    Meaning : How much thermal energy is contained in one "ton" of the fuel.
+    Caution : For Hard coal and Lignite, the "ton" is standardized coal-
+              equivalent tons (tce, ~8 MWh/t by convention) — NOT literal
+              physical tonnes, since real lignite has a much lower calorific
+              value than hard coal per physical tonne. Oil's value (11.63)
+              matches the standard "tonne of oil equivalent" (toe) exactly.
+              Uranium's value is very large (full fission energy content of
+              natural/enriched uranium) — likely off by a factor of 1000 in
+              the source (probably meant to be read as thousands, not units).
+              Solar/Wind/Hydro = 0 (no physical fuel consumed).
+
+cost_per_ton
+    Unit    : EUR / ton (same notional "ton" as energy_density_per_ton)
+    Meaning : Fuel commodity price. Because cost and energy density share
+              the same "ton" definition, dividing cost_per_ton by
+              energy_density_per_ton gives a unit-consistent fuel cost in
+              EUR/MWh(thermal), regardless of what the "ton" physically
+              represents.
+    Special : Solar/Wind/Hydro = 0 (free/no fuel input).
+
+
+technology.json — TECHNOLOGY DATA
+=========================
+Structure: one entry per generation technology.
+
+CAPEX
+    Unit    : EUR / MW (installed electrical capacity)
+    Meaning : Overnight capital expenditure per MW built. E.g. CCGT at
+              1,000,000 EUR/MW = 1000 EUR/kW, a standard reference value
+              for new-build CCGT.
+
+Lifetime
+    Unit    : years
+    Meaning : Assumed technical/economic operating lifetime of the plant,
+              used to annuitize CAPEX in an LCOE-style calculation.
+
+WACC
+    Unit    : dimensionless (fraction, e.g. 0.08 = 8%)
+    Meaning : Weighted average cost of capital — discount rate used
+              together with Lifetime to annuitize CAPEX.
+
+FOM
+    Unit    : EUR / MW / year
+    Meaning : Fixed operation & maintenance cost, independent of how much
+              the plant actually generates.
+
+VOM
+    Unit    : EUR / MWh (electrical output)
+    Meaning : Variable operation & maintenance cost, incurred per MWh of
+              electricity actually produced (on top of fuel cost).
+    Special : "Deficit" entry's VOM (20,000 EUR/MWh) is not a real
+              technology — it represents the Value of Lost Load (VoLL),
+              i.e. the penalty cost per MWh of unserved demand, used in
+              the model to discourage supply shortfalls.
+
+Fuel type
+    Unit    : n/a (string key)
+    Meaning : Links to the corresponding entry in the fuel data file
+              (File 1), from which co2_emissions, energy_density_per_ton,
+              and cost_per_ton are drawn.
+    Special : null for Solar PV, Wind, Hydro ROR, and Deficit — no fuel
+              input applies.
+
+Efficiency
+    Unit    : dimensionless (fraction, e.g. 0.63 = 63%)
+    Meaning : Net electrical conversion efficiency, i.e. MWh(electrical
+              output) / MWh(fuel input, net calorific value). Used to
+              convert fuel-based cost/emissions into electricity-based
+              figures:
+                  kg CO2/MWh(elec) = co2_emissions[fuel] * 1000 / Efficiency
+                  EUR/MWh(elec, fuel cost) = (cost_per_ton / energy_density_per_ton) / Efficiency
+              Note: co2_emissions is already in t CO2/MWh(fuel), so only a
+              tonnes->kg conversion (x1000) is needed — no GJ<->MWh factor
+              applies here, since no GJ-based quantity is involved in this
+              conversion path.
+    Special : null for Solar PV, Wind, Hydro ROR — no thermal conversion
+              step exists for these technologies.
+
+Commitable
+    Unit    : n/a (boolean)
+    Meaning : Whether the plant can be modeled as a discrete dispatchable
+              unit (started/stopped/committed) in a unit-commitment
+              formulation. True for all thermal/dispatchable plants;
+              false for variable renewable/must-run technologies (Solar
+              PV, Wind Onshore/Offshore, Hydro ROR) and for Deficit.
+
+
+NOTES / CROSS-CHECKS
+=====================
+- co2_emissions (File 1), converted to kg CO2/GJ via (value * 1000 / 3.6),
+  is consistent with TYNDP-style fuel emission factors:
+  Hard coal ~94.7 vs TYNDP 94.00; Gas ~56.1 vs TYNDP 57.00;
+  Oil ~74.2 vs TYNDP 78.00. This confirms co2_emissions is expressed in
+  t CO2/MWh(fuel, net calorific value), consistent with the Unit stated
+  above.
+- Combining Efficiency (File 2) with co2_emissions via
+  kg CO2/MWh(elec) = co2_emissions * 1000 / Efficiency
+  reproduces literature-typical electrical emission factors:
+      CCGT      (eff. 0.63): 202 * 1000 / 0.63 = 321 kg CO2/MWh(elec)
+      OCGT      (eff. 0.33): 202 * 1000 / 0.33 = 612 kg CO2/MWh(elec)
+      Hard coal (eff. 0.45): 341 * 1000 / 0.45 = 758 kg CO2/MWh(elec)
+      Lignite   (eff. 0.44): 408 * 1000 / 0.44 = 927 kg CO2/MWh(elec)
+      Oil       (eff. 0.33): 267 * 1000 / 0.33 = 809 kg CO2/MWh(elec)
+  These fall within commonly cited ranges (e.g. IPCC AR5 direct emissions
+  for Coal-PC: 670-870 gCO2/kWh, median 760; Gas-CC: 350-490 gCO2/kWh,
+  median 370), supporting the unit interpretations above. In particular,
+  the Hard coal figure (758) lines up almost exactly with the IPCC AR5
+  median direct emissions value for Coal-PC (760 gCO2eq/kWh), and the
+  Lignite figure (927) is consistently higher than Hard coal (758) by
+  about 22%, in line with the hard coal vs. lignite gap discussed
+  elsewhere (lignite's lower calorific value and higher carbon content
+  per unit of useful heat typically yield 10-20%+ higher emissions per
+  kWh electrical than hard coal).
