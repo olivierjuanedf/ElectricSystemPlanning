@@ -208,7 +208,7 @@ class UCOptimalSolution:
 
     def get_link_capa_dual_var_opt(self, network: pypsa.Network):
         logging.warning('Link capa. dual variable code to be fixed (needs to "enter" into Linopy framework '
-                        '- not directly available in PyPSA 0.35.1)')
+                        '- not directly available in PyPSA)')
         linopy_model = network.model
         # TODO: fix it, going into linopy framework... apparently not possible to directly access this info from PyPSA
         # see linopy_model.constraints to get a list of considered constraints (Link-fix-p-lower, but cannot be accessed

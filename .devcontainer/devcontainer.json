@@ -1,15 +1,14 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
-    "nexus.retd.edf.fr/osiris-r36-docker/edf-corporate-setup:1": {}
-  },
-  "postCreateCommand": "pip3 install --user -r requirements.txt",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11-bookworm",
+
+  "postCreateCommand": "pip3 install --user -r requirements.txt  && python -m ipykernel install --user --name=project",
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "streetsidesoftware.code-spell-checker",
-        "ms-python.vscode-pylance"
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter"
       ],
     },
   }
