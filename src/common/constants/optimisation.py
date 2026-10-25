@@ -134,7 +134,15 @@ class ZoneAndTempProdSumConstraint:
                                                    granularity=self.temporal_granularity)
             self.bound = len(period_start_dates) * [self.bound]
 
-    def check(self, available_countries: List[str], optim_start: datetime = None, optim_end: datetime = None):
+    def check(self, available_countries: List[str], optim_start: datetime = None, optim_end: datetime = None,
+              target_year: int = None):
+        """
+        :param available_countries
+        :param optim_start: if per period max/min metric (like CO2 emissions) are used
+        :param optim_end: idem
+        :param target_year: to check coherence of (start of) period dates in year that will be used in PyPSA model.
+        If None, check will be done with year of optim_start/end
+        """
         const_def_errors = []
         # 1. All known countries?
         unknown_countries = list(set(self.countries) - set(available_countries))
@@ -172,6 +180,10 @@ class ZoneAndTempProdSumConstraint:
         # N.B. case when bound is float and a constraint is applied per period has been processed before to make bound
         # a vector of coherent size
         if self.temporal_granularity in [Timescale.day, Timescale.week, Timescale.month]:
+            # using dates in target year, to be coherent with the treatment of dates made in PyPSA hereafter
+            if target_year is not None:
+                optim_start = optim_start.replace(year=target_year)
+                optim_end = optim_end.replace(year=target_year)
             period_start_dates = set_period_starts(start_date=optim_start, end_date=optim_end,
                                                    granularity=self.temporal_granularity)
             n_periods = len(period_start_dates)

@@ -167,7 +167,11 @@ def get_n_days_in_month(year: int, month: int) -> int:
     return calendar.monthrange(year, month)[1]
 
 
-def set_period_starts(start_date: datetime, end_date: datetime, granularity: str) -> List[datetime]:
+def set_period_starts(start_date: datetime, end_date: datetime, granularity: str) \
+        -> List[datetime]:
+    """
+    Set (beginning of) periods dates in an horizon between a start and an end dates
+    """
     dates = []
 
     if granularity == Timescale.day:

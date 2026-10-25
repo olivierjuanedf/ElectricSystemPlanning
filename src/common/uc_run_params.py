@@ -147,7 +147,7 @@ class UCRunParams:
             for constraint in self.sum_prod_constraints:
                 constraint.process(optim_start=self.uc_period_start, optim_end=self.uc_period_end)
                 constraint.check(available_countries=available_countries, optim_start=self.uc_period_start,
-                                 optim_end=self.uc_period_end)
+                                 optim_end=self.uc_period_end, target_year=self.selected_target_year)
 
     def set_is_stress_test(self, avail_cy_stress_test: List[int]):
         self.is_stress_test = self.selected_climatic_year in avail_cy_stress_test
