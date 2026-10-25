@@ -15,6 +15,7 @@ import pypsa
 import matplotlib.pyplot as plt
 
 from src.common.constants.countries import set_country_trigram
+from src.common.constants.links import set_link_name
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
@@ -315,7 +316,8 @@ class PypsaModel:
                     else:
                         p_min_pu, p_max_pu = 0, 1
                     links.append({GEN_UNITS_PYPSA_PARAMS.name:
-                                      f'{country_origin_bus_name}-{country_dest_bus_name}_{carrier_name}',
+                                      set_link_name(origin_bus_name=country_origin_bus_name,
+                                                    dest_bus_name=country_dest_bus_name, carrier_name=carrier_name),
                                   f'{GEN_UNITS_PYPSA_PARAMS.bus}0': country_origin_bus_name,
                                   f'{GEN_UNITS_PYPSA_PARAMS.bus}1': country_dest_bus_name,
                                   GEN_UNITS_PYPSA_PARAMS.nominal_power: current_interco_capa,

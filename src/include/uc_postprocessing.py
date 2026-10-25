@@ -1,6 +1,7 @@
 import logging
 import warnings
 from datetime import datetime
+from itertools import product
 
 import pandas as pd
 from dataclasses import dataclass, asdict
@@ -10,6 +11,7 @@ import pypsa
 from matplotlib import pyplot as plt
 
 from src.common.constants.countries import set_country_trigram
+from src.common.constants.links import set_link_name, REVERSE_SIGN
 from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
     get_prod_type_from_unit_name, set_gen_unit_name
 from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
@@ -17,7 +19,6 @@ from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_fi
 from src.common.plot_params import PlotParams
 from src.utils.basic_utils import format_with_spaces, get_default_values, dict_to_str
 from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values
-
 
 OUTPUT_DATE_COL = 'date'
 
@@ -175,6 +176,51 @@ def add_storage_decisions_to_prod_df(country_trigram: str, generator_prod: pd.Da
     current_storage_prod = rename_df_columns(df=current_storage_prod, old_to_new_cols=new_prod_cols)
     current_storage_cons = rename_df_columns(df=current_storage_cons, old_to_new_cols=new_cons_cols)
     return pd.concat([generator_prod, current_storage_cons, current_storage_prod], axis=1)
+
+
+def set_reverse_flow_col(flow_col: str) -> str:
+    flow_col_split = flow_col.split("_")
+    origin_and_dest = flow_col_split[0].split("-")
+    carrier_name = flow_col_split[1]
+    return set_link_name(origin_bus_name=origin_and_dest[0], dest_bus_name=origin_and_dest[1],
+                         carrier_name=carrier_name, sign=REVERSE_SIGN)
+
+
+def set_consec_opposite_flow_cols(flow_cols: List[str], reverse_flow_cols_after: bool = True,
+                                  flow_carrier_name: str = "ac") -> List[str]:
+    # get list of zone used in (reverse) flow columns
+    # first list of (origin, dest.)
+    all_o_and_d = [col.split("_")[0].split("-") for col in flow_cols]
+    all_bus = set([o_and_d[0] for o_and_d in all_o_and_d])
+    all_bus |= set([o_and_d[1] for o_and_d in all_o_and_d])
+    all_bus = list(all_bus)
+    # sort, by alpha. order
+    all_bus.sort()
+    ordered_flow_cols = []
+    ordered_reverse_flow_cols = []
+    for origin_bus, dest_bus in product(all_bus, all_bus):
+        if dest_bus == origin_bus:
+            continue
+        current_link_col = set_link_name(origin_bus_name=origin_bus, dest_bus_name=dest_bus,
+                                         carrier_name=flow_carrier_name)
+        if current_link_col in flow_cols and current_link_col not in ordered_flow_cols:
+            ordered_flow_cols.append(current_link_col)
+            opposite_link_col = set_link_name(origin_bus_name=dest_bus, dest_bus_name=origin_bus,
+                                              carrier_name=flow_carrier_name)
+            if opposite_link_col in flow_cols and opposite_link_col not in ordered_flow_cols:
+                ordered_flow_cols.append(opposite_link_col)
+            # reverse flow columns
+            for (origin_bus_2, dest_bus_2) in [(origin_bus, dest_bus), (dest_bus, origin_bus)]:
+                current_col_reverse = set_link_name(origin_bus_name=origin_bus_2, dest_bus_name=dest_bus_2,
+                                                    carrier_name=flow_carrier_name, sign=REVERSE_SIGN)
+                if current_col_reverse in flow_cols:
+                    # all reverse columns will be put at the end
+                    if reverse_flow_cols_after and current_col_reverse not in ordered_reverse_flow_cols:
+                        ordered_reverse_flow_cols.append(current_col_reverse)
+                    elif current_col_reverse not in ordered_flow_cols:
+                        ordered_flow_cols.append(current_col_reverse)
+    ordered_flow_cols.extend(ordered_reverse_flow_cols)
+    return ordered_flow_cols
 
 
 # TODO: check typing
@@ -406,8 +452,7 @@ class UCOptimalSolution:
         # add reverse suffix to reverse flows
         new_cols = []
         for flow_col in df_link_flow_opt_reverse.columns:
-            flow_col_split = flow_col.split('_')
-            new_cols.append(f'{flow_col_split[0]}-reverse_{flow_col_split[1]}')
+            new_cols.append(set_reverse_flow_col(flow_col=flow_col))
         df_link_flow_opt_reverse.columns = new_cols
         df_link_flow_opt = pd.concat([df_link_flow_opt_direct, df_link_flow_opt_reverse], axis=1)
         if rename_snapshot_col:
@@ -415,7 +460,8 @@ class UCOptimalSolution:
         # re-order columns to have the ones of flow y -> x justafter the one x -> y
         consec_opposite_flow = True
         if consec_opposite_flow:
-            bob = 1
+            new_cols = set_consec_opposite_flow_cols(flow_cols=list(df_link_flow_opt.columns))
+            df_link_flow_opt.columns = new_cols
         # cast to int to avoid useless numeric precisions and associated... issues!
         df_link_flow_opt = df_link_flow_opt.astype(int)
         df_link_flow_opt.to_csv(link_flow_opt_dec_csv_file)
