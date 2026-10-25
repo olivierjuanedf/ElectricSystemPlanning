@@ -249,8 +249,52 @@ class UCOptimalSolution:
             if rm_all_zero_curves:
                 current_prod = sort_out_cols_with_zero_values(df=current_prod, abs_val_threshold=1e-2)
             # TODO: put alpha into plot_params.json
-            current_prod.div(1e3).plot.area(subplots=False, ylabel='GW', color=plot_params_agg_pt.per_case_color,
-                                            alpha=0.3)
+            prod_gw = current_prod.div(1e3)
+
+            fig, ax = plt.subplots()
+
+            x = prod_gw.index
+
+            # Cols always negatives / positives
+            neg_cols = [c for c in prod_gw.columns if (prod_gw[c] <= 0).all()]
+            pos_cols = [c for c in prod_gw.columns if (prod_gw[c] >= 0).all()]
+
+            if len(pos_cols) == len(prod_gw.columns):  # simple case, with only all-positive cols
+                prod_gw.plot.area(subplots=False, ylabel='GW', color=plot_params_agg_pt.per_case_color, alpha=0.3)
+            else:
+                # Stack all-negative columns
+                import numpy as np
+                neg_bottom = np.zeros(len(prod_gw))
+                for col in neg_cols:
+                    values = prod_gw[col].values
+                    ax.fill_between(
+                        x,
+                        neg_bottom,
+                        neg_bottom + values,
+                        color=plot_params_agg_pt.per_case_color[col],
+                        alpha=0.3,
+                        label=col
+                    )
+                    neg_bottom += values
+
+                # Stack all-positive columns
+                pos_bottom = np.zeros(len(prod_gw))
+                for col in pos_cols:
+                    values = prod_gw[col].values
+                    ax.fill_between(
+                        x,
+                        pos_bottom,
+                        pos_bottom + values,
+                        color=plot_params_agg_pt.per_case_color[col],
+                        alpha=0.3,
+                        label=col
+                    )
+                    pos_bottom += values
+
+            ax.set_ylabel("GW")
+            ax.legend(title=None)
+            plt.tight_layout()
+
             # to avoid having the index name in the legend block ('Generator'; not very useful here)
             plt.legend(title=None)
             plt.tight_layout()
