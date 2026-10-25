@@ -131,8 +131,10 @@ class UCRunParams:
                 upper_bound_ts.check(period_start=self.uc_period_start, period_end=self.uc_period_end,
                                      with_whole_period_gran=True)
                 # set dates associated to upper bound values
-                upper_bound_ts.set_dates(period_start=self.uc_period_start, period_end=self.uc_period_end)
-                upper_bound_ts.weigh_values(period_start=self.uc_period_start, period_end=self.uc_period_end)
+                upper_bound_ts.set_dates(period_start=self.uc_period_start, period_end=self.uc_period_end,
+                                         new_year=self.selected_target_year)
+                upper_bound_ts.weigh_values(period_start=self.uc_period_start, period_end=self.uc_period_end,
+                                            new_year=self.selected_target_year)
                 # multiply extreme values of the series to weigh them according to duration of first/last period (if
                 # not full, e.g. week with only 3 days)
                 self.sum_prod_constraints.append(

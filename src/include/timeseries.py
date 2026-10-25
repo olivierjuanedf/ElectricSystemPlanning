@@ -48,10 +48,20 @@ class Timeseries:
                                 f'with start {period_start: %Y/%m/%d}, end {period_end: %Y/%m/%d} and timescale '
                                 f'{self.timescale}')
 
-    def set_dates(self, period_start: datetime, period_end: datetime):
+    def set_dates(self, period_start: datetime, period_end: datetime, new_year: int = None):
+        """
+        :param period_start
+        :param period_end
+        :param new_year: if dates have to be considered in a new year (e.g., switching from 1 900 for inputs of this
+        env. to ERAA considered target year)
+        """
         if self.dates is not None:
             logging.warning(f'Timeseries dates will be overwritten based on period start/end '
                             f'and timescale {self.timescale}')
+        if new_year is not None:
+            period_start = period_start.replace(year=new_year)
+            period_end = period_end.replace(year=new_year)
+
         if self.timescale in [Timescale.day, Timescale.week]:
             period_start_day = datetime(year=period_start.year, month=period_start.month, day=period_start.day)
             period_end_day = datetime(year=period_end.year, month=period_end.month, day=period_end.day)
@@ -85,12 +95,18 @@ class Timeseries:
         self.dates[0] = period_start
         self.dates[-1] = period_end
 
-    def weigh_values(self, period_start: datetime, period_end: datetime):
+    def weigh_values(self, period_start: datetime, period_end: datetime, new_year: int = None):
         """
         Apply weight to first and last element in value, to account for possibly uncomplete timescale
         :param period_start: start of the period (included)
         :param period_end: end of the period, NOT included
+        :param new_year: if dates have to be considered in a new year (e.g., switching from 1 900 for inputs of this
+        env. to ERAA considered target year)
         """
+        if new_year is not None:
+            period_start = period_start.replace(year=new_year)
+            period_end = period_end.replace(year=new_year)
+
         if self.timescale == Timescale.day:
             start_hour = period_start.hour
             if start_hour > 0:
@@ -108,6 +124,7 @@ class Timeseries:
             start_isoweekday = period_start.isoweekday()  # assumption that hour is always 0
             if not start_isoweekday == 1:  # not a Monday
                 first_weight = (8 - start_isoweekday) / 7
+                logging.info(f"First value of bounds of weekly sum-prod constraints will be weighted by {first_weight}")
             else:
                 first_weight = 1
             end_isoweekday = period_end.isoweekday()
@@ -115,6 +132,7 @@ class Timeseries:
             # otherwise nber of days in considered last week is end_isoweekday - 1
             if len(self.value) > 1 and end_isoweekday > 1:
                 last_weight = (end_isoweekday - 1) / 7
+                logging.info(f"Last value of bounds of weekly sum-prod constraints will be weighted by {last_weight}")
             else:
                 last_weight = 1
         elif self.timescale == Timescale.month:
@@ -123,6 +141,8 @@ class Timeseries:
             if not start_day == 1:
                 n_days_in_month_start = get_n_days_in_month(year=period_start.year, month=period_start.month)
                 first_weight = (n_days_in_month_start - start_day + 1) / n_days_in_month_start
+                logging.info(f"First value of bounds of monthly sum-prod constraints "
+                             f"will be weighted by {first_weight}")
             else:
                 first_weight = 1
             end_day = period_end.day
@@ -131,6 +151,7 @@ class Timeseries:
             # strictly before from 1st one in current month
             if not end_day == n_days_in_month_end:
                 last_weight = (end_day - 1) / n_days_in_month_end
+                logging.info(f"Last value of bounds of monthly sum-prod constraints will be weighted by {last_weight}")
             else:
                 last_weight = 1
         # apply obtained weights for first and last time-slots
