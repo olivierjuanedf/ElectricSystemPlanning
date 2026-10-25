@@ -368,6 +368,10 @@ class UCOptimalSolution:
         df_link_flow_opt = pd.concat([df_link_flow_opt_direct, df_link_flow_opt_reverse], axis=1)
         if rename_snapshot_col:
             df_link_flow_opt.index.name = OUTPUT_DATE_COL
+        # re-order columns to have the ones of flow y -> x justafter the one x -> y
+        consec_opposite_flow = True
+        if consec_opposite_flow:
+            bob = 1
         # cast to int to avoid useless numeric precisions and associated... issues!
         df_link_flow_opt = df_link_flow_opt.astype(int)
         df_link_flow_opt.to_csv(link_flow_opt_dec_csv_file)

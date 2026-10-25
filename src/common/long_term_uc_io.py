@@ -370,7 +370,7 @@ def get_link_flow_opt_dec_file(country: str, year: int, climatic_year: int, star
 
 def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
                              toy_model_output: bool = False) -> str:
-    return get_csv_file_named(name='marginal_prices', country=country, year=year, climatic_year=climatic_year,
+    return get_csv_file_named(name='marginal-prices', country=country, year=year, climatic_year=climatic_year,
                               start_horizon=start_horizon, toy_model_output=toy_model_output)
 
 
