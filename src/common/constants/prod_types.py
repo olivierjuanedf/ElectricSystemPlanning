@@ -29,10 +29,23 @@ class ProdTypeNames:  # by alpha. order
     wind_onshore: str = 'wind_onshore'
 
 
+PT_ORDER_IN_DATA_OUTPUT = [
+    # 1st renewables
+    ProdTypeNames.solar_pv, ProdTypeNames.solar_thermal, ProdTypeNames.wind_onshore,
+    ProdTypeNames.wind_offshore, ProdTypeNames.csp_no_storage, ProdTypeNames.others_renewable,
+    ProdTypeNames.hydro_ror, ProdTypeNames.hydro_pondage, ProdTypeNames.hydro_reservoir,
+    ProdTypeNames.hydro_pump_storage_open, ProdTypeNames.hydro_pump_storage_closed,  # 2nd hydro
+    ProdTypeNames.nuclear,  # thermal - nuclear
+    ProdTypeNames.biofuel, ProdTypeNames.coal, ProdTypeNames.hard_coal, ProdTypeNames.lignite,
+    ProdTypeNames.oil, ProdTypeNames.gas,  # thermal - others
+    "others_fatal",  # TODO: include it in dataclass above?
+    ProdTypeNames.others_non_renewable,  # others
+    ProdTypeNames.batteries, ProdTypeNames.demand_side_response,  # other storage-like assets
+    ProdTypeNames.failure  # last failure (fictive prod.)
+]
 STOCK_LIKE_PROD_TYPES = [ProdTypeNames.hydro_reservoir, ProdTypeNames.hydro_pump_storage_closed,
                          ProdTypeNames.hydro_pump_storage_open, ProdTypeNames.batteries,
                          ProdTypeNames.demand_side_response]
-
 
 UNIT_NAME_SEP = '_'
 

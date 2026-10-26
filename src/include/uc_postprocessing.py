@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.links import set_link_name, REVERSE_SIGN
 from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
-    get_prod_type_from_unit_name, set_gen_unit_name
+    get_prod_type_from_unit_name, set_gen_unit_name, get_country_from_unit_name, PT_ORDER_IN_DATA_OUTPUT
 from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
     get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file
 from src.common.plot_params import PlotParams
@@ -184,6 +184,21 @@ def set_reverse_flow_col(flow_col: str) -> str:
     carrier_name = flow_col_split[1]
     return set_link_name(origin_bus_name=origin_and_dest[0], dest_bus_name=origin_and_dest[1],
                          carrier_name=carrier_name, sign=REVERSE_SIGN)
+
+
+def set_lexico_order_prod_cols(prod_cols: List[str]) -> List[str]:
+    # get bus and prod type names from columns
+    all_bus = list(set([get_country_from_unit_name(prod_unit_name=col) for col in prod_cols]))
+    all_prod_types = list(set([get_prod_type_from_unit_name(prod_unit_name=col) for col in prod_cols]))
+    # order them
+    all_bus.sort()
+    all_prod_types = [prod_type for prod_type in PT_ORDER_IN_DATA_OUTPUT if prod_type in all_prod_types]
+    ordered_prod_cols = []
+    for bus_name, prod_type in product(all_bus, all_prod_types):
+        prod_col = set_gen_unit_name(country=bus_name, agg_prod_type=prod_type)
+        if prod_col in prod_cols:
+            ordered_prod_cols.append(prod_col)
+    return ordered_prod_cols
 
 
 def set_consec_opposite_flow_cols(flow_cols: List[str], reverse_flow_cols_after: bool = True,
@@ -411,7 +426,8 @@ class UCOptimalSolution:
 
     def save_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,
-                              country: str = 'europe'):
+                              country: str = 'europe', lexico_order_prod_cols: bool = True,
+                              consec_opposite_flow: bool = True):
         # TODO: check if unique country and in this case (i) suppress country prefix in asset names
         # opt prod decisions for all but Storage assets
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
@@ -420,6 +436,9 @@ class UCOptimalSolution:
         df_prod_opt = self.prod
         if rename_snapshot_col:
             df_prod_opt.index.name = OUTPUT_DATE_COL
+        if lexico_order_prod_cols:
+            new_cols = set_lexico_order_prod_cols(prod_cols=list(df_prod_opt.columns))
+            df_prod_opt.columns = new_cols
         # cast to int to avoid useless numeric precisions and associated... issues!
         df_prod_opt = df_prod_opt.astype(int)
         df_prod_opt.to_csv(opt_p_csv_file)
@@ -458,7 +477,6 @@ class UCOptimalSolution:
         if rename_snapshot_col:
             df_link_flow_opt.index.name = OUTPUT_DATE_COL
         # re-order columns to have the ones of flow y -> x justafter the one x -> y
-        consec_opposite_flow = True
         if consec_opposite_flow:
             new_cols = set_consec_opposite_flow_cols(flow_cols=list(df_link_flow_opt.columns))
             df_link_flow_opt.columns = new_cols
