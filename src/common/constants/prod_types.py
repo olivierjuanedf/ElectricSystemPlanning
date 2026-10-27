@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 from src.common.constants.countries import set_country_trigram
 
@@ -46,7 +47,7 @@ PT_ORDER_IN_DATA_OUTPUT = [
 STOCK_LIKE_PROD_TYPES = [ProdTypeNames.hydro_reservoir, ProdTypeNames.hydro_pump_storage_closed,
                          ProdTypeNames.hydro_pump_storage_open, ProdTypeNames.batteries,
                          ProdTypeNames.demand_side_response]
-
+STORAGE_COL_SUFFIX = {'prod': 'prod', 'cons': 'cons'}
 UNIT_NAME_SEP = '_'
 
 
@@ -59,19 +60,28 @@ def get_country_from_unit_name(prod_unit_name: str) -> str:
     return prod_unit_name.split(UNIT_NAME_SEP)[0]
 
 
+def get_storage_suffix(prod_unit_name: str) -> Optional[str]:
+    storage_suffix = None
+    for elt in STORAGE_COL_SUFFIX.values():
+        if prod_unit_name.endswith(f"_{elt}"):
+            storage_suffix = elt
+    return storage_suffix
+
+
 def get_prod_type_from_unit_name(prod_unit_name: str) -> str:
     """
-    ATTENTION tricky cases if '_' in prod type... the rule is to take the str after country name + separator
+    ATTENTION (i) Tricky cases if '_' in prod type... the rule is to take the str after country name + separator;
+    (ii) Remove storage suffix when present in prod unit name
     Args:
         prod_unit_name:
 
     Returns:
     """
     country = get_country_from_unit_name(prod_unit_name=prod_unit_name)
-    return prod_unit_name[len(country) + len(UNIT_NAME_SEP):]
-
-
-STORAGE_COL_SUFFIX = {'prod': 'prod', 'cons': 'cons'}
+    storage_suffix = get_storage_suffix(prod_unit_name=prod_unit_name)
+    suffix_len = 0 if storage_suffix is None else len(storage_suffix) + len(UNIT_NAME_SEP)
+    pu_name_len = len(prod_unit_name)
+    return prod_unit_name[len(country) + len(UNIT_NAME_SEP):pu_name_len-suffix_len]
 
 
 def add_suffix_to_storage_unit_col(col: str, col_type: str) -> str:

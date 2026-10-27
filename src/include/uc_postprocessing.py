@@ -13,7 +13,8 @@ from matplotlib import pyplot as plt
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.links import set_link_name, REVERSE_SIGN
 from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
-    get_prod_type_from_unit_name, set_gen_unit_name, get_country_from_unit_name, PT_ORDER_IN_DATA_OUTPUT
+    get_prod_type_from_unit_name, set_gen_unit_name, get_country_from_unit_name, PT_ORDER_IN_DATA_OUTPUT, \
+    STORAGE_COL_SUFFIX
 from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
     get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file
 from src.common.plot_params import PlotParams
@@ -186,19 +187,35 @@ def set_reverse_flow_col(flow_col: str) -> str:
                          carrier_name=carrier_name, sign=REVERSE_SIGN)
 
 
-def set_lexico_order_prod_cols(prod_cols: List[str]) -> List[str]:
+def get_and_order_bus_and_pt_from_cols(cols: List[str]) -> (List[str], List[str]):
     # get bus and prod type names from columns
-    all_bus = list(set([get_country_from_unit_name(prod_unit_name=col) for col in prod_cols]))
-    all_prod_types = list(set([get_prod_type_from_unit_name(prod_unit_name=col) for col in prod_cols]))
+    all_bus = list(set([get_country_from_unit_name(prod_unit_name=col) for col in cols]))
+    all_prod_types = list(set([get_prod_type_from_unit_name(prod_unit_name=col) for col in cols]))
     # order them
     all_bus.sort()
     all_prod_types = [prod_type for prod_type in PT_ORDER_IN_DATA_OUTPUT if prod_type in all_prod_types]
+    return all_bus, all_prod_types
+
+
+def set_lexico_order_prod_cols(prod_cols: List[str]) -> List[str]:
+    all_bus, all_prod_types = get_and_order_bus_and_pt_from_cols(cols=prod_cols)
     ordered_prod_cols = []
     for bus_name, prod_type in product(all_bus, all_prod_types):
         prod_col = set_gen_unit_name(country=bus_name, agg_prod_type=prod_type)
         if prod_col in prod_cols:
             ordered_prod_cols.append(prod_col)
     return ordered_prod_cols
+
+
+def set_lexico_order_storage_cols(storage_cols: List[str]) -> List[str]:
+    all_bus, all_prod_types = get_and_order_bus_and_pt_from_cols(cols=storage_cols)
+    ordered_storage_cols = []
+    for bus_name, prod_type, suffix_type in product(all_bus, all_prod_types, STORAGE_COL_SUFFIX.keys()):
+        storage_col = set_gen_unit_name(country=bus_name, agg_prod_type=prod_type)
+        storage_col = add_suffix_to_storage_unit_col(col=storage_col, col_type=suffix_type)
+        if storage_col in storage_cols:
+            ordered_storage_cols.append(storage_col)
+    return ordered_storage_cols
 
 
 def set_consec_opposite_flow_cols(flow_cols: List[str], reverse_flow_cols_after: bool = True,
@@ -236,6 +253,24 @@ def set_consec_opposite_flow_cols(flow_cols: List[str], reverse_flow_cols_after:
                         ordered_flow_cols.append(current_col_reverse)
     ordered_flow_cols.extend(ordered_reverse_flow_cols)
     return ordered_flow_cols
+
+
+def process_data_to_csv(data_type: str, df: pd.DataFrame, rename_snapshot_col: bool, order_cols: bool) -> pd.DataFrame:
+    if rename_snapshot_col:
+        df.index.name = OUTPUT_DATE_COL
+    if order_cols:
+        if data_type == "prod":
+            ordered_cols = set_lexico_order_prod_cols(prod_cols=list(df.columns))
+        elif data_type == "storage_all_decs":
+            ordered_cols = set_lexico_order_storage_cols(storage_cols=list(df.columns))
+        elif data_type == "link_flow":
+            ordered_cols = set_consec_opposite_flow_cols(flow_cols=list(df.columns))
+        else:
+            raise Exception(f"Unknown data type {data_type} for output data processing before saving it to csv")
+        df = df[ordered_cols]
+    # cast to int to avoid useless numeric precisions and associated... issues!
+    df = df.astype(int)
+    return df
 
 
 # TODO: check typing
@@ -427,20 +462,15 @@ class UCOptimalSolution:
     def save_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,
                               country: str = 'europe', lexico_order_prod_cols: bool = True,
-                              consec_opposite_flow: bool = True):
+                              lexico_order_storage_cols: bool = True, consec_opposite_flow: bool = True):
         # TODO: check if unique country and in this case (i) suppress country prefix in asset names
         # opt prod decisions for all but Storage assets
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
                                             start_horizon=start_horizon, toy_model_output=toy_model_output)
         logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv file {opt_p_csv_file}')
         df_prod_opt = self.prod
-        if rename_snapshot_col:
-            df_prod_opt.index.name = OUTPUT_DATE_COL
-        if lexico_order_prod_cols:
-            new_cols = set_lexico_order_prod_cols(prod_cols=list(df_prod_opt.columns))
-            df_prod_opt.columns = new_cols
-        # cast to int to avoid useless numeric precisions and associated... issues!
-        df_prod_opt = df_prod_opt.astype(int)
+        df_prod_opt = process_data_to_csv(data_type="prod", df=df_prod_opt, rename_snapshot_col=rename_snapshot_col,
+                                          order_cols=lexico_order_prod_cols)
         df_prod_opt.to_csv(opt_p_csv_file)
         # then storage assets decisions
         storage_opt_dec_csv_file = \
@@ -456,10 +486,10 @@ class UCOptimalSolution:
         df_cons_opt = set_full_cols_for_storage_df(df=df_cons_opt, col_suffix='cons')
         df_soc_opt = set_full_cols_for_storage_df(df=df_soc_opt, col_suffix='soc')
         df_storage_all_decs = df_prod_opt.join(df_cons_opt).join(df_soc_opt)
-        if rename_snapshot_col:
-            df_storage_all_decs.index.name = OUTPUT_DATE_COL
-        # cast to int to avoid useless numeric precisions and associated... issues!
-        df_storage_all_decs = df_storage_all_decs.astype(int)
+        df_storage_all_decs = (
+            process_data_to_csv(data_type="storage_all_decs", df=df_storage_all_decs,
+                                rename_snapshot_col=rename_snapshot_col, order_cols=lexico_order_storage_cols)
+        )
         df_storage_all_decs.to_csv(storage_opt_dec_csv_file)
         # and finally link flow decisions
         link_flow_opt_dec_csv_file = \
@@ -474,14 +504,8 @@ class UCOptimalSolution:
             new_cols.append(set_reverse_flow_col(flow_col=flow_col))
         df_link_flow_opt_reverse.columns = new_cols
         df_link_flow_opt = pd.concat([df_link_flow_opt_direct, df_link_flow_opt_reverse], axis=1)
-        if rename_snapshot_col:
-            df_link_flow_opt.index.name = OUTPUT_DATE_COL
-        # re-order columns to have the ones of flow y -> x justafter the one x -> y
-        if consec_opposite_flow:
-            new_cols = set_consec_opposite_flow_cols(flow_cols=list(df_link_flow_opt.columns))
-            df_link_flow_opt.columns = new_cols
-        # cast to int to avoid useless numeric precisions and associated... issues!
-        df_link_flow_opt = df_link_flow_opt.astype(int)
+        df_link_flow_opt = process_data_to_csv(data_type="link_flow", df=df_link_flow_opt,
+                                               rename_snapshot_col=rename_snapshot_col, order_cols=consec_opposite_flow)
         df_link_flow_opt.to_csv(link_flow_opt_dec_csv_file)
 
     def save_marginal_prices_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
