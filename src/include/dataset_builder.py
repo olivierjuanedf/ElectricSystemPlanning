@@ -524,7 +524,7 @@ class PypsaModel:
         bus_names = self.get_bus_names()
         return {name: max(self.network.loads_t['p_set'][f'{name}-load']) for name in bus_names}
 
-    def plot_network(self, toy_model_output: bool = False, country: str = None):
+    def plot_network(self, toy_model_output: bool = False, country: str = None, output_tag: str = None):
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -534,7 +534,8 @@ class PypsaModel:
                 # 'color_geomap' was removed/deprecated in PyPSA 1.0+
                 self.network.plot(title=f'{self.name.capitalize()} PyPSA network', jitter=0.3)
             plt.savefig(get_network_figure(toy_model_output=toy_model_output, country=country,
-                                           n_bus=len(self.network.buses)))
+                                           n_bus=len(self.network.buses), output_tag=output_tag)
+                        )
             plt.close()
 
     def set_default_optim_solver(self, warning_msg: str):
@@ -581,9 +582,18 @@ class PypsaModel:
                                       n_constraints=len(linopy_model.constraints.flat))
 
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
-                         toy_model_output: bool = False, countries: List[str] = None) -> PYPSA_RESULT_TYPE:
+                         toy_model_output: bool = False, countries: List[str] = None,
+                         output_tag: str = None) -> PYPSA_RESULT_TYPE:
         """
         Solve the optimization UC problem associated to current network
+        :param year: of the considered UC problem
+        :param n_countries: in considered UC problem
+        :param period_start
+        :param save_lp_file: to get a standard saving of optim. model (that can be re-used with solvers outside of this
+        environment)
+        :param toy_model_output
+        :param countries
+        :param output_tag: used for output folder
         :returns a tuple (xxx, status of resolution)
         """
         logging.info('Optimise "network" - i.e. solve associated UC problem')
@@ -591,7 +601,7 @@ class PypsaModel:
         logging.info(f'Obtained result: {result}')
         if save_lp_file:
             save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
-                          toy_model_output=toy_model_output, countries=countries)
+                          toy_model_output=toy_model_output, countries=countries, output_tag=output_tag)
         return result
 
     def set_uc_opt_solution(self) -> UCOptimalSolution:
@@ -617,7 +627,7 @@ class PypsaModel:
             f'{objective_value_refmted} (M€) -> output data (resp. figures) can be generated')
         return objective_value
 
-    def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False):
+    def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False, output_tag: str = None):
         country_trigram = set_country_trigram(country=country)
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
@@ -629,7 +639,7 @@ class PypsaModel:
                                                                                                    figsize=(8, 3))
             plt.tight_layout()
             plt.savefig(get_output_figure(fig_name=FigNamesPrefix.capacity, country=country, year=year,
-                                          toy_model_output=toy_model_output))
+                                          toy_model_output=toy_model_output, output_tag=output_tag))
             plt.close()
 
 
@@ -688,7 +698,8 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 
 
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
-                  n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False):
+                  n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False,
+                  output_tag: str = None):
     from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
     # In PyPSA 1.0+, opt.create_model is removed. Instead we use the built-in linopy model.
@@ -726,7 +737,7 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
     # if more than 1 country lp will be saved in a europe output folder (not monozone_{country})
     country_output_folder = countries[0] if countries is not None and len(countries) == 1 else None
     output_folder_data = set_full_lt_uc_output_folder(folder_type=OutputFolderNames.data, country=country_output_folder,
-                                                      toy_model_output=toy_model_output)
+                                                      toy_model_output=toy_model_output, output_tag=output_tag)
     make_dir(full_path=output_folder_data)
     lp_filepath = f'{output_folder_data}/model_{file_suffix}.lp'
     logging.info(f'Save model in .lp file: {lp_filepath}')

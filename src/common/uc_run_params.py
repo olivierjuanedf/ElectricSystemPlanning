@@ -11,6 +11,7 @@ from src.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA,
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
 from src.common.constants.uc_json_inputs import ALL_KEYWORD
 from src.common.error_msgs import uncoherent_param_stop
+from src.common.long_term_uc_io import get_current_run_idx_in_output_folder
 from src.include.timeseries import Timeseries
 from src.utils.basic_utils import are_lists_eq
 from src.utils.dates import get_period_str
@@ -67,6 +68,10 @@ class UCRunParams:
     # sum of production constraint objects, obtained based on previous dicts:
     # sum_{z, t} prod(z, t) * coeff(z, t) <= ub (or >=)
     sum_prod_constraints: List[ZoneAndTempProdSumConstraint] = None
+    # tag to get an explicit output folder name
+    add_date_tag_to_output: bool = False
+    add_run_idx_tag_to_output: bool = False
+    output_tag: str = None
 
     def __repr__(self):
         repr_sep = '\n- '
@@ -150,6 +155,9 @@ class UCRunParams:
                 constraint.process(optim_start=self.uc_period_start, optim_end=self.uc_period_end)
                 constraint.check(available_countries=available_countries, optim_start=self.uc_period_start,
                                  optim_end=self.uc_period_end, target_year=self.selected_target_year)
+        if self.add_date_tag_to_output and self.add_run_idx_tag_to_output:
+            logging.warning("Both date and run idx output tags cannot be added; only date will be used")
+            self.add_run_idx_tag_to_output = False
 
     def set_is_stress_test(self, avail_cy_stress_test: List[int]):
         self.is_stress_test = self.selected_climatic_year in avail_cy_stress_test
@@ -300,6 +308,26 @@ class UCRunParams:
             common_year_for_capa = self.selected_target_year
         # assign common value to all considered countries
         self.target_years_for_capa_data = {country: common_year_for_capa for country in self.selected_countries}
+
+    def process_output_tag(self, date_tag: datetime = None, output_folder: str = None):
+        if self.output_tag is None:
+            self.output_tag = ""
+        if self.add_date_tag_to_output:
+            if date_tag is None:
+                logging.warning("Date tag cannot be added to output folder as no date provided...")
+            else:
+                date_tag_str = date_tag.strftime(format='%Y%m%d_%H%M%S')
+                logging.info(f"Date tag {date_tag_str} will be added to output folder(s)")
+                self.output_tag += f"_{date_tag_str}"
+        if self.add_run_idx_tag_to_output:
+            if output_folder is None:
+                logging.warning("Run idx tag cannot be added to output folder as output folder not provided")
+            else:
+                current_run_idx = get_current_run_idx_in_output_folder(output_folder=output_folder,
+                                                                       output_tag=self.output_tag)
+                self.output_tag += f"_{current_run_idx}"
+        if len(self.output_tag) > 0:
+            logging.info(f"The following output folder tag will be used for current run: {self.output_tag}")
 
 
 def overwrite_uc_run_params(uc_run_params: UCRunParams, uc_run_params_2: UCRunParams,

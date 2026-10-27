@@ -4,6 +4,7 @@ from datetime import datetime
 from itertools import product
 
 import pandas as pd
+import numpy as np
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Union, Optional
 import json
@@ -149,12 +150,13 @@ class UCSummaryMetrics:
         return uc_summary_metrics_str
 
     def json_dump(self, year: int, climatic_year: int, start_horizon: datetime, country: str = 'europe',
-                  toy_model_output: bool = False):
+                  toy_model_output: bool = False, output_tag: str = None):
         summary_dict = asdict(self)
         # remove None values
         summary_dict = {key: val for key, val in summary_dict.items() if val is not None}
         file = get_uc_summary_file(country=country, year=year, climatic_year=climatic_year,
-                                   start_horizon=start_horizon, toy_model_output=toy_model_output)
+                                   start_horizon=start_horizon, toy_model_output=toy_model_output,
+                                   output_tag=output_tag)
         with open(file, "w", encoding="utf-8") as f:
             json.dump(summary_dict, f)
 
@@ -323,7 +325,7 @@ class UCOptimalSolution:
 
     def plot_prod(self, plot_params_agg_pt: PlotParams, country: str, year: int, climatic_year: int,
                   start_horizon: datetime, toy_model_output: bool = False, rm_all_zero_curves: bool = True,
-                  include_storage: bool = False):
+                  include_storage: bool = False, output_tag: str = None):
         """
         Plot 'stack' of optimized production profiles
         """
@@ -364,7 +366,6 @@ class UCOptimalSolution:
                 prod_gw.plot.area(subplots=False, ylabel='GW', color=plot_params_agg_pt.per_case_color, alpha=0.3)
             else:
                 # Stack all-negative columns
-                import numpy as np
                 neg_bottom = np.zeros(len(prod_gw))
                 for col in neg_cols:
                     values = prod_gw[col].values
@@ -401,11 +402,11 @@ class UCOptimalSolution:
             plt.tight_layout()
             plt.savefig(get_output_figure(fig_name=FigNamesPrefix.production, country=country, year=year,
                                           climatic_year=climatic_year, start_horizon=start_horizon,
-                                          toy_model_output=toy_model_output))
+                                          toy_model_output=toy_model_output, output_tag=output_tag))
             plt.close()
 
     def plot_link_flows(self, origin_country: str, year: int, climatic_year: int,
-                        start_horizon: datetime, toy_model_output: bool = False):
+                        start_horizon: datetime, toy_model_output: bool = False, output_tag: str = None):
         # logging.info('Preliminary code for optimal flow plotting to be adapted/tested to get output figures')
         # select links with origin_country as p0
         direct_flows = self.link_flow_direct
@@ -437,7 +438,7 @@ class UCOptimalSolution:
         bob = 1
 
     def plot_failure(self, country: str, year: int, climatic_year: int, start_horizon: datetime,
-                     toy_model_output: bool = False):
+                     toy_model_output: bool = False, output_tag: str = None):
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -445,12 +446,13 @@ class UCOptimalSolution:
             self.prod.div(1e3)[failure_unit_name].plot.line(subplots=False, ylabel='GW')
             plt.tight_layout()
             plt.savefig(get_figure_file_named('failure', country=country, year=year, climatic_year=climatic_year,
-                                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+                                              start_horizon=start_horizon, toy_model_output=toy_model_output,
+                                              output_tag=output_tag)
                         )
             plt.close()
 
     def plot_marginal_price(self, plot_params_zone: PlotParams, year: int, climatic_year: int, start_horizon: datetime,
-                            country: str = 'europe', toy_model_output: bool = False):
+                            country: str = 'europe', toy_model_output: bool = False, output_tag: str = None):
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -460,7 +462,7 @@ class UCOptimalSolution:
             plt.tight_layout()
             plt.savefig(get_output_figure(fig_name=FigNamesPrefix.prices, country=country, year=year,
                                           climatic_year=climatic_year, start_horizon=start_horizon,
-                                          toy_model_output=toy_model_output)
+                                          toy_model_output=toy_model_output, output_tag=output_tag)
                         )
             plt.close()
 
@@ -468,11 +470,12 @@ class UCOptimalSolution:
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,
                               country: str = 'europe', lexico_order_prod_cols: bool = True,
                               lexico_order_storage_cols: bool = True, consec_opposite_flow: bool = True,
-                              save_storage_soc: bool = True):
+                              save_storage_soc: bool = True, output_tag: str = None):
         # TODO: check if unique country and in this case (i) suppress country prefix in asset names
         # opt prod decisions for all but Storage assets
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
-                                            start_horizon=start_horizon, toy_model_output=toy_model_output)
+                                            start_horizon=start_horizon, toy_model_output=toy_model_output,
+                                            output_tag=output_tag)
         logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv file {opt_p_csv_file}')
         df_prod_opt = self.prod
         df_prod_opt = process_data_to_csv(data_type="prod", df=df_prod_opt, rename_snapshot_col=rename_snapshot_col,
@@ -481,7 +484,8 @@ class UCOptimalSolution:
         # then storage assets decisions
         storage_opt_dec_csv_file = \
             get_storage_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
-                                     start_horizon=start_horizon, toy_model_output=toy_model_output)
+                                     start_horizon=start_horizon, toy_model_output=toy_model_output,
+                                     output_tag=output_tag)
         logging.info(f'Save Storage optimal decisions to csv file {storage_opt_dec_csv_file}')
         # join the 3 Storage result dfs
         df_prod_opt = self.storage_prod
@@ -503,7 +507,8 @@ class UCOptimalSolution:
         # and finally link flow decisions
         link_flow_opt_dec_csv_file = \
             get_link_flow_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
-                                       start_horizon=start_horizon, toy_model_output=toy_model_output)
+                                       start_horizon=start_horizon, toy_model_output=toy_model_output,
+                                       output_tag=output_tag)
         logging.info(f'Save link flow optimal decisions to csv file {link_flow_opt_dec_csv_file}')
         df_link_flow_opt_direct = self.link_flow_direct
         df_link_flow_opt_reverse = self.link_flow_reverse
@@ -519,12 +524,13 @@ class UCOptimalSolution:
 
     def save_marginal_prices_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                                     rename_snapshot_col: bool = True, toy_model_output: bool = False,
-                                    country: str = 'europe'):
+                                    country: str = 'europe', output_tag: str = None):
         logging.info('Save marginal prices decisions to .csv file')
         marginal_prices_csv_file = get_marginal_prices_file(country=country, year=year,
                                                             climatic_year=climatic_year,
                                                             start_horizon=start_horizon,
-                                                            toy_model_output=toy_model_output)
+                                                            toy_model_output=toy_model_output,
+                                                            output_tag=output_tag)
         df_sde_dual_var_opt = self.sde_dual
         if rename_snapshot_col:
             df_sde_dual_var_opt.index.name = OUTPUT_DATE_COL

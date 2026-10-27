@@ -85,6 +85,14 @@ def check_min_pypsa_params_provided(eraa_dataset: Dataset):
 def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_dataset: Dataset,
                                zones_gps_coords: Dict[str, Tuple[float, float]],
                                fuel_sources: Dict[str, FuelSource]) -> PypsaModel:
+    """
+    Create PyPSA network model
+    :param name
+    :param uc_run_params
+    :param eraa_dataset
+    :param zones_gps_coords: only for network figure
+    :param fuel_sources
+    """
     logging.info(f'{TITLE_LOG_SEP} III) Create PyPSA UC model {TITLE_LOG_SEP}')
     pypsa_model = PypsaModel(name=name)
     date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
@@ -135,12 +143,12 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
                                                        param_to_be_set=PlotParamsKeysInJson.fig_style)
     )
     print_non_default(obj=fig_style, obj_name=f'FigureStyle - for phase {phase_name}', log_level='debug')
-    pypsa_model.plot_network(toy_model_output=False)
+    pypsa_model.plot_network(toy_model_output=False, output_tag=uc_run_params.output_tag)
     return pypsa_model
 
 
 def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: int, uc_period_start: datetime,
-                              solver_params: SolverParams = DEFAULT_OPTIM_SOLVER_PARAMS) \
+                              solver_params: SolverParams = DEFAULT_OPTIM_SOLVER_PARAMS, output_tag: str = None) \
         -> Tuple[str, str]:
     """
     Solve PyPSA network (UC) model, using an optimisation solver
@@ -149,12 +157,14 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
     :param n_countries: in the considered network
     :param uc_period_start: date of the beginning of UC pb
     :param solver_params: name/license file, if not default solver (highs) used
+    :param output_tag: used to have a more explicit output folder arborescence
     """
     logging.info(f'{TITLE_LOG_SEP} IV) Get a solution for European UC model {TITLE_LOG_SEP}')
     # use alternatively set_optim_solver(name='gurobi', license_file='gurobi.lic') to use Gurobi,
     # with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
     pypsa_model.set_optim_solver(solver_params=solver_params)
-    result = pypsa_model.optimize_network(year=year, n_countries=n_countries, period_start=uc_period_start)
+    result = pypsa_model.optimize_network(year=year, n_countries=n_countries, period_start=uc_period_start,
+                                          output_tag=output_tag)
     # Get optim. pb main characteristics (to check if coherent with resolution time?!)
     optim_pb_characts = pypsa_model.get_optim_pb_characteristics()
     logging.info(f'Corresp. to solved {str(optim_pb_characts)}')
@@ -185,7 +195,8 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                 (uc_optimal_solution.plot_prod(plot_params_agg_pt=plot_params_agg_pt, country=country,
                                                year=uc_run_params.selected_target_year,
                                                climatic_year=uc_run_params.selected_climatic_year,
-                                               start_horizon=uc_run_params.uc_period_start)
+                                               start_horizon=uc_run_params.uc_period_start,
+                                               output_tag=uc_run_params.output_tag)
                  )
             # idem, including stock-like prod units (both cons. and prod.) on the stack of curves
             if PlotNames.prod_stacked_with_stock in plots_tb_done:
@@ -193,12 +204,13 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                                               year=uc_run_params.selected_target_year,
                                               climatic_year=uc_run_params.selected_climatic_year,
                                               start_horizon=uc_run_params.uc_period_start,
-                                              include_storage=True)
+                                              include_storage=True, output_tag=uc_run_params.output_tag)
             # flow in the links
             if PlotNames.link_flows in plots_tb_done:
                 (uc_optimal_solution.plot_link_flows(origin_country=country, year=uc_run_params.selected_target_year,
                                                      climatic_year=uc_run_params.selected_climatic_year,
-                                                     start_horizon=uc_run_params.uc_period_start)
+                                                     start_horizon=uc_run_params.uc_period_start,
+                                                     output_tag=uc_run_params.output_tag)
                  )
         # then plots at the scale of all countries (Europe)
         # 'marginal price' figure
@@ -206,19 +218,22 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
             (uc_optimal_solution.plot_marginal_price(plot_params_zone=plot_params_zone,
                                                      year=uc_run_params.selected_target_year,
                                                      climatic_year=uc_run_params.selected_climatic_year,
-                                                     start_horizon=uc_run_params.uc_period_start)
+                                                     start_horizon=uc_run_params.uc_period_start,
+                                                     output_tag=uc_run_params.output_tag)
              )
 
         # save optimal prod. decision to an output file
         (uc_optimal_solution.save_decisions_to_csv(year=uc_run_params.selected_target_year,
                                                    climatic_year=uc_run_params.selected_climatic_year,
-                                                   start_horizon=uc_run_params.uc_period_start)
+                                                   start_horizon=uc_run_params.uc_period_start,
+                                                   output_tag=uc_run_params.output_tag)
          )
 
         # save marginal prices to an output file
         (uc_optimal_solution.save_marginal_prices_to_csv(year=uc_run_params.selected_target_year,
                                                          climatic_year=uc_run_params.selected_climatic_year,
-                                                         start_horizon=uc_run_params.uc_period_start)
+                                                         start_horizon=uc_run_params.uc_period_start,
+                                                         output_tag=uc_run_params.output_tag)
          )
         # set UC summary metrics (Energy Not Served, number of failure hours, costs)
         uc_summary_metrics = (
@@ -227,7 +242,8 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
         )
         uc_summary_metrics.json_dump(year=uc_run_params.selected_target_year,
                                      climatic_year=uc_run_params.selected_climatic_year,
-                                     start_horizon=uc_run_params.uc_period_start)
+                                     start_horizon=uc_run_params.uc_period_start,
+                                     output_tag=uc_run_params.output_tag)
         return uc_summary_metrics
     else:
         logging.info(f'Optimisation resolution status is not {pypsa_opt_resol_status} '
@@ -312,6 +328,7 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     check_min_pypsa_params_provided(eraa_dataset=eraa_dataset)
 
     # create PyPSA network
+    uc_run_params.process_output_tag(date_tag=datetime.fromtimestamp(run_start), output_folder=output_folder)
     pypsa_model = create_pypsa_network_model(name=network_name, uc_run_params=uc_run_params, eraa_dataset=eraa_dataset,
                                              zones_gps_coords=eraa_data_descr.gps_coordinates,
                                              fuel_sources=fuel_sources)
@@ -321,7 +338,8 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
         solver_params = read_solver_params()
     result = solve_pypsa_network_model(pypsa_model=pypsa_model, year=uc_run_params.selected_target_year,
                                        n_countries=len(uc_run_params.selected_countries),
-                                       uc_period_start=uc_run_params.uc_period_start, solver_params=solver_params)
+                                       uc_period_start=uc_run_params.uc_period_start, solver_params=solver_params,
+                                       output_tag=uc_run_params.output_tag)
 
     uc_summary_metrics = save_data_and_fig_results(pypsa_model=pypsa_model, uc_run_params=uc_run_params,
                                                    result_optim_status=result[1])

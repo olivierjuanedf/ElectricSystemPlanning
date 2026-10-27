@@ -124,7 +124,8 @@ class Timeseries:
             start_isoweekday = period_start.isoweekday()  # assumption that hour is always 0
             if not start_isoweekday == 1:  # not a Monday
                 first_weight = (8 - start_isoweekday) / 7
-                logging.info(f"First value of bounds of weekly sum-prod constraints will be weighted by {first_weight}")
+                logging.info(f"First value of bounds of weekly sum-prod constraints will be weighted "
+                             f"by {first_weight:.2f}")
             else:
                 first_weight = 1
             end_isoweekday = period_end.isoweekday()
@@ -132,7 +133,8 @@ class Timeseries:
             # otherwise nber of days in considered last week is end_isoweekday - 1
             if len(self.value) > 1 and end_isoweekday > 1:
                 last_weight = (end_isoweekday - 1) / 7
-                logging.info(f"Last value of bounds of weekly sum-prod constraints will be weighted by {last_weight}")
+                logging.info(f"Last value of bounds of weekly sum-prod constraints will be weighted "
+                             f"by {last_weight:.2f}")
             else:
                 last_weight = 1
         elif self.timescale == Timescale.month:
@@ -142,7 +144,7 @@ class Timeseries:
                 n_days_in_month_start = get_n_days_in_month(year=period_start.year, month=period_start.month)
                 first_weight = (n_days_in_month_start - start_day + 1) / n_days_in_month_start
                 logging.info(f"First value of bounds of monthly sum-prod constraints "
-                             f"will be weighted by {first_weight}")
+                             f"will be weighted by {first_weight:.2f}")
             else:
                 first_weight = 1
             end_day = period_end.day
@@ -151,7 +153,8 @@ class Timeseries:
             # strictly before from 1st one in current month
             if not end_day == n_days_in_month_end:
                 last_weight = (end_day - 1) / n_days_in_month_end
-                logging.info(f"Last value of bounds of monthly sum-prod constraints will be weighted by {last_weight}")
+                logging.info(f"Last value of bounds of monthly sum-prod constraints will be weighted "
+                             f"by {last_weight:.2f}")
             else:
                 last_weight = 1
         # apply obtained weights for first and last time-slots
