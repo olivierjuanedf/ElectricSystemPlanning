@@ -259,14 +259,19 @@ def process_data_to_csv(data_type: str, df: pd.DataFrame, rename_snapshot_col: b
     if rename_snapshot_col:
         df.index.name = OUTPUT_DATE_COL
     if order_cols:
+        current_cols = list(df.columns)
         if data_type == "prod":
-            ordered_cols = set_lexico_order_prod_cols(prod_cols=list(df.columns))
+            ordered_cols = set_lexico_order_prod_cols(prod_cols=current_cols)
         elif data_type == "storage_all_decs":
-            ordered_cols = set_lexico_order_storage_cols(storage_cols=list(df.columns))
+            ordered_cols = set_lexico_order_storage_cols(storage_cols=current_cols)
         elif data_type == "link_flow":
-            ordered_cols = set_consec_opposite_flow_cols(flow_cols=list(df.columns))
+            ordered_cols = set_consec_opposite_flow_cols(flow_cols=current_cols)
         else:
             raise Exception(f"Unknown data type {data_type} for output data processing before saving it to csv")
+        if len(current_cols) > len(ordered_cols):
+            lost_cols = list(set(current_cols) - set(ordered_cols))
+            n_lost_cols = len(lost_cols)
+            logging.warning(f"{n_lost_cols} columns lost when ordering them before saving to csv: {lost_cols}")
         df = df[ordered_cols]
     # cast to int to avoid useless numeric precisions and associated... issues!
     df = df.astype(int)
