@@ -47,7 +47,7 @@ PT_ORDER_IN_DATA_OUTPUT = [
 STOCK_LIKE_PROD_TYPES = [ProdTypeNames.hydro_reservoir, ProdTypeNames.hydro_pump_storage_closed,
                          ProdTypeNames.hydro_pump_storage_open, ProdTypeNames.batteries,
                          ProdTypeNames.demand_side_response]
-STORAGE_COL_SUFFIX = {'prod': 'prod', 'cons': 'cons'}
+STORAGE_COL_SUFFIX = {'prod': 'prod', 'cons': 'cons', 'soc': 'soc'}
 UNIT_NAME_SEP = '_'
 
 

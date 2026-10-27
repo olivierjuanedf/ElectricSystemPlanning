@@ -92,9 +92,9 @@ def set_col_order_for_plot(df: pd.DataFrame, cols_ordered: List[str], is_prod_ty
     return df
 
 
-def set_full_cols_for_storage_df(df: pd.DataFrame, col_suffix: str) -> pd.DataFrame:
+def set_full_cols_for_storage_df(df: pd.DataFrame, col_type: str) -> pd.DataFrame:
     old_cols = list(df.columns)
-    new_cols = {col: f'{col}_{col_suffix}' for col in old_cols}
+    new_cols = {col: add_suffix_to_storage_unit_col(col=col, col_type=col_type) for col in old_cols}
     df = rename_df_columns(df=df, old_to_new_cols=new_cols)
     return df
 
@@ -462,7 +462,8 @@ class UCOptimalSolution:
     def save_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,
                               country: str = 'europe', lexico_order_prod_cols: bool = True,
-                              lexico_order_storage_cols: bool = True, consec_opposite_flow: bool = True):
+                              lexico_order_storage_cols: bool = True, consec_opposite_flow: bool = True,
+                              save_storage_soc: bool = True):
         # TODO: check if unique country and in this case (i) suppress country prefix in asset names
         # opt prod decisions for all but Storage assets
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
@@ -480,12 +481,15 @@ class UCOptimalSolution:
         # join the 3 Storage result dfs
         df_prod_opt = self.storage_prod
         df_cons_opt = self.storage_cons
-        df_soc_opt = self.storage_soc
         # rename first the different columns -> adding prod/cons/soc suffixes
-        df_prod_opt = set_full_cols_for_storage_df(df=df_prod_opt, col_suffix='prod')
-        df_cons_opt = set_full_cols_for_storage_df(df=df_cons_opt, col_suffix='cons')
-        df_soc_opt = set_full_cols_for_storage_df(df=df_soc_opt, col_suffix='soc')
-        df_storage_all_decs = df_prod_opt.join(df_cons_opt).join(df_soc_opt)
+        df_prod_opt = set_full_cols_for_storage_df(df=df_prod_opt, col_type='prod')
+        df_cons_opt = set_full_cols_for_storage_df(df=df_cons_opt, col_type='cons')
+        df_storage_all_decs = df_prod_opt.join(df_cons_opt)
+        if save_storage_soc:
+            # Storage SoC
+            df_soc_opt = self.storage_soc
+            df_soc_opt = set_full_cols_for_storage_df(df=df_soc_opt, col_type='soc')
+            df_storage_all_decs = df_storage_all_decs.join(df_soc_opt)
         df_storage_all_decs = (
             process_data_to_csv(data_type="storage_all_decs", df=df_storage_all_decs,
                                 rename_snapshot_col=rename_snapshot_col, order_cols=lexico_order_storage_cols)
