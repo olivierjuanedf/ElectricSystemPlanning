@@ -8,7 +8,7 @@ from src.common.constants.optimisation import ZoneAndTempProdSumConstraint, Cust
     CustomConstraintDirection
 from src.common.constants.prod_types import ProdTypeNames
 from src.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA, \
-    MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT
+    MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT, Timescale
 from src.common.constants.uc_json_inputs import ALL_KEYWORD
 from src.common.error_msgs import uncoherent_param_stop
 from src.common.long_term_uc_io import get_current_run_idx_in_output_folder
@@ -131,7 +131,10 @@ class UCRunParams:
         if self.max_co2_emis_constraints is not None:
             for const_params in self.max_co2_emis_constraints['cases']:
                 # create timeseries from upper bound value and timescale
-                temporal_granularity = self.max_co2_emis_constraints['temporal_granularity']
+                if 'temporal_granularity' in self.max_co2_emis_constraints:
+                    temporal_granularity = self.max_co2_emis_constraints['temporal_granularity']
+                else:  # default value
+                    temporal_granularity = Timescale.whole_period
                 upper_bound_ts = Timeseries(timescale=temporal_granularity, value=const_params['upper_bound'])
                 upper_bound_ts.check(period_start=self.uc_period_start, period_end=self.uc_period_end,
                                      with_whole_period_gran=True)

@@ -134,7 +134,7 @@ added to the UC model** simulated (if file in proper format!).
 ### "Sumprod" constraints
 
 Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
-problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost
+problems; a typical case is an upper bound on CO2 emissions.
 
 N.B. Both can be expressed on subset(s) of zones.
 
@@ -142,35 +142,23 @@ These constraints can be added in the proposed environment, adding a dictionary 
 [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json): 
    - in "extra_params" dict.
    - with following fields
-     - **max_co2_emis_constraints** (resp. **xxx**) for an upper bound on CO2 emissions (resp. UC cost)
-       - **temporal_granularity**: "day", "week" or "whole_period". N.B. When weekly periods are considered they 
-       are starting on Mondays
-       - **cases**: on which this sumprod constraint is to be applied, each of them consisting in a dict. with fields
-         - **countries**: list of countries on which the sum must be calculated - in addition to the temporal sum done 
-         on day/week/whole period
-         - **upper_bound**: can be either a float, or list of values. If float either it corresponds to a case with 
-         temporal_granularity=whole_period, or in which the same bound will be applied to each period. N.B. (i) It can 
-         be replaced by **lower_bound** resp **xxx**) if a lower bound (resp. equality) constraint is to be applied. 
-         (ii) If a vector is provided its size must correspond to the number of (daily/weekly) periods in considered
-         optimization period. If not the case, or the number of time-slots in considered model does not correspond 
-         the code will raise an error/warning. 
-         
+     - **max_co2_emis_constraints**
+       - **cases**: on which this sumprod constraint is to be applied, each of them consisting in a dict. with fields:
+         - **countries**: list of countries on which the sum must be calculated - in addition to the temporal sum 
+         done on whole temporal period.
+         - **upper_bound**: a float, the maximal amount of CO2 emissions (XXX unit XXX).
+
+Ex: to add a (unique) constraint of this type on France-Germany
 ```json
 {
   "max_co2_emis_constraints": {
-    "temporal_granularity": "week",
     "cases": [
       {
         "countries": [
           "france",
           "germany"
         ],
-        "upper_bound": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "upper_bound": 3.14
       }
     ]
   }
