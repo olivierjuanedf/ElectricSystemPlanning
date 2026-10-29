@@ -28,12 +28,29 @@ Note that run stops correctly - with an explicit error message in the logs - whe
 ## Output files
 **Obtained data (resp. plotted figures) results** are given in [output/long_term_uc/multizones_eur/data](../../output/long_term_uc/multizones_eur/data) (resp. [output/long_term_uc/multizones_eur/figures](../../output/long_term_uc/multizones_eur/figures)) folders.
 
-In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
-* (*data/* subfolder) **optimal production of all generators** considered in Europe, in a .csv file. **N.B.** The suffix of this file is indicating the year, climatic year ("cy") and the date of UC start period
-* (*data/* subfolder) **"prices" for all countries** considered in Europe, in a .csv file. **N.B.** (i) Idem; (ii) Specifically, this prices are the optimal values of dual variables associated to suuply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
-* (*figures/* subfolder) a **"cumulated vision" of the production**, in a .png file per country
-* (*figures/* subfolder) **price curves**, for the different countries in a unique .png file
+For all files obtained, suffixes indicate the (i) Country corresponding to the content ("europe" if for whole continent);
+(ii) TY and CY; (iii) Start date of the UC period simulated.
 
+In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
+* (*data/* subfolder) **optimal production of all generators** considered in Europe, in an *opt_power_europe_{TY and CY}_{start date}.csv* file. 
+* (*data/* subfolder) **"prices" for all countries** considered in Europe, in a *marginal-prices_europe_{TY and CY}_{start date}.csv* file. 
+**N.B.** Specifically, these prices are the optimal values of dual variables associated to supply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
+* (*data/* subfolder) **optimal flows in the interconnections** in *link-flow_opt_decisions_europe_{TY and CY}_{start date}.csv*.
+* (*data/* subfolder) **optimal decisions for the storages** - production (turbining, discharging; depending on the type of asset), 
+consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *storage_opt_decisions_europe_{TY and CY}_{start date}.csv*.
+* (*data/* subfolder) summary of (per-country) main results in *uc-summary_europe_{TY and CY}_{start date}.json*. In detail, all metrics over the whole UC period:
+  - **per_country_ens**: Energy Not Served, i.e. the yearly volume of failure (MWh).
+  - **per_country_n_failure_hours**: number of failure hours, i.e. with a strictly positive level of (fictive) failure asset.
+  - **total_cost** (resp. **per_country_total_cost**): of the UC problem simulated over Europe (resp. for a given country), i.e. "value" of the optimization problem (M€).
+  - **total_operational_cost** (resp. **per_country_total_operational_cost**): previous value over Europe (resp. for a given country), from which failure cost (penalty) has been subtracted (M€).
+  - **total_co2_emissions** (resp. **per_country_co2_emissions**): CO2 emissions over Europe (resp. for a given country) (XXX).
+* (*data/* subfolder) An LP file containing the description of UC optimization problem solved, in *model_7-countries_{start date}.lp*.
+* (*figures/* subfolder) a - very schematic - description of the "network" corresponding to the UC model simulated, in *network_7-bus.png*. 
+* (*figures/* subfolder) a **"cumulated (stacked) vision" of the production**, in *prod_{country}_{TY and CY}_{start date}.png* files.
+* (*figures/* subfolder) **price curves**, for the different countries in a unique *prices_europe_{TY and CY}_{start date}.png* file.
+
+Note that, as explained with the description of [elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) input file in Appendix section, 
+a "tag" - indicating name of the run, and optionally a counter index - can be added to data/figures subfolder to identify them more simply.
 
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
