@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 import linopy.model
+import xarray
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -452,8 +453,8 @@ class PypsaModel:
         # cast dict of bound values as xarray - format to be used in Linopy
         soc_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_min, snapshots=self.network.snapshots)
         soc_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_max, snapshots=self.network.snapshots)
-        self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name="hydro_soc_min")
-        self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name="hydro_soc_max")
+        self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name=CustomConstraintNames.hydro_soc_min)
+        self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name=CustomConstraintNames.hydro_soc_max)
 
     def add_hydro_extreme_gen_constraint(self, generation_min: Dict[str, np.ndarray],
                                          generation_max: Dict[str, np.ndarray], power_capa: Dict[str, float],
@@ -516,7 +517,7 @@ class PypsaModel:
     def get_per_bus_total_installed_capa(self):
         bus_names = self.get_bus_names()
         df_generators = self.network.generators
-        return {name: df_generators.loc[(df_generators.index.str.startswith(f'{name}-'))
+        return {name: df_generators.loc[(df_generators.index.str.startswith(f'{name}_'))
                                         & (df_generators['type'] != ProdTypeNames.failure), 'p_nom'].sum()
                 for name in bus_names}
 
@@ -597,7 +598,7 @@ class PypsaModel:
         :returns a tuple (xxx, status of resolution)
         """
         logging.info('Optimise "network" - i.e. solve associated UC problem')
-        result = self.network.optimize(solver_name=self.optim_solver_params.name)
+        result = self.network.optimize.solve_model(solver_name=self.optim_solver_params.name)
         logging.info(f'Obtained result: {result}')
         if save_lp_file:
             save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
@@ -626,6 +627,14 @@ class PypsaModel:
             f'Optimisation resolution status is {pypsa_resol_status} with objective value (cost) = '
             f'{objective_value_refmted} (M€) -> output data (resp. figures) can be generated')
         return objective_value
+
+    def get_constraint_bound_value(self, constraint_name: str) -> Optional[xarray.DataArray]:
+        if constraint_name in self.network.model.constraints:
+            return self.network.model.constraints[constraint_name].rhs
+        else:
+            logging.warning(f"Bound cannot be obtained for constraint {constraint_name}, "
+                            f"not present in current PyPSA model")
+            return None
 
     def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False, output_tag: str = None):
         country_trigram = set_country_trigram(country=country)

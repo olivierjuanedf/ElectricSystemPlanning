@@ -72,6 +72,18 @@ def robust_cast_str_to_float(float_str: str) -> Optional[float]:
         return None
 
 
+def robust_round_value(value: Union[float, dict[str, float]], n_digits: int) -> Union[float, dict[str, float]]:
+    """Round a float or all values of a dict to n_digits decimals."""
+
+    if isinstance(value, dict):
+        return {
+            k: round(v, n_digits) if isinstance(v, (int, float)) else v
+            for k, v in value.items()
+        }
+
+    return round(value, n_digits)
+
+
 def are_lists_eq(list_of_lists: List[list]) -> bool:
     first_list = list_of_lists[0]
     len_first_list = len(first_list)

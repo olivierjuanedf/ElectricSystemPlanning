@@ -318,8 +318,8 @@ def read_solver_params() -> SolverParams:
     return SolverParams(**solver_params_data)
 
 
-def read_given_phase_specific_key_from_plot_params(phase_name: str, param_to_be_set: str) -> Union[
-    FigureStyle, List[str]]:
+def read_given_phase_specific_key_from_plot_params(phase_name: str, param_to_be_set: str) \
+        -> Union[FigureStyle, List[str]]:
     """
     Read given phase specific parameters from plot_params.json file
     Args:
