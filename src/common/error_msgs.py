@@ -45,6 +45,5 @@ def infeas_debugging_hints_msg(total_capa: Union[float, Dict[str, float]],
     info_msg += f"\n     {per_bus_msg}Maximum observed demand (MW): {max_load}"
     info_msg += f"\n     {per_bus_msg}Total installed capacity (MW): {total_capa}"
     info_msg += "\n  2. Is failure_power_capa large enough?"
-    info_msg += "\n  3. Are storage constraints (hydro, batteries) consistent?"
-    info_msg += "\n  4. Does the simulated period actually contain ERAA data?"
+    info_msg += "\n  3. Are storage constraints (hydro, batteries) consistent? (not 'too' constraining)"
     return info_msg
