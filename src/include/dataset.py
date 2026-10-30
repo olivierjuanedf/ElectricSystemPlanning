@@ -963,11 +963,11 @@ class Dataset:
                     if check_if_from_eraa_data(param_key=inflow_key,
                                                complem_params_pt=units_complem_params_per_agg_pt[agg_pt]):
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {inflow_key}')
-                        current_pt_inflow_data = self.hydro_inflows_data[country]
-                        # set column according to type of hydro asset
-                        inflow_value_col = 'cum_inflow_into_reservoirs' if agg_pt == ProdTypeNames.hydro_reservoir \
-                            else 'cum_nat_inflow_into_pump-storage_reservoirs'
                         try:
+                            current_pt_inflow_data = self.hydro_inflows_data[country]
+                            # set column according to type of hydro asset
+                            inflow_value_col = 'cum_inflow_into_reservoirs' if agg_pt == ProdTypeNames.hydro_reservoir \
+                                else 'cum_nat_inflow_into_pump-storage_reservoirs'
                             current_inflows_data = np.array(current_pt_inflow_data[inflow_value_col])
                         except:
                             data_name = "inflows"
@@ -986,8 +986,8 @@ class Dataset:
                     if check_if_from_eraa_data(param_key=soc_level_extr_key,
                                                complem_params_pt=units_complem_params_per_agg_pt[agg_pt]):
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {soc_level_extr_key} (min and max)')
-                        current_pt_soc_level_min_data = self.hydro_reservoir_levels_min_data[country]
                         try:
+                            current_pt_soc_level_min_data = self.hydro_reservoir_levels_min_data[country]
                             current_soc_level_min_data = np.array(current_pt_soc_level_min_data[COLUMN_NAMES.value])
                         except:
                             data_name = "SOC level min"
@@ -1001,12 +1001,13 @@ class Dataset:
                                                     agg_prod_type=agg_pt, default_value=default_value)
                             # Q: ok to set constant float and not vector for this PyPSA attr.?
                             current_soc_level_min_data = default_value
-                        current_pt_soc_level_max_data = self.hydro_reservoir_levels_max_data[country]
                         try:
+                            current_pt_soc_level_max_data = self.hydro_reservoir_levels_max_data[country]
                             current_soc_level_max_data = np.array(current_pt_soc_level_max_data[COLUMN_NAMES.value])
                         except:
                             data_name = "SOC level max"
-                            default_value = 1e12
+                            # PU value (conversion to ABSOLUTE values, to be used in PyPSA, made after in the code)
+                            default_value = 1
                             if agg_warn_over_cases:
                                 if data_name not in aggreg_warning:
                                     aggreg_warning[data_name] = []
@@ -1022,8 +1023,8 @@ class Dataset:
                     if check_if_from_eraa_data(param_key=gen_level_extr_key,
                                                complem_params_pt=units_complem_params_per_agg_pt[agg_pt]):
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {gen_level_extr_key} (min and max)')
-                        current_pt_gen_level_min_data = self.hydro_reservoir_gen_min_data[country]
                         try:
+                            current_pt_gen_level_min_data = self.hydro_reservoir_gen_min_data[country]
                             current_gen_level_min_data = np.array(current_pt_gen_level_min_data[COLUMN_NAMES.value])
                         except:
                             data_name = "gen. level min"
@@ -1037,8 +1038,8 @@ class Dataset:
                                                     agg_prod_type=agg_pt, default_value=default_value)
                             # Q: ok to set constant float and not vector for this PyPSA attr.?
                             current_gen_level_min_data = default_value
-                        current_pt_gen_level_max_data = self.hydro_reservoir_gen_max_data[country]
                         try:
+                            current_pt_gen_level_max_data = self.hydro_reservoir_gen_max_data[country]
                             current_gen_level_max_data = np.array(current_pt_gen_level_max_data[COLUMN_NAMES.value])
                         except:
                             data_name = "gen. level max"
