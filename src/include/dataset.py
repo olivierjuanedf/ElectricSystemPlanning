@@ -1139,12 +1139,11 @@ class Dataset:
             if len(current_country_hydro_res_data) > 0:
                 # any positive SoC min const?
                 current_hydro_soc_min = [elt.soc_min for elt in current_country_hydro_res_data]
-                if any([np.any(elt > 0) for elt in current_hydro_soc_min]):
+                if any([elt is not None and np.any(elt > 0) for elt in current_hydro_soc_min]):
                     return True
-                # any SoC max upper bound < capa?
+                # any SoC max upper bound < 100% of capacity (in p.u.)?
                 current_hydro_soc_max = [elt.soc_max for elt in current_country_hydro_res_data]
-                current_hydro_e_capa = [float(elt.max_hours * elt.p_nom) for elt in current_country_hydro_res_data]
-                if any([np.any(elt < current_hydro_e_capa[i]) for i, elt in enumerate(current_hydro_soc_max)]):
+                if any([elt is not None and np.any(elt < 1.0) for elt in current_hydro_soc_max]):
                     return True
         return False
 

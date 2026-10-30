@@ -165,13 +165,14 @@ def prepro_bound_params(bound_values: Dict[str, Union[float, np.ndarray]], max_f
     return bound_values
 
 
-def stack_per_storage_bound_as_xarray(per_gen_bound: Dict[str, np.ndarray], snapshots) -> xr.DataArray:
+def stack_per_storage_bound_as_xarray(per_gen_bound: Dict[str, np.ndarray], snapshots,
+                                      storage_dim: str = "StorageUnit") -> xr.DataArray:
     return xr.DataArray(
         np.column_stack([bound_vect for pu_name, bound_vect in per_gen_bound.items()]),
-        dims=("snapshot", "StorageUnit"),
+        dims=("snapshot", storage_dim),
         coords={
             "snapshot": snapshots,
-            "StorageUnit": list(per_gen_bound),
+            storage_dim: list(per_gen_bound),
         },
     )
 
@@ -476,8 +477,17 @@ class PypsaModel:
         # countries selected for this constraint - using bus names (country trigrams) in PyPSA
         selec_countries = [get_country_bus_name(country=elt) for elt in prod_sum_const.countries]
         prod_var = self.network.model.variables[PypsaOptimVarNames.generators_p]
-        # generators selected for this constraint
+
+        # In PyPSA 1.0+, generator variable dimensions in Linopy are ('snapshot', 'name')
+        # rather than ('snapshot', 'Generator'). Dynamically extract the non-snapshot dimension name.
+        gen_dim = [d for d in prod_var.dims if d != 'snapshot'][0]
+
+        # Identify generators belonging to selected countries and present in the Linopy model
         selec_gens = self.network.generators.index[self.network.generators.bus.isin(selec_countries)]
+        selec_gens = [g for g in selec_gens if g in prod_var.coords[gen_dim].values]
+        if len(selec_gens) == 0:
+            logging.info(f"No matching generators for custom constraint {const_name}")
+            return
 
         if prod_sum_const.type == CustomConstraintNames.max_co2_emissions:
             factor = (
@@ -488,11 +498,22 @@ class PypsaModel:
         elif prod_sum_const.type == CustomConstraintNames.max_prod_cost:
             factor = self.network.generators.marginal_cost
 
+        # Align factor series with gen_dim so xarray / Linopy matches coordinates properly
+        factor_sel = factor.loc[selec_gens]
+        factor_sel.index.name = gen_dim
+        prod_var_sel = prod_var.sel({gen_dim: selec_gens})
+
+        # Ensure snapshot_weights index is named 'snapshot' for Linopy time-axis alignment
         snapshot_weights = self.network.snapshot_weightings.generators  # time-slots (snapshots) weights
-        expr = ((prod_var.loc[:, selec_gens]
-                 * factor.loc[selec_gens]
+        if snapshot_weights.index.name != 'snapshot':
+            snapshot_weights = snapshot_weights.copy()
+            snapshot_weights.index.name = 'snapshot'
+
+        # Sum over the component dimension dynamically (gen_dim) to obtain a 1D expression over snapshots
+        expr = ((prod_var_sel
+                 * factor_sel
                  * snapshot_weights)
-                .sum("Generator")
+                .sum(gen_dim)
                 )
 
         # temporal aggregation/sum -> over whole period
@@ -525,7 +546,8 @@ class PypsaModel:
                              f"for constraints: {period_values}")
 
             for i, (period, snaps) in enumerate(periods.groupby(periods)):
-                lhs = expr.loc[snaps.index].sum()
+                # Select snapshots belonging to the current period and sum temporally
+                lhs = expr.sel(snapshot=snaps.index).sum()
                 rhs = prod_sum_const.bound[i]
                 per_dir_const = {
                     CustomConstraintDirection.lower: lhs >= rhs,
@@ -556,17 +578,36 @@ class PypsaModel:
         soc_min = prepro_bound_params(bound_values=soc_min, max_feas_bound=energy_capa, n_ts=n_ts)
         soc_max = prepro_bound_params(bound_values=soc_max, max_feas_bound=energy_capa, n_ts=n_ts)
         # set associated constraints in Linopy
-        # version with only assets with such constraints -> TODO: check if order correct, or if mask is to be used
+        # In PyPSA 1.0+, variable names follow lowercase/plural convention: 'storage_units-state_of_charge'
         soc_var_name = PypsaOptimVarNames.storage_soc
         if soc_var_name not in self.network.model.variables:
-            # Try PyPSA 1.0 plural/lowercase format
             soc_var_name = 'storage_units-state_of_charge'
         hydro_soc_var = self.network.model.variables[soc_var_name]
+
+        # In PyPSA 1.0+, storage unit dimension is 'name' instead of 'StorageUnit'.
+        # Dynamically extract the non-snapshot dimension.
+        storage_dim = [d for d in hydro_soc_var.dims if d != 'snapshot'][0]
+
+        # IMPORTANT: hydro_soc_var contains ALL storage units (batteries, PSP/STEP, hydro reservoirs).
+        # soc_min/soc_max bounds are only defined for hydro reservoirs (subset of storage units).
+        # We MUST filter hydro_soc_var to only hydro reservoirs; otherwise, xarray alignment fills
+        # non-hydro storage units with NaN, creating invalid constraints and causing solver infeasibility.
+        hydro_units = [u for u in soc_min if u in hydro_soc_var.coords[storage_dim].values]
+        if len(hydro_units) == 0:
+            logging.info("No matching storage units found for hydro extreme levels constraints")
+            return
+
+        soc_min = {u: soc_min[u] for u in hydro_units}
+        soc_max = {u: soc_max[u] for u in hydro_units}
+        hydro_soc_var_sel = hydro_soc_var.sel({storage_dim: hydro_units})
+
         # cast dict of bound values as xarray - format to be used in Linopy
-        soc_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_min, snapshots=self.network.snapshots)
-        soc_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_max, snapshots=self.network.snapshots)
-        self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name=CustomConstraintNames.hydro_soc_min)
-        self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name=CustomConstraintNames.hydro_soc_max)
+        soc_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_min, snapshots=self.network.snapshots,
+                                                          storage_dim=storage_dim)
+        soc_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_max, snapshots=self.network.snapshots,
+                                                          storage_dim=storage_dim)
+        self.network.model.add_constraints(hydro_soc_var_sel >= soc_min_array, name=CustomConstraintNames.hydro_soc_min)
+        self.network.model.add_constraints(hydro_soc_var_sel <= soc_max_array, name=CustomConstraintNames.hydro_soc_max)
 
     def add_hydro_extreme_gen_constraint(self, generation_min: Dict[str, np.ndarray],
                                          generation_max: Dict[str, np.ndarray], power_capa: Dict[str, float],
@@ -578,7 +619,6 @@ class PypsaModel:
         :param extr_gen_temp_period: either day, or week
         """
         logging.info("Add hydro extreme GENERATION levels constraints")
-        # TODO: rolling sum - of size dependent on extr_gen_temp_period
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than power capacity * nber of ts in considered period), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
@@ -586,20 +626,67 @@ class PypsaModel:
         max_feas_bound = {pu_name: capa * n_ts_in_period for pu_name, capa in power_capa.items()}
         generation_min = prepro_bound_params(bound_values=generation_min, max_feas_bound=max_feas_bound, n_ts=n_ts)
         generation_max = prepro_bound_params(bound_values=generation_max, max_feas_bound=max_feas_bound, n_ts=n_ts)
+
         # Generator production constraints, NOT CONSIDERING charging part
+        # In PyPSA 1.0+, dispatch variable name is 'storage_units-p_dispatch'
         gen_var_name = PypsaOptimVarNames.storage_p_dispatch
         if gen_var_name not in self.network.model.variables:
-            # Try PyPSA 1.0 plural/lowercase format
             gen_var_name = 'storage_units-p_dispatch'
         hydro_gen_var = self.network.model.variables[gen_var_name]
-        # And convert bounds as xarray, to be used in Linopy
-        # cast dict of bound values as xarray - format to be used in Linopy
-        generation_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=generation_min,
-                                                                 snapshots=self.network.snapshots)
-        generation_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=generation_max,
-                                                                 snapshots=self.network.snapshots)
-        self.network.model.add_constraints(hydro_gen_var >= generation_min_array, name="hydro_gen_min")
-        self.network.model.add_constraints(hydro_gen_var <= generation_max_array, name="hydro_gen_max")
+
+        # Identify storage unit dimension dynamically and filter for hydro reservoirs only
+        storage_dim = [d for d in hydro_gen_var.dims if d != 'snapshot'][0]
+        hydro_units = [u for u in generation_min if u in hydro_gen_var.coords[storage_dim].values]
+        if len(hydro_units) == 0:
+            logging.info("No matching storage units found for hydro extreme generation constraints")
+            return
+
+        generation_min = {u: generation_min[u] for u in hydro_units}
+        generation_max = {u: generation_max[u] for u in hydro_units}
+        hydro_gen_var_sel = hydro_gen_var.sel({storage_dim: hydro_units})
+
+        # IMPORTANT: ERAA min/max hydro generation limits represent total energy over a week/day (MWh),
+        # not hourly instantaneous power limits (MW). Imposing weekly MWh volume on hourly dispatch
+        # caused massive infeasibility. We group snapshots by period and sum hourly dispatch (.sum("snapshot")),
+        # scaling bounds by dur_ratio = len(snaps) / n_ts_in_period to handle partial first/last periods.
+        if extr_gen_temp_period in [Timescale.week, Timescale.day]:
+            if extr_gen_temp_period == Timescale.week:
+                periods = pd.Series(
+                    self.network.snapshots.to_period("W"),
+                    index=self.network.snapshots,
+                )
+            else:
+                periods = pd.Series(
+                    self.network.snapshots.normalize(),
+                    index=self.network.snapshots,
+                )
+
+            for i, (period, snaps) in enumerate(periods.groupby(periods)):
+                # Sum hourly production over all snapshots in this period (MWh)
+                gen_sum = hydro_gen_var_sel.sel(snapshot=snaps.index).sum("snapshot")
+                t_start_idx = self.network.snapshots.get_loc(snaps.index[0])
+                dur_ratio = len(snaps) / n_ts_in_period
+                rhs_min = xr.DataArray(
+                    [generation_min[u][t_start_idx] * dur_ratio for u in hydro_units],
+                    dims=(storage_dim,),
+                    coords={storage_dim: hydro_units},
+                )
+                rhs_max = xr.DataArray(
+                    [generation_max[u][t_start_idx] * dur_ratio for u in hydro_units],
+                    dims=(storage_dim,),
+                    coords={storage_dim: hydro_units},
+                )
+                self.network.model.add_constraints(gen_sum >= rhs_min, name=f"hydro_gen_min_{period}")
+                self.network.model.add_constraints(gen_sum <= rhs_max, name=f"hydro_gen_max_{period}")
+        else:
+            generation_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=generation_min,
+                                                                     snapshots=self.network.snapshots,
+                                                                     storage_dim=storage_dim)
+            generation_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=generation_max,
+                                                                     snapshots=self.network.snapshots,
+                                                                     storage_dim=storage_dim)
+            self.network.model.add_constraints(hydro_gen_var_sel >= generation_min_array, name="hydro_gen_min")
+            self.network.model.add_constraints(hydro_gen_var_sel <= generation_max_array, name="hydro_gen_max")
 
     def get_n_time_slots(self) -> int:
         return len(self.network.snapshots)
