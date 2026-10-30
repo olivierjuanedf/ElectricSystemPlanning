@@ -8,7 +8,8 @@ from datetime import datetime
 
 from src.common.constants.datadims import DataDimensions
 from src.common.constants.extract_eraa_data import ERAADatasetDescr
-from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams
+from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
+    CustomConstraintNames
 from src.common.constants.plots import PlotNames
 from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
@@ -18,7 +19,7 @@ from src.common.long_term_uc_io import set_full_lt_uc_output_folder
 from src.common.plot_params import PlotParamsKeysInJson
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset import Dataset
-from src.include.dataset_builder import PypsaModel
+from src.include.dataset_builder import PypsaModel, PYPSA_RESULT_TYPE
 from src.include.uc_postprocessing import UCSummaryMetrics
 from src.include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
 from src.utils.basic_utils import print_non_default
@@ -119,12 +120,12 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     with_hydro_custom_const = with_hydro_extr_level_const or with_hydro_gen_level_const
     with_sum_of_prod_custom_const = len(uc_run_params.sum_prod_constraints) > 0
     if with_hydro_custom_const or with_sum_of_prod_custom_const:
-        pypsa_model.build_model_before_adding_custom_const()
+        pypsa_model.build_model_before_adding_custom_const()  # call PyPSA optimize method before adding custom const.
     if with_hydro_extr_level_const:
         # get reservoir extreme generation and level values, as well as energy capacities
         # (to see if constraints will be useless)
-        hydro_soc_min, hydro_soc_max, hydro_e_capa = eraa_dataset.get_hydro_params_for_extr_levels_const()
-        pypsa_model.add_hydro_extreme_levels_constraint(soc_min=hydro_soc_min, soc_max=hydro_soc_max,
+        hydro_soc_min_pu, hydro_soc_max_pu, hydro_e_capa = eraa_dataset.get_hydro_params_for_extr_levels_const()
+        pypsa_model.add_hydro_extreme_levels_constraint(soc_min_pu=hydro_soc_min_pu, soc_max_pu=hydro_soc_max_pu,
                                                         energy_capa=hydro_e_capa)
     if with_hydro_gen_level_const:
         hydro_gen_min, hydro_gen_max, hydro_p_capa = eraa_dataset.get_hydro_params_for_gen_levels_const()
@@ -148,8 +149,8 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
 
 
 def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: int, uc_period_start: datetime,
-                              solver_params: SolverParams = DEFAULT_OPTIM_SOLVER_PARAMS, output_tag: str = None) \
-        -> Tuple[str, str]:
+                              solver_params: SolverParams = DEFAULT_OPTIM_SOLVER_PARAMS, output_tag: str = None,
+                              save_explicit_corresp_for_lp_elts: bool = False) -> PYPSA_RESULT_TYPE:
     """
     Solve PyPSA network (UC) model, using an optimisation solver
     :param pypsa_model: to be solved
@@ -158,13 +159,18 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
     :param uc_period_start: date of the beginning of UC pb
     :param solver_params: name/license file, if not default solver (highs) used
     :param output_tag: used to have a more explicit output folder arborescence
+    :param save_explicit_corresp_for_lp_elts: save files with correspondence between PyPSA "abstract"
+    variable/constraint names and explicit ones?
+    :returns (xxx, optim status)
     """
     logging.info(f'{TITLE_LOG_SEP} IV) Get a solution for European UC model {TITLE_LOG_SEP}')
     # use alternatively set_optim_solver(name='gurobi', license_file='gurobi.lic') to use Gurobi,
     # with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
     pypsa_model.set_optim_solver(solver_params=solver_params)
     result = pypsa_model.optimize_network(year=year, n_countries=n_countries, period_start=uc_period_start,
-                                          output_tag=output_tag)
+                                          output_tag=output_tag,
+                                          save_explicit_vars_corresp=save_explicit_corresp_for_lp_elts,
+                                          save_explicit_consts_corresp=save_explicit_corresp_for_lp_elts)
     # Get optim. pb main characteristics (to check if coherent with resolution time?!)
     optim_pb_characts = pypsa_model.get_optim_pb_characteristics()
     logging.info(f'Corresp. to solved {str(optim_pb_characts)}')
@@ -212,6 +218,19 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                                                      start_horizon=uc_run_params.uc_period_start,
                                                      output_tag=uc_run_params.output_tag)
                  )
+            if PlotNames.stock_soc in plots_tb_done:
+                hydro_soc_min = (
+                    pypsa_model.get_constraint_bound_value(constraint_name=CustomConstraintNames.hydro_soc_min)
+                )
+                hydro_soc_max = (
+                    pypsa_model.get_constraint_bound_value(constraint_name=CustomConstraintNames.hydro_soc_max)
+                )
+                if hydro_soc_min is not None or hydro_soc_max is not None:
+                    uc_optimal_solution.plot_stock_soc(hydro_soc_min=hydro_soc_min, hydro_soc_max=hydro_soc_max)
+                else:
+                    logging.warning(f"Plot {PlotNames.stock_soc} will not be done, as no lower/upper bound on stock "
+                                    f"SoC in current PyPSA model")
+
         # then plots at the scale of all countries (Europe)
         # 'marginal price' figure
         if PlotNames.marginal_price in plots_tb_done:
@@ -339,7 +358,9 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     result = solve_pypsa_network_model(pypsa_model=pypsa_model, year=uc_run_params.selected_target_year,
                                        n_countries=len(uc_run_params.selected_countries),
                                        uc_period_start=uc_run_params.uc_period_start, solver_params=solver_params,
-                                       output_tag=uc_run_params.output_tag)
+                                       output_tag=uc_run_params.output_tag,
+                                       save_explicit_corresp_for_lp_elts=
+                                       uc_run_params.save_explicit_corresp_for_lp_elts)
 
     uc_summary_metrics = save_data_and_fig_results(pypsa_model=pypsa_model, uc_run_params=uc_run_params,
                                                    result_optim_status=result[1])

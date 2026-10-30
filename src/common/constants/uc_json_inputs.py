@@ -20,6 +20,7 @@ class EuropeJsonParamNames:
     interco_capas_tb_overwritten: str = 'interco_capas_tb_overwritten'
     mode: str = 'mode'
     output_tag: str = 'output_tag'
+    save_explicit_corresp_for_lp_elts: str = 'save_explicit_corresp_for_lp_elts'
     selected_climatic_year: str = 'selected_climatic_year'
     selected_countries: str = 'selected_countries'
     selected_target_year: str = 'selected_target_year'

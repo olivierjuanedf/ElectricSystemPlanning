@@ -28,12 +28,29 @@ Note that run stops correctly - with an explicit error message in the logs - whe
 ## Output files
 **Obtained data (resp. plotted figures) results** are given in [output/long_term_uc/multizones_eur/data](../../output/long_term_uc/multizones_eur/data) (resp. [output/long_term_uc/multizones_eur/figures](../../output/long_term_uc/multizones_eur/figures)) folders.
 
-In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
-* (*data/* subfolder) **optimal production of all generators** considered in Europe, in a .csv file. **N.B.** The suffix of this file is indicating the year, climatic year ("cy") and the date of UC start period
-* (*data/* subfolder) **"prices" for all countries** considered in Europe, in a .csv file. **N.B.** (i) Idem; (ii) Specifically, this prices are the optimal values of dual variables associated to suuply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
-* (*figures/* subfolder) a **"cumulated vision" of the production**, in a .png file per country
-* (*figures/* subfolder) **price curves**, for the different countries in a unique .png file
+For all files obtained, suffixes indicate the (i) Country corresponding to the content ("europe" if for whole continent);
+(ii) TY and CY; (iii) Start date of the UC period simulated.
 
+In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
+* (*data/* subfolder) **optimal production of all generators** considered in Europe, in an *opt_power_europe_{TY and CY}_{start date}.csv* file. 
+* (*data/* subfolder) **"prices" for all countries** considered in Europe, in a *marginal-prices_europe_{TY and CY}_{start date}.csv* file. 
+**N.B.** Specifically, these prices are the optimal values of dual variables associated to supply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!) 
+* (*data/* subfolder) **optimal flows in the interconnections** in *link-flow_opt_decisions_europe_{TY and CY}_{start date}.csv*.
+* (*data/* subfolder) **optimal decisions for the storages** - production (turbining, discharging; depending on the type of asset), 
+consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *storage_opt_decisions_europe_{TY and CY}_{start date}.csv*.
+* (*data/* subfolder) summary of (per-country) main results in *uc-summary_europe_{TY and CY}_{start date}.json*. In detail, all metrics over the whole UC period:
+  - **per_country_ens**: Energy Not Served, i.e. the yearly volume of failure (MWh).
+  - **per_country_n_failure_hours**: number of failure hours, i.e. with a strictly positive level of (fictive) failure asset.
+  - **total_cost** (resp. **per_country_total_cost**): of the UC problem simulated over Europe (resp. for a given country), i.e. "value" of the optimization problem (M€).
+  - **total_operational_cost** (resp. **per_country_total_operational_cost**): previous value over Europe (resp. for a given country), from which failure cost (penalty) has been subtracted (M€).
+  - **total_co2_emissions** (resp. **per_country_co2_emissions**): CO2 emissions over Europe (resp. for a given country) (XXX).
+* (*data/* subfolder) An LP file containing the description of UC optimization problem solved, in *model_7-countries_{start date}.lp*.
+* (*figures/* subfolder) a - very schematic - description of the "network" corresponding to the UC model simulated, in *network_7-bus.png*. 
+* (*figures/* subfolder) a **"cumulated (stacked) vision" of the production**, in *prod_{country}_{TY and CY}_{start date}.png* files.
+* (*figures/* subfolder) **price curves**, for the different countries in a unique *prices_europe_{TY and CY}_{start date}.png* file.
+
+Note that, as explained with the description of [elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) input file in Appendix section, 
+a "tag" - indicating name of the run, and optionally a counter index - can be added to data/figures subfolder to identify them more simply.
 
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
@@ -62,10 +79,15 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
     - "<span style="color:#32B032; font-weight:bold">selected_target_year</span>": to choose the ERAA (target) **year** to be simulated (<span style="color:#257cbd; font-weight:bold">int</span>, either 2025 or 2033)
     - "<span style="color:#32B032; font-weight:bold">selected_prod_types</span>": **per country selection of the (generation unit) aggregate production types** to be part of your model
     - "<span style="color:#32B032; font-weight:bold">uc_period_start</span>": **date from which UC optimization period starts; under format "1900/%M/%d"**. Ex.: "1900/1/1" to start from beginning of the year. **N.B.** "1900" to clearly indicate that a "fictive calendar" (modelling one) be used in ERAA data, with 364 days (to get 52 full weeks... an important granularity for some unit optim., as discussed in class)
-    - (optional) "uc_period_end": idem, **end of period; same format**. Default value: period of 9 days starting from "uc_period_start".
-    -  "<span style="color:#32B032; font-weight:bold">failure_power_capa</span>": **capacity of the failure - fictive - asset** considered (<span style="color:#257cbd; font-weight:bold">non-negative float</span>). **N.B.** Common to all countries
-    -  "<span style="color:#32B032; font-weight:bold">failure_penalty</span>": **failure asset variable cost**, or more standardly "penalty" (<span style="color:#257cbd; font-weight:bold">non-negative float</span>). **N.B.** Typically set to a "very big" value, so that this asset be used as a last recourse - i.e. after having used all other production units at maximal power available
-    -  "<span style="color:#32B032; font-weight:bold">interco_capas_tb_overwritten</span>": **values for the interconnection capacities**; to be used to overwrite - or complete - ERAA data (<span style="color:#257cbd; font-weight:bold">dictionary</span> with <span style="color:#257cbd; font-weight:bold">str</span> keys and <span style="color:#257cbd; font-weight:bold">non-negative float</span> values, with keys under format {origin country}2{destination country}). Ex:  {"france2poland": 10, "france2scandinavia": 0, "italy2iberian-peninsula": 0} will set interconnection capacity from France to Poland to 10GW (very fictive!) and from France to both Scandinavia et Iberian-Peninsula to 0GW. Note that regarding the France to Scandinavia link this value will be useless as there is no ERAA data associated to this link; in turn our code already used 0GW as the value. 
+    - (optional) "uc_period_end": idem, **end of period; same format**. Default: period of 9 days starting from "uc_period_start".
+    - "<span style="color:#32B032; font-weight:bold">failure_power_capa</span>": **capacity of the failure - fictive - asset** considered (<span style="color:#257cbd; font-weight:bold">non-negative float</span>). **N.B.** Common to all countries
+    - "<span style="color:#32B032; font-weight:bold">failure_penalty</span>": **failure asset variable cost**, or more standardly "penalty" (<span style="color:#257cbd; font-weight:bold">non-negative float</span>). **N.B.** Typically set to a "very big" value, so that this asset be used as a last recourse - i.e. after having used all other production units at maximal power available
+    - "<span style="color:#32B032; font-weight:bold">interco_capas_tb_overwritten</span>": **values for the interconnection capacities**; to be used to overwrite - or complete - ERAA data (<span style="color:#257cbd; font-weight:bold">dictionary</span> with <span style="color:#257cbd; font-weight:bold">str</span> keys and <span style="color:#257cbd; font-weight:bold">non-negative float</span> values, with keys under format {origin country}2{destination country}). Ex:  {"france2poland": 10, "france2scandinavia": 0, "italy2iberian-peninsula": 0} will set interconnection capacity from France to Poland to 10GW (very fictive!) and from France to both Scandinavia et Iberian-Peninsula to 0GW. Note that regarding the France to Scandinavia link this value will be useless as there is no ERAA data associated to this link; in turn our code already used 0GW as the value.
+    - (optional) "<span style="color:#32B032; font-weight:bold">output_tag</span>": to **add a tag to the obtained data/figure** output folders. Default: no tag, in this case a previous run results may be overwritten.
+    Ex: if output_tag="preliminar", results will be obtained in "data_preliminar"/"figures_preliminar" subfolders
+    - (optional) "<span style="color:#32B032; font-weight:bold">add_run_idx_tag_to_output</span>": to **add a tag indicating the run index** to the obtained data/figure output folders. Default: no such index, in this case a previous run results may be overwritten.
+    - (optional) "<span style="color:#32B032; font-weight:bold">save_explicit_corresp_for_lp_elts</span>": save two files with 
+    correspondence between PyPSA "abstract" variable/constraint names (e.g., xi for variables) and explicit ones? Default: do not save these files.
 
 - [countries/](../../input/long_term_uc/countries/){**country**}.json*: 
     - "<span style="color:#32B032; font-weight:bold">team</span>": **name of your team**, i.e. name of the country you are "responsible for" (*str*, that must be in the set {"benelux", "germany", "iberian-peninsula", "poland", "scandinavia"} - use lower letters)
@@ -115,7 +137,7 @@ in which it represents a significant part of the capacities (e.g., Scandinavia!)
       - "climatic_year": at least the value used for simulation
       - "min_value" (resp. "max_value"): min (resp. max) WEEKLY generation level (MWh). In turn, the sum of production
       decisions in the week will be lower- (resp. upper-) bounded by this value
-    - **min/max generation levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
+    - **min/max reservoir levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
     cf. here the case of France
     **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
       - "week": index in 1, ..., 53
@@ -131,7 +153,7 @@ added to the UC model** simulated (if file in proper format!).
 ### "Sumprod" constraints
 
 Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
-problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost
+problems; a typical case is an upper bound on CO2 emissions.
 
 N.B. Both can be expressed on subset(s) of zones.
 
@@ -139,35 +161,23 @@ These constraints can be added in the proposed environment, adding a dictionary 
 [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json): 
    - in "extra_params" dict.
    - with following fields
-     - **max_co2_emis_constraints** (resp. **xxx**) for an upper bound on CO2 emissions (resp. UC cost)
-       - **temporal_granularity**: "day", "week" or "whole_period". N.B. When weekly periods are considered they 
-       are starting on Mondays
-       - **cases**: on which this sumprod constraint is to be applied, each of them consisting in a dict. with fields
-         - **countries**: list of countries on which the sum must be calculated - in addition to the temporal sum done 
-         on day/week/whole period
-         - **upper_bound**: can be either a float, or list of values. If float either it corresponds to a case with 
-         temporal_granularity=whole_period, or in which the same bound will be applied to each period. N.B. (i) It can 
-         be replaced by **lower_bound** resp **xxx**) if a lower bound (resp. equality) constraint is to be applied. 
-         (ii) If a vector is provided its size must correspond to the number of (daily/weekly) periods in considered
-         optimization period. If not the case, or the number of time-slots in considered model does not correspond 
-         the code will raise an error/warning. 
-         
+     - **max_co2_emis_constraints**
+       - **cases**: on which this sumprod constraint is to be applied, each of them consisting in a dict. with fields:
+         - **countries**: list of countries on which the sum must be calculated - in addition to the temporal sum 
+         done on whole temporal period.
+         - **upper_bound**: a float, the maximal amount of CO2 emissions (XXX unit XXX).
+
+Ex: to add a (unique) constraint of this type on France-Germany
 ```json
 {
   "max_co2_emis_constraints": {
-    "temporal_granularity": "week",
     "cases": [
       {
         "countries": [
           "france",
           "germany"
         ],
-        "upper_bound": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "upper_bound": 3.14
       }
     ]
   }

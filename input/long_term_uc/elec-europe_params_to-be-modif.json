@@ -43,19 +43,13 @@
   },
   "extra_params": {
     "max_co2_emis_constraints": {
-      "temporal_granularity": "week",
       "cases": [
         {
           "countries": [
             "france",
             "germany"
           ],
-          "upper_bound": [
-            1,
-            2,
-            3,
-            4
-          ]
+          "upper_bound": 3.14
         }
       ]
     },
@@ -63,5 +57,6 @@
   },
   "output_tag": "preliminar",
   "add_date_tag_to_output": false,
-  "add_run_idx_tag_to_output": true
+  "add_run_idx_tag_to_output": true,
+  "save_explicit_corresp_for_lp_elts": true
 }

@@ -9,6 +9,7 @@ from dataclasses import dataclass, asdict
 from typing import Dict, List, Union, Optional
 import json
 import pypsa
+import xarray
 from matplotlib import pyplot as plt
 
 from src.common.constants.countries import set_country_trigram
@@ -428,6 +429,10 @@ class UCOptimalSolution:
         #                                       start_horizon=start_horizon, toy_model_output=toy_model_output)
         #                 )
         #     plt.close()
+
+    def plot_stock_soc(self, hydro_soc_min: xarray.DataArray = None, hydro_soc_max: xarray.DataArray = None):
+        df_soc_opt = self.storage_soc
+        bob = 1
 
     def plot_cum_export_flows(self):
         # TODO: aggreg. plot with sum of exported flow per country (as a function of time)

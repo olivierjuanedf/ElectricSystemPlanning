@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime
 
 import linopy.model
+import xarray
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -13,13 +14,16 @@ from typing import Dict, List, Tuple, Optional, Union
 from dataclasses import dataclass
 import pypsa
 import matplotlib.pyplot as plt
+import re
 
-from src.common.constants.countries import set_country_trigram
-from src.common.constants.links import set_link_name
+from src.common.constants.countries import set_country_trigram, is_country_trigram
+from src.common.constants.links import set_link_name, get_bus_from_link_name
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
-from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
-from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames
+from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP, \
+    get_prod_type_from_unit_name
+from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames, PYPSA_TO_EXPLICIT_VAR_NAMES, \
+    PYPSA_TO_EXPLICIT_CONST_NAMES
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
@@ -179,6 +183,111 @@ def set_sum_of_prod_const_name(const_type: str, temporal_granularity: str, direc
             const_type = const_type[len(prefix):]
 
     return f"{const_type}_{temporal_granularity}_{direction}"
+
+
+def simplify_lp_elt_mapping(mapping: dict[str, str], snapshots: pd.DatetimeIndex, elt_type: str,
+                            shorten_asset_name: bool = True) -> dict[str, str]:
+    """
+    Convert PyPSA variable names such as
+
+        Generator-p[2033-01-01T00:00:00.000000000, fra_nuclear]
+
+    into
+
+        prod_fra_nuclear_1
+
+    where:
+        - 'p' is mapped to 'prod'
+        - the timestamp is replaced by its 1-based index in snapshots
+
+    Parameters
+    ----------
+    mapping : dict[str, str]
+        Mapping returned by get_lp_variable_mapping().
+
+    elt_type : variable, or constraint
+
+    snapshots : pd.DatetimeIndex
+        Reference date range used to convert timestamps into
+        1-based time-step indices.
+
+    shorten_asset_name : use reduced names for the assets?
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of LP variable names to simplified names.
+    """
+    allowed_elt_types = ["variable", "constraint"]
+    if elt_type not in allowed_elt_types:
+        raise Exception(f"Element type for mapping simplification (in LP) {elt_type} not in list of allowed "
+                        f"ones {allowed_elt_types}")
+
+    # rename some variables
+    timestamp_to_idx = {pd.Timestamp(ts): i for i, ts in enumerate(snapshots)}
+
+    simplified = {}
+
+    if elt_type == "variable":
+        pattern = re.compile(
+            r"(?P<component>[^-]+)-(?P<elt>[^\[]+)"
+            r"\[(?P<timestamp>[^,]+),\s*(?P<asset>[^\]]+)\]"
+        )
+    else:  # constraint
+        pattern = re.compile(
+            r"(?P<component>[^-]+)-(?P<elt>[^\[]+)"
+            r"\[(?P<coords>[^\]]+)\]"
+        )
+
+    for lp_name, pypsa_name in mapping.items():
+
+        match = pattern.fullmatch(pypsa_name)
+
+        if match is None:
+            simplified[lp_name] = pypsa_name
+            continue
+
+        if elt_type == "variable":
+            timestamp = pd.Timestamp(match.group("timestamp"))
+            asset = match.group("asset")
+        else:
+            # TODO: see if both regex cannot be merged in fact...
+            const_coords = match.group("coords").split(", ")
+            const_coords = [elt_coord.strip() for elt_coord in const_coords]
+            # depending on the constraints, dims are not ordered the same way...
+            if is_country_trigram(my_str=const_coords[0]):
+                asset_idx = 0
+                timestamp_idx = 1
+            else:
+                timestamp_idx = 0
+                asset_idx = 1
+            timestamp = pd.Timestamp(const_coords[timestamp_idx])
+            # can be a prod. asset name, a zone (SDE) or a couple of zone for link constraints
+            asset = const_coords[asset_idx]
+
+        if shorten_asset_name:
+            # Specific case of links
+            o_and_d_bus = get_bus_from_link_name(link_name=asset)
+            if o_and_d_bus is not None:
+                asset = "-".join(o_and_d_bus)
+            else:
+                # In specific case when asset is a (unique) bus it will return this bus name
+                bus_name = get_country_from_unit_name(prod_unit_name=asset)
+                prod_type = get_prod_type_from_unit_name(prod_unit_name=asset)
+                asset = "_".join([bus_name, PROD_TYPE_IN_LP.get(prod_type, prod_type)])
+
+        full_elt = match.group("component") + "-" + match.group("elt")
+
+        explicit_corresp = PYPSA_TO_EXPLICIT_VAR_NAMES if elt_type == "variable" else PYPSA_TO_EXPLICIT_CONST_NAMES
+        elt = explicit_corresp.get(full_elt, full_elt)
+
+        time_idx = timestamp_to_idx[timestamp]
+
+        simplified_name = f"{elt}_{asset}_{time_idx}"
+
+        simplified[lp_name] = simplified_name
+
+    return simplified
 
 
 @dataclass
@@ -426,20 +535,24 @@ class PypsaModel:
                 self.network.model.add_constraints(per_dir_const[prod_sum_const.direction],
                                                    name=f"{const_name}_{period}")
 
-    def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
-                                            soc_max: Dict[str, Union[float, np.ndarray]],
+    def add_hydro_extreme_levels_constraint(self, soc_min_pu: Dict[str, Union[float, np.ndarray]],
+                                            soc_max_pu: Dict[str, Union[float, np.ndarray]],
                                             energy_capa: Dict[str, float]):
         """
         Add constraint on hydro extreme SOC levels
-        :param soc_min: dict {unit name: soc min vector} - with SoC min an absolute value,
+        :param soc_min_pu: dict {unit name: soc min vector} - with SoC min an absolute value,
         NOT AS A PERCENTAGE of capacity
-        :param soc_max: idem, max
+        :param soc_max_pu: idem, max
         :param energy_capa: dict {unit name: energy capa value}
         """
         logging.info("Add hydro extreme SoC levels constraints")
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than energy capacity), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
+        # from PU to ABSOLUTE values of min/max SoC (ABSOLUTE values have to be used in PyPSA)
+        soc_min = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_min_pu.items()}
+        soc_max = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_max_pu.items()}
+        # project on feasible bound interval [0, capa], and vectorize
         soc_min = prepro_bound_params(bound_values=soc_min, max_feas_bound=energy_capa, n_ts=n_ts)
         soc_max = prepro_bound_params(bound_values=soc_max, max_feas_bound=energy_capa, n_ts=n_ts)
         # set associated constraints in Linopy
@@ -452,8 +565,8 @@ class PypsaModel:
         # cast dict of bound values as xarray - format to be used in Linopy
         soc_min_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_min, snapshots=self.network.snapshots)
         soc_max_array = stack_per_storage_bound_as_xarray(per_gen_bound=soc_max, snapshots=self.network.snapshots)
-        self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name="hydro_soc_min")
-        self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name="hydro_soc_max")
+        self.network.model.add_constraints(hydro_soc_var >= soc_min_array, name=CustomConstraintNames.hydro_soc_min)
+        self.network.model.add_constraints(hydro_soc_var <= soc_max_array, name=CustomConstraintNames.hydro_soc_max)
 
     def add_hydro_extreme_gen_constraint(self, generation_min: Dict[str, np.ndarray],
                                          generation_max: Dict[str, np.ndarray], power_capa: Dict[str, float],
@@ -516,7 +629,7 @@ class PypsaModel:
     def get_per_bus_total_installed_capa(self):
         bus_names = self.get_bus_names()
         df_generators = self.network.generators
-        return {name: df_generators.loc[(df_generators.index.str.startswith(f'{name}-'))
+        return {name: df_generators.loc[(df_generators.index.str.startswith(f'{name}_'))
                                         & (df_generators['type'] != ProdTypeNames.failure), 'p_nom'].sum()
                 for name in bus_names}
 
@@ -582,8 +695,10 @@ class PypsaModel:
                                       n_constraints=len(linopy_model.constraints.flat))
 
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
-                         toy_model_output: bool = False, countries: List[str] = None,
-                         output_tag: str = None) -> PYPSA_RESULT_TYPE:
+                         save_explicit_vars_corresp: bool = False, save_explicit_consts_corresp: bool = False,
+                         toy_model_output: bool = False, countries: List[str] = None, output_tag: str = None,
+                         save_lp_with_explicit_names: bool = False) \
+            -> PYPSA_RESULT_TYPE:
         """
         Solve the optimization UC problem associated to current network
         :param year: of the considered UC problem
@@ -591,17 +706,34 @@ class PypsaModel:
         :param period_start
         :param save_lp_file: to get a standard saving of optim. model (that can be re-used with solvers outside of this
         environment)
+        :param save_explicit_vars_corresp: save corresp. between xi variable names in PyPSA and explicit ones?
+        :param save_explicit_consts_corresp: idem, for constraint names
         :param toy_model_output
         :param countries
         :param output_tag: used for output folder
+        :param save_lp_with_explicit_names: save lp with explicit variable and/or constraint names?
         :returns a tuple (xxx, status of resolution)
         """
         logging.info('Optimise "network" - i.e. solve associated UC problem')
-        result = self.network.optimize(solver_name=self.optim_solver_params.name)
+        result = self.network.optimize.solve_model(solver_name=self.optim_solver_params.name)
         logging.info(f'Obtained result: {result}')
         if save_lp_file:
-            save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
-                          toy_model_output=toy_model_output, countries=countries, output_tag=output_tag)
+            lp_filepath = save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
+                                        toy_model_output=toy_model_output, countries=countries, output_tag=output_tag)
+            if save_explicit_vars_corresp:
+                logging.info(f"Save correspondence between PyPSA abstract variable names and explicit ones")
+                lp_var_mapping = self.get_lp_variable_mapping()
+                df_var_mapping = pd.DataFrame(lp_var_mapping.items(), columns=["pypsa", "explicit"])
+                df_var_mapping.to_csv(lp_filepath.replace(".lp", f"_var-mapping.csv"), index=False)
+            if save_explicit_consts_corresp:
+                logging.info(f"Save correspondence between PyPSA abstract constraint names and explicit ones")
+                lp_const_mapping = self.get_lp_constraint_mapping()
+                df_const_mapping = pd.DataFrame(lp_const_mapping.items(), columns=["pypsa", "explicit"])
+                df_const_mapping.to_csv(lp_filepath.replace(".lp", f"_const-mapping.csv"), index=False)
+            if save_lp_with_explicit_names and (lp_var_mapping is not None or lp_const_mapping is not None):
+                rename_elts_in_lp_model(lp_filepath=lp_filepath, var_readable_mapping=lp_var_mapping,
+                                        const_readable_mapping=lp_const_mapping)
+
         return result
 
     def set_uc_opt_solution(self) -> UCOptimalSolution:
@@ -627,6 +759,14 @@ class PypsaModel:
             f'{objective_value_refmted} (M€) -> output data (resp. figures) can be generated')
         return objective_value
 
+    def get_constraint_bound_value(self, constraint_name: str) -> Optional[xarray.DataArray]:
+        if constraint_name in self.network.model.constraints:
+            return self.network.model.constraints[constraint_name].rhs
+        else:
+            logging.warning(f"Bound cannot be obtained for constraint {constraint_name}, "
+                            f"not present in current PyPSA model")
+            return None
+
     def plot_installed_capas(self, country: str, year: int, toy_model_output: bool = False, output_tag: str = None):
         country_trigram = set_country_trigram(country=country)
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
@@ -642,6 +782,98 @@ class PypsaModel:
                                           toy_model_output=toy_model_output, output_tag=output_tag))
             plt.close()
 
+    import numpy as np
+
+    def get_lp_variable_mapping(self, simplify_mapping: bool = True) -> dict[str, str]:
+        """
+        Build a mapping between LP variable names (x1, x2, ...)
+        and their corresponding PyPSA/Linopy variable names.
+        Returns
+        -------
+        dict[str, str]
+            Dictionary of the form
+
+                {
+                    "x1": "Generator-p[Gen1,2025-01-01 00:00:00]",
+                    "x2": "Generator-p[Gen1,2025-01-01 01:00:00]",
+                    ...
+                }
+        """
+
+        mapping = {}
+
+        for var_name, var in self.network.model.variables.items():
+
+            labels = np.asarray(var.labels).ravel()
+
+            # Build a coordinate array with the same shape as labels
+            coord_arrays = np.meshgrid(
+                *[var.coords[dim].values for dim in var.dims],
+                indexing="ij",
+            )
+
+            flat_coords = list(zip(*(c.ravel() for c in coord_arrays)))
+
+            for label, coords in zip(labels, flat_coords):
+
+                # Negative labels correspond to empty positions
+                if label < 0:
+                    continue
+
+                coord_str = ", ".join(str(c) for c in coords)
+
+                mapping[f"x{label}"] = f"{var_name}[{coord_str}]"
+
+        if simplify_mapping:
+            mapping = simplify_lp_elt_mapping(mapping=mapping, elt_type="variable", snapshots=self.network.snapshots)
+
+        return mapping
+
+    def get_lp_constraint_mapping(self, simplify_mapping: bool = True) -> dict[str, str]:
+        """
+        Build a mapping between LP constraint names (c1, c2, ...)
+        and their corresponding PyPSA/Linopy constraint names.
+
+        Returns
+        -------
+        dict[str, str]
+            Dictionary of the form
+
+                {
+                    "c1": "Generator-fix-p-upper[...]",
+                    "c2": "Generator-fix-p-upper[...]",
+                    ...
+                }
+        """
+
+        mapping = {}
+
+        for constraint_name, constraint in self.network.model.constraints.items():
+
+            labels = np.asarray(constraint.labels).ravel()
+
+            coord_arrays = np.meshgrid(
+                *[constraint.coords[dim].values for dim in constraint.dims],
+                indexing="ij",
+            )
+
+            flat_coords = list(zip(*(c.ravel() for c in coord_arrays)))
+
+            for label, coords in zip(labels, flat_coords):
+
+                if label < 0:
+                    continue
+
+                coord_str = ", ".join(str(c) for c in coords)
+
+                mapping[f"c{label}"] = (
+                    f"{constraint_name}[{coord_str}]"
+                )
+
+        if simplify_mapping:
+            mapping = simplify_lp_elt_mapping(mapping=mapping, elt_type="constraint", snapshots=self.network.snapshots)
+
+        return mapping
 
 # def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
 #     str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
@@ -699,7 +931,7 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False,
-                  output_tag: str = None):
+                  output_tag: str = None) -> str:
     from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
     # In PyPSA 1.0+, opt.create_model is removed. Instead we use the built-in linopy model.
@@ -742,3 +974,31 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
     lp_filepath = f'{output_folder_data}/model_{file_suffix}.lp'
     logging.info(f'Save model in .lp file: {lp_filepath}')
     m.to_file(Path(lp_filepath))
+    return lp_filepath
+
+
+def rename_elts_in_lp_model(lp_filepath: str, var_readable_mapping: dict[str, str] = None,
+                            const_readable_mapping: dict[str, str] = None):
+    renamed_elts = []
+    if var_readable_mapping is not None:
+        renamed_elts.append("variables")
+    if const_readable_mapping is not None:
+        renamed_elts.append("constraints")
+    info_msg = " and ".join(renamed_elts)
+    logging.info(f"Rename {info_msg} explicitly in file {os.path.split(lp_filepath)[1]}")
+    with open(lp_filepath, encoding="utf-8") as f:
+        content = f.read()
+
+    mapping_dict = {"var": var_readable_mapping, "const": const_readable_mapping}
+    for elt_name, readable_mapping in mapping_dict.items():
+        if readable_mapping is not None:
+            # Replace longest names first
+            for old_name in sorted(readable_mapping, key=len, reverse=True):
+                content = re.sub(
+                    rf"\b{re.escape(old_name)}\b",
+                    readable_mapping[old_name],
+                    content,
+                )
+
+    with open(lp_filepath, "w", encoding="utf-8") as f:
+        f.write(content)

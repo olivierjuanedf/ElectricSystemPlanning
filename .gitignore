@@ -164,6 +164,9 @@ cython_debug/
 # PyPSA tests
 pypsa_tests/
 
+# optional inputs
+input/long_term_uc/optional/hydro/*.csv
+
 # outputs
 output/data_analysis/*.log
 output/data_analysis/*.png
@@ -176,8 +179,8 @@ output/long_term_uc/multizones_eur/figures/*.png
 output/long_term_uc/data/*.csv
 output/long_term_uc/data/*.json
 output/long_term_uc/data/*.lp
-output/long_term_uc/data_
+output/long_term_uc/data_*
 output/long_term_uc/figures/*.png
-output/long_term_uc/figures_
+output/long_term_uc/figures_*
 output/long_term_uc/monozone_*/
 output/toy_model_*/

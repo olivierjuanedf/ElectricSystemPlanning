@@ -63,6 +63,8 @@ DEFAULT_OPTIM_SOLVER_PARAMS = SolverParams(name=OptimSolvers.highs)
 @dataclass
 class CustomConstraintNames:
     hydro: str = 'hydro'
+    hydro_soc_min: str = 'hydro_soc_min'
+    hydro_soc_max: str = 'hydro_soc_max'
     max_co2_emissions: str = 'max_co2_emissions'
     max_prod_cost: str = 'max_prod_cost'
 
@@ -82,7 +84,6 @@ class ConstMultCoeffNames:
 
 # TODO: put as object (below) constants?
 N_COUNTRIES_MAX_IN_NAME = 3
-WHOLE_PERIOD_GRANULARITY: str = 'whole_period'
 
 
 @dataclass
@@ -97,9 +98,9 @@ class ZoneAndTempProdSumConstraint:
     # (idem = bound)
     direction: str
     mult_coeff_name: str  # name of the multiplicative coeffs to be used
-    temporal_granularity: str  # temporal granularity associated to this constraint
     countries: List[str]  # over which constraints is to be imposed
     bound: np.ndarray
+    temporal_granularity: str = Timescale.whole_period  # temporal granularity associated to this constraint
     name: str = None
 
     def __repr__(self) -> str:
@@ -137,6 +138,7 @@ class ZoneAndTempProdSumConstraint:
     def check(self, available_countries: List[str], optim_start: datetime = None, optim_end: datetime = None,
               target_year: int = None):
         """
+        Check sum-of-prod constraint
         :param available_countries
         :param optim_start: if per period max/min metric (like CO2 emissions) are used
         :param optim_end: idem
@@ -161,7 +163,7 @@ class ZoneAndTempProdSumConstraint:
         # -> stop with error if not valid
         available_temp_granularities = get_default_values(obj=Timescale)
         # add 'granularity' corresponding to the application of this constraint to whole period
-        available_temp_granularities.append(WHOLE_PERIOD_GRANULARITY)
+        available_temp_granularities.append(Timescale.whole_period)
         avail_const_directions = get_default_values(obj=CustomConstraintDirection)
         avail_mult_coeff_names = get_default_values(obj=ConstMultCoeffNames)
         known_value_checks = {'temporal granularity': (self.temporal_granularity, available_temp_granularities),
@@ -193,12 +195,15 @@ class ZoneAndTempProdSumConstraint:
                             f"correspond to the size of provided bound {n_bound_values} -> update either bound size, "\
                             f"or optimization period"
                 const_def_errors.append(error_msg)
+        elif self.temporal_granularity == Timescale.whole_period:
+            n_periods = 1
         # check if all periods contain all time-slots in model - otherwise bias on constraint def.
         # (bound may be applied to a partial sum)
         n_ts_in_optim = get_hours_nber_between_dates(start_date=optim_start, end_date=optim_end)
         # TODO: make this test fully coherent in the case of month
-        n_ts_in_period = 4*168 if self.temporal_granularity == Timescale.month else \
-            168 if self.temporal_granularity == Timescale.week else 24
+        n_ts_in_period_per_gran = {Timescale.day: 24, Timescale.week: 168,
+                                   Timescale.month: 4 * 168, Timescale.whole_period: n_ts_in_optim}
+        n_ts_in_period = n_ts_in_period_per_gran[self.temporal_granularity]
         n_ts_full_const_def = n_periods * n_ts_in_period
         if not n_ts_in_optim == n_ts_full_const_def:
             logging.warning(
