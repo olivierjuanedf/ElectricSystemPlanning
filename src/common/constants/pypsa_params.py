@@ -33,7 +33,7 @@ class GenUnitsCustomParams:
     soc_max: str = 'soc_max'
     gen_min: str = 'gen_min'
     gen_max: str = 'gen_max'
-    
+
 
 @dataclass
 class PypsaOptimVarNames:
@@ -55,3 +55,34 @@ PYPSA_TO_EXPLICIT_VAR_NAMES = \
      PypsaOptimVarNames.storage_p_store: 'c',
      PypsaOptimVarNames.storage_soc: 'soc',
      PypsaOptimVarNames.storage_spill: 'spill'}
+
+
+@dataclass
+class PypsaOptimConstNames:
+    generators_p_lb: str = 'Generator-fix-p-lower'
+    generators_p_ub: str = 'Generator-fix-p-upper'
+    link_lb: str = 'Link-fix-p-lower'
+    link_ub: str = 'Link-fix-p-upper'
+    storage_p_dispatch_lb: str = 'StorageUnit-fix-p_dispatch-lower'
+    storage_p_dispatch_ub: str = 'StorageUnit-fix-p_dispatch-upper'
+    storage_p_store_lb: str = 'StorageUnit-fix-p_store-lower'
+    storage_p_store_ub: str = 'StorageUnit-fix-p_store-upper'
+    storage_soc_state_eq: str = 'StorageUnit-energy_balance'
+    storage_soc_lb: str = 'StorageUnit-fix-state_of_charge-lower'
+    storage_soc_ub: str = 'StorageUnit-fix-state_of_charge-upper'
+    supply_demand_eq: str = 'Bus-nodal_balance'
+
+
+PYPSA_TO_EXPLICIT_CONST_NAMES = \
+    {PypsaOptimConstNames.generators_p_lb: "p_lb",
+     PypsaOptimConstNames.generators_p_ub: "p_ub",
+     PypsaOptimConstNames.link_lb: "p_lb",
+     PypsaOptimConstNames.link_ub: "p_lb",
+     PypsaOptimConstNames.storage_p_dispatch_lb: "p_lb",
+     PypsaOptimConstNames.storage_p_dispatch_ub: "p_ub",
+     PypsaOptimConstNames.storage_p_store_lb: "c_lb",
+     PypsaOptimConstNames.storage_p_store_ub: "c_ub",
+     PypsaOptimConstNames.storage_soc_state_eq: "soc_stateeq",
+     PypsaOptimConstNames.storage_soc_lb: "soc_lb",
+     PypsaOptimConstNames.storage_soc_ub: "soc_ub",
+     PypsaOptimConstNames.supply_demand_eq: "sde"}

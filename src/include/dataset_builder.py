@@ -16,12 +16,14 @@ import pypsa
 import matplotlib.pyplot as plt
 import re
 
-from src.common.constants.countries import set_country_trigram
-from src.common.constants.links import set_link_name
+from src.common.constants.countries import set_country_trigram, is_country_trigram
+from src.common.constants.links import set_link_name, get_bus_from_link_name
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
-from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP
-from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames, PYPSA_TO_EXPLICIT_VAR_NAMES
+from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP, \
+    get_prod_type_from_unit_name
+from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames, PYPSA_TO_EXPLICIT_VAR_NAMES, \
+    PYPSA_TO_EXPLICIT_CONST_NAMES
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
@@ -183,8 +185,8 @@ def set_sum_of_prod_const_name(const_type: str, temporal_granularity: str, direc
     return f"{const_type}_{temporal_granularity}_{direction}"
 
 
-def simplify_variable_mapping(mapping: dict[str, str], snapshots: pd.DatetimeIndex,
-                              shorten_asset_name: bool = True) -> dict[str, str]:
+def simplify_lp_elt_mapping(mapping: dict[str, str], snapshots: pd.DatetimeIndex, elt_type: str,
+                            shorten_asset_name: bool = True) -> dict[str, str]:
     """
     Convert PyPSA variable names such as
 
@@ -203,6 +205,8 @@ def simplify_variable_mapping(mapping: dict[str, str], snapshots: pd.DatetimeInd
     mapping : dict[str, str]
         Mapping returned by get_lp_variable_mapping().
 
+    elt_type : variable, or constraint
+
     snapshots : pd.DatetimeIndex
         Reference date range used to convert timestamps into
         1-based time-step indices.
@@ -214,15 +218,26 @@ def simplify_variable_mapping(mapping: dict[str, str], snapshots: pd.DatetimeInd
     dict[str, str]
         Mapping of LP variable names to simplified names.
     """
+    allowed_elt_types = ["variable", "constraint"]
+    if elt_type not in allowed_elt_types:
+        raise Exception(f"Element type for mapping simplification (in LP) {elt_type} not in list of allowed "
+                        f"ones {allowed_elt_types}")
+
     # rename some variables
     timestamp_to_idx = {pd.Timestamp(ts): i for i, ts in enumerate(snapshots)}
 
     simplified = {}
 
-    pattern = re.compile(
-        r"(?P<component>[^-]+)-(?P<var>[^\[]+)"
-        r"\[(?P<timestamp>[^,]+),\s*(?P<asset>[^\]]+)\]"
-    )
+    if elt_type == "variable":
+        pattern = re.compile(
+            r"(?P<component>[^-]+)-(?P<elt>[^\[]+)"
+            r"\[(?P<timestamp>[^,]+),\s*(?P<asset>[^\]]+)\]"
+        )
+    else:  # constraint
+        pattern = re.compile(
+            r"(?P<component>[^-]+)-(?P<elt>[^\[]+)"
+            r"\[(?P<coords>[^\]]+)\]"
+        )
 
     for lp_name, pypsa_name in mapping.items():
 
@@ -232,18 +247,43 @@ def simplify_variable_mapping(mapping: dict[str, str], snapshots: pd.DatetimeInd
             simplified[lp_name] = pypsa_name
             continue
 
-        timestamp = pd.Timestamp(match.group("timestamp"))
-        asset = match.group("asset")
-        if shorten_asset_name:
-            asset_split = asset.split("_")
-            asset = "_".join([asset_split[0], PROD_TYPE_IN_LP.get(asset_split[1], asset_split[1])])
-        full_variable = match.group("component") + "-" + match.group("var")
+        if elt_type == "variable":
+            timestamp = pd.Timestamp(match.group("timestamp"))
+            asset = match.group("asset")
+        else:
+            # TODO: see if both regex cannot be merged in fact...
+            const_coords = match.group("coords").split(", ")
+            const_coords = [elt_coord.strip() for elt_coord in const_coords]
+            # depending on the constraints, dims are not ordered the same way...
+            if is_country_trigram(my_str=const_coords[0]):
+                asset_idx = 0
+                timestamp_idx = 1
+            else:
+                timestamp_idx = 0
+                asset_idx = 1
+            timestamp = pd.Timestamp(const_coords[timestamp_idx])
+            # can be a prod. asset name, a zone (SDE) or a couple of zone for link constraints
+            asset = const_coords[asset_idx]
 
-        variable = PYPSA_TO_EXPLICIT_VAR_NAMES.get(full_variable, full_variable)
+        if shorten_asset_name:
+            # Specific case of links
+            o_and_d_bus = get_bus_from_link_name(link_name=asset)
+            if o_and_d_bus is not None:
+                asset = "-".join(o_and_d_bus)
+            else:
+                # In specific case when asset is a (unique) bus it will return this bus name
+                bus_name = get_country_from_unit_name(prod_unit_name=asset)
+                prod_type = get_prod_type_from_unit_name(prod_unit_name=asset)
+                asset = "_".join([bus_name, PROD_TYPE_IN_LP.get(prod_type, prod_type)])
+
+        full_elt = match.group("component") + "-" + match.group("elt")
+
+        explicit_corresp = PYPSA_TO_EXPLICIT_VAR_NAMES if elt_type == "variable" else PYPSA_TO_EXPLICIT_CONST_NAMES
+        elt = explicit_corresp.get(full_elt, full_elt)
 
         time_idx = timestamp_to_idx[timestamp]
 
-        simplified_name = f"{variable}_{asset}_{time_idx}"
+        simplified_name = f"{elt}_{asset}_{time_idx}"
 
         simplified[lp_name] = simplified_name
 
@@ -687,9 +727,9 @@ class PypsaModel:
                 df_var_mapping.to_csv(lp_filepath.replace(".lp", f"_var-mapping.csv"), index=False)
             if save_explicit_consts_corresp:
                 logging.info(f"Save correspondence between PyPSA abstract constraint names and explicit ones")
-                lp_const_mapping = None
-                # df_const_mapping = pd.DataFrame(lp_const_mapping.items(), columns=["pypsa", "explicit"])
-                # df_const_mapping.to_csv(lp_filepath.replace(".lp", f"_const-mapping.csv"), index=False)
+                lp_const_mapping = self.get_lp_constraint_mapping()
+                df_const_mapping = pd.DataFrame(lp_const_mapping.items(), columns=["pypsa", "explicit"])
+                df_const_mapping.to_csv(lp_filepath.replace(".lp", f"_const-mapping.csv"), index=False)
             if save_lp_with_explicit_names and (lp_var_mapping is not None or lp_const_mapping is not None):
                 rename_elts_in_lp_model(lp_filepath=lp_filepath, var_readable_mapping=lp_var_mapping,
                                         const_readable_mapping=lp_const_mapping)
@@ -785,7 +825,53 @@ class PypsaModel:
                 mapping[f"x{label}"] = f"{var_name}[{coord_str}]"
 
         if simplify_mapping:
-            mapping = simplify_variable_mapping(mapping=mapping, snapshots=self.network.snapshots)
+            mapping = simplify_lp_elt_mapping(mapping=mapping, elt_type="variable", snapshots=self.network.snapshots)
+
+        return mapping
+
+    def get_lp_constraint_mapping(self, simplify_mapping: bool = True) -> dict[str, str]:
+        """
+        Build a mapping between LP constraint names (c1, c2, ...)
+        and their corresponding PyPSA/Linopy constraint names.
+
+        Returns
+        -------
+        dict[str, str]
+            Dictionary of the form
+
+                {
+                    "c1": "Generator-fix-p-upper[...]",
+                    "c2": "Generator-fix-p-upper[...]",
+                    ...
+                }
+        """
+
+        mapping = {}
+
+        for constraint_name, constraint in self.network.model.constraints.items():
+
+            labels = np.asarray(constraint.labels).ravel()
+
+            coord_arrays = np.meshgrid(
+                *[constraint.coords[dim].values for dim in constraint.dims],
+                indexing="ij",
+            )
+
+            flat_coords = list(zip(*(c.ravel() for c in coord_arrays)))
+
+            for label, coords in zip(labels, flat_coords):
+
+                if label < 0:
+                    continue
+
+                coord_str = ", ".join(str(c) for c in coords)
+
+                mapping[f"c{label}"] = (
+                    f"{constraint_name}[{coord_str}]"
+                )
+
+        if simplify_mapping:
+            mapping = simplify_lp_elt_mapping(mapping=mapping, elt_type="constraint", snapshots=self.network.snapshots)
 
         return mapping
 
