@@ -1,0 +1,122 @@
+{
+    "Nuclear": {
+        "CAPEX": 4500e3,
+        "Lifetime": 60,
+        "WACC": 0.04,
+        "FOM": 115e3,
+        "VOM": 7.4,
+        "Fuel type": "uranium",
+        "Efficiency": 0.38,
+        "Commitable": true
+    },
+    "Solar PV": {
+        "CAPEX": 500e3,
+        "Lifetime": 20,
+        "WACC": 0.05,
+        "FOM": 14e3,
+        "VOM": 0.0,
+        "Fuel type": "solar",
+        "Efficiency": null,
+        "Commitable": false
+    },
+    "Wind Onshore": {
+        "CAPEX": 1200e3,
+        "Lifetime": 25,
+        "WACC": 0.05,
+        "FOM": 14e3,
+        "VOM": 0,
+        "Fuel type": "wind",
+        "Efficiency": null,
+        "Commitable": false
+    },
+    "Wind Offshore": {
+        "CAPEX": 2200e3,
+        "Lifetime": 25,
+        "WACC": 0.08,
+        "FOM": 31e3,
+        "VOM": 0.2,
+        "Fuel type": "wind",
+        "Efficiency": null,
+        "Commitable": false
+    },
+    "Hydro ROR": {
+        "CAPEX": 1600e3,
+        "Lifetime": 50,
+        "WACC": 0.04,
+        "FOM": 8e3,
+        "VOM": 0.4,
+        "Fuel type": "hydro",
+        "Efficiency": null,
+        "Commitable": false
+    },
+    "Biomass": {
+        "CAPEX": 1500e3,
+        "Lifetime": 40,
+        "WACC": 0.08,
+        "FOM": 40e3,
+        "VOM": 3.6,
+        "Fuel type": "biomass",
+        "Efficiency": 0.3,
+        "Commitable": true
+    },
+    "Oil": {
+        "CAPEX": 500e3,
+        "Lifetime": 20,
+        "WACC": 0.08,
+        "FOM": 10e3,
+        "VOM": 2.6,
+        "Fuel type": "oil",
+        "Efficiency": 0.33,
+        "Commitable": true
+    },
+    "CCGT": {
+        "CAPEX": 1000e3,
+        "Lifetime": 30,
+        "WACC": 0.08,
+        "FOM": 21e3,
+        "VOM": 2.1,
+        "Fuel type": "gas",
+        "Efficiency": 0.63,
+        "Commitable": true
+    },
+    "OCGT": {
+        "CAPEX": 600e3,
+        "Lifetime": 30,
+        "WACC": 0.08,
+        "FOM": 12e3,
+        "VOM": 1.9,
+        "Fuel type": "gas",
+        "Efficiency": 0.33,
+        "Commitable": true
+    },
+    "Hard Coal": {
+        "CAPEX": 1800e3,
+        "Lifetime": 35,
+        "WACC": 0.08,
+        "FOM": 40e3,
+        "VOM": 3,
+        "Fuel type": "hard coal",
+        "Efficiency": 0.45,
+        "Commitable": true
+    },
+    "Lignite": {
+        "CAPEX": 1800e3,
+        "Lifetime": 35,
+        "WACC": 0.08,
+        "FOM": 40e3,
+        "VOM": 5,
+        "Fuel type": "lignite",
+        "Efficiency": 0.44,
+        "Commitable": true
+    },
+    "Deficit": {
+        "CAPEX": 0,
+        "Lifetime": 1,
+        "WACC": 0,
+        "FOM": 0,
+        "VOM": 20000,
+        "Fuel type": null,
+        "Efficiency": null,
+        "Commitable": true
+    }
+}

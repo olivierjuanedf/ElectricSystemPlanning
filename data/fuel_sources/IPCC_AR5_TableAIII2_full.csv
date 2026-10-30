@@ -1,0 +1,13 @@
+Technology,Direct_emissions_Min,Direct_emissions_Median,Direct_emissions_Max,Infrastructure_supply_chain_typical,Biogenic_CO2_albedo_typical,Methane_emissions_typical,Lifecycle_emissions_Min,Lifecycle_emissions_Median,Lifecycle_emissions_Max,Notes
+Coal - PC,670,760,870,9.6,0,47,740,820,910,
+Gas - Combined Cycle,350,370,490,1.6,0,91,410,490,650,
+Biomass - cofiring,n.a.,n.a.,n.a.,n.a.,n.a.,n.a.,620,740,890,Direct emissions not applicable in this breakdown; see footnote on biogenic CO2 treatment for cofiring
+Biomass - dedicated,n.a.,n.a.,n.a.,210,27,0,130,230,420,Direct emissions not applicable in this breakdown; see footnote on biogenic CO2 treatment for dedicated biomass
+Geothermal,0,0,0,45,0,0,6.0,38,79,
+Hydropower,0,0,0,19,0,88,1.0,24,2200,Methane value reflects reservoir emissions relevant to high end of range (tropical reservoirs)
+Nuclear,0,0,0,18,0,0,3.7,12,110,
+Concentrated Solar Power,0,0,0,29,0,0,8.8,27,63,
+Solar PV - rooftop,0,0,0,42,0,0,26,41,60,
+Solar PV - utility,0,0,0,66,0,0,18,48,180,
+Wind onshore,0,0,0,15,0,0,7.0,11,56,
+Wind offshore,0,0,0,17,0,0,8.0,12,35,

@@ -1,0 +1,47 @@
+{
+  "hard coal": {
+      "co2_emissions": 0.341,
+      "energy_density_per_ton": 8,
+      "cost_per_ton": 111
+  },
+  "lignite": {
+      "co2_emissions": 0.408,
+      "energy_density_per_ton": 8,
+      "cost_per_ton": 111
+  },
+  "gas": {
+      "co2_emissions": 0.202,
+      "energy_density_per_ton": 10.6,
+      "cost_per_ton": 250
+  },
+  "oil": {
+      "co2_emissions": 0.267,
+      "energy_density_per_ton": 11.63,
+      "cost_per_ton": 555.78
+  },
+  "uranium": {
+      "co2_emissions": 0,
+      "energy_density_per_ton": 22394e6,
+      "cost_per_ton": 15000e6
+  },
+  "biomass": {
+      "co2_emissions": 0,
+      "energy_density_per_ton": 5,
+      "cost_per_ton": 55
+  },
+  "solar": {
+      "co2_emissions": 0,
+      "energy_density_per_ton": 0,
+      "cost_per_ton": 0
+  },
+  "wind": {
+      "co2_emissions": 0,
+      "energy_density_per_ton": 0,
+      "cost_per_ton": 0
+  },
+  "hydro": {
+      "co2_emissions": 0,
+      "energy_density_per_ton": 0,
+      "cost_per_ton": 0
+  }
+}
