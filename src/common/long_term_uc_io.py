@@ -135,7 +135,9 @@ HYDRO_DATA_RESAMPLE_METHODS = {DATATYPE_NAMES.hydro_ror: ResampleMethods.uniform
                                DATATYPE_NAMES.hydro_levels_max: ResampleMethods.all_at_first_ts,
                                DATATYPE_NAMES.hydro_gen_min: ResampleMethods.all_at_first_ts,  # TODO: check if ok
                                DATATYPE_NAMES.hydro_gen_max: ResampleMethods.all_at_first_ts}  # TODO: idem
-HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e10}
+# in input data min/max levels are in p.u., relative to stock capacity
+# (ATTENTION in PyPSA, absolute values will have to be used)
+HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1}
 # TODO: more robust way to complete path from root folder
 INPUT_ERAA_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "ERAA_2023-2"))
 INPUT_FOLDER = 'input'

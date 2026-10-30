@@ -135,7 +135,7 @@ in which it represents a significant part of the capacities (e.g., Scandinavia!)
       - "climatic_year": at least the value used for simulation
       - "min_value" (resp. "max_value"): min (resp. max) WEEKLY generation level (MWh). In turn, the sum of production
       decisions in the week will be lower- (resp. upper-) bounded by this value
-    - **min/max generation levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
+    - **min/max reservoir levels** (State-of-Charge of the reservoir): idem with a file [hydro-weekly-reservoir-min-max-levels_{year}_{country}.csv](../../input/long_term_uc/optional/hydro/hydro-weekly-reservoir-min-max-levels_2033_france.csv),
     cf. here the case of France
     **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
       - "week": index in 1, ..., 53

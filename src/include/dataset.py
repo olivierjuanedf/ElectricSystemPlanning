@@ -1174,14 +1174,14 @@ class Dataset:
                                                                 countries=[set_country_trigram(country=country)],
                                                                 unit_types=[ProdTypeNames.hydro_reservoir])
                                  for country, units_data in self.generation_units_data.items()}
-        hydro_soc_min = {elt.name: elt.soc_min
-                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
-        hydro_soc_max = {elt.name: elt.soc_max
-                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
+        hydro_soc_min_pu = {elt.name: elt.soc_min
+                            for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
+        hydro_soc_max_pu = {elt.name: elt.soc_max
+                            for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
         # energy capacity, obtained as power capacity * max_hours duration
         hydro_e_capa = {elt.name: float(elt.max_hours * elt.p_nom)
                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
-        return hydro_soc_min, hydro_soc_max, hydro_e_capa
+        return hydro_soc_min_pu, hydro_soc_max_pu, hydro_e_capa
 
     def get_hydro_params_for_gen_levels_const(self) -> (
             Dict[str, np.ndarray], Dict[str, np.ndarray], Dict[str, float]):

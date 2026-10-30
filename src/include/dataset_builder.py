@@ -427,20 +427,24 @@ class PypsaModel:
                 self.network.model.add_constraints(per_dir_const[prod_sum_const.direction],
                                                    name=f"{const_name}_{period}")
 
-    def add_hydro_extreme_levels_constraint(self, soc_min: Dict[str, Union[float, np.ndarray]],
-                                            soc_max: Dict[str, Union[float, np.ndarray]],
+    def add_hydro_extreme_levels_constraint(self, soc_min_pu: Dict[str, Union[float, np.ndarray]],
+                                            soc_max_pu: Dict[str, Union[float, np.ndarray]],
                                             energy_capa: Dict[str, float]):
         """
         Add constraint on hydro extreme SOC levels
-        :param soc_min: dict {unit name: soc min vector} - with SoC min an absolute value,
+        :param soc_min_pu: dict {unit name: soc min vector} - with SoC min an absolute value,
         NOT AS A PERCENTAGE of capacity
-        :param soc_max: idem, max
+        :param soc_max_pu: idem, max
         :param energy_capa: dict {unit name: energy capa value}
         """
         logging.info("Add hydro extreme SoC levels constraints")
         # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
         # or bigger than energy capacity), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
+        # from PU to ABSOLUTE values of min/max SoC (ABSOLUTE values have to be used in PyPSA)
+        soc_min = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_min_pu.items()}
+        soc_max = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_max_pu.items()}
+        # project on feasible bound interval [0, capa], and vectorize
         soc_min = prepro_bound_params(bound_values=soc_min, max_feas_bound=energy_capa, n_ts=n_ts)
         soc_max = prepro_bound_params(bound_values=soc_max, max_feas_bound=energy_capa, n_ts=n_ts)
         # set associated constraints in Linopy

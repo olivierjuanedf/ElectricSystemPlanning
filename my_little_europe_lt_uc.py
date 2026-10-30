@@ -124,8 +124,8 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     if with_hydro_extr_level_const:
         # get reservoir extreme generation and level values, as well as energy capacities
         # (to see if constraints will be useless)
-        hydro_soc_min, hydro_soc_max, hydro_e_capa = eraa_dataset.get_hydro_params_for_extr_levels_const()
-        pypsa_model.add_hydro_extreme_levels_constraint(soc_min=hydro_soc_min, soc_max=hydro_soc_max,
+        hydro_soc_min_pu, hydro_soc_max_pu, hydro_e_capa = eraa_dataset.get_hydro_params_for_extr_levels_const()
+        pypsa_model.add_hydro_extreme_levels_constraint(soc_min_pu=hydro_soc_min_pu, soc_max_pu=hydro_soc_max_pu,
                                                         energy_capa=hydro_e_capa)
     if with_hydro_gen_level_const:
         hydro_gen_min, hydro_gen_max, hydro_p_capa = eraa_dataset.get_hydro_params_for_gen_levels_const()

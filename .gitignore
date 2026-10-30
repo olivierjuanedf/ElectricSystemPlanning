@@ -164,6 +164,9 @@ cython_debug/
 # PyPSA tests
 pypsa_tests/
 
+# optional inputs
+input/long_term_uc/optional/hydro/*.csv
+
 # outputs
 output/data_analysis/*.log
 output/data_analysis/*.png
