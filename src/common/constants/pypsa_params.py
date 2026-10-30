@@ -46,4 +46,12 @@ class PypsaOptimVarNames:
     storage_spill: str = 'StorageUnit-spill'
     # related to links
     links_p: str = 'Link-p'
-    
+
+
+PYPSA_TO_EXPLICIT_VAR_NAMES = \
+    {PypsaOptimVarNames.generators_p: 'p',
+     PypsaOptimVarNames.links_p: 'p',
+     PypsaOptimVarNames.storage_p_dispatch: 'p',
+     PypsaOptimVarNames.storage_p_store: 'c',
+     PypsaOptimVarNames.storage_soc: 'soc',
+     PypsaOptimVarNames.storage_spill: 'spill'}

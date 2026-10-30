@@ -86,6 +86,8 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
     - (optional) "<span style="color:#32B032; font-weight:bold">output_tag</span>": to **add a tag to the obtained data/figure** output folders. Default: no tag, in this case a previous run results may be overwritten.
     Ex: if output_tag="preliminar", results will be obtained in "data_preliminar"/"figures_preliminar" subfolders
     - (optional) "<span style="color:#32B032; font-weight:bold">add_run_idx_tag_to_output</span>": to **add a tag indicating the run index** to the obtained data/figure output folders. Default: no such index, in this case a previous run results may be overwritten.
+    - (optional) "<span style="color:#32B032; font-weight:bold">save_explicit_corresp_for_lp_elts</span>": save two files with 
+    correspondence between PyPSA "abstract" variable/constraint names (e.g., xi for variables) and explicit ones? Default: do not save these files.
 
 - [countries/](../../input/long_term_uc/countries/){**country**}.json*: 
     - "<span style="color:#32B032; font-weight:bold">team</span>": **name of your team**, i.e. name of the country you are "responsible for" (*str*, that must be in the set {"benelux", "germany", "iberian-peninsula", "poland", "scandinavia"} - use lower letters)

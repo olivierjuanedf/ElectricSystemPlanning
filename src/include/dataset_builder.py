@@ -14,13 +14,14 @@ from typing import Dict, List, Tuple, Optional, Union
 from dataclasses import dataclass
 import pypsa
 import matplotlib.pyplot as plt
+import re
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.links import set_link_name
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
-from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames
-from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames
+from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP
+from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames, PYPSA_TO_EXPLICIT_VAR_NAMES
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
@@ -180,6 +181,73 @@ def set_sum_of_prod_const_name(const_type: str, temporal_granularity: str, direc
             const_type = const_type[len(prefix):]
 
     return f"{const_type}_{temporal_granularity}_{direction}"
+
+
+def simplify_variable_mapping(mapping: dict[str, str], snapshots: pd.DatetimeIndex,
+                              shorten_asset_name: bool = True) -> dict[str, str]:
+    """
+    Convert PyPSA variable names such as
+
+        Generator-p[2033-01-01T00:00:00.000000000, fra_nuclear]
+
+    into
+
+        prod_fra_nuclear_1
+
+    where:
+        - 'p' is mapped to 'prod'
+        - the timestamp is replaced by its 1-based index in snapshots
+
+    Parameters
+    ----------
+    mapping : dict[str, str]
+        Mapping returned by get_lp_variable_mapping().
+
+    snapshots : pd.DatetimeIndex
+        Reference date range used to convert timestamps into
+        1-based time-step indices.
+
+    shorten_asset_name : use reduced names for the assets?
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of LP variable names to simplified names.
+    """
+    # rename some variables
+    timestamp_to_idx = {pd.Timestamp(ts): i for i, ts in enumerate(snapshots)}
+
+    simplified = {}
+
+    pattern = re.compile(
+        r"(?P<component>[^-]+)-(?P<var>[^\[]+)"
+        r"\[(?P<timestamp>[^,]+),\s*(?P<asset>[^\]]+)\]"
+    )
+
+    for lp_name, pypsa_name in mapping.items():
+
+        match = pattern.fullmatch(pypsa_name)
+
+        if match is None:
+            simplified[lp_name] = pypsa_name
+            continue
+
+        timestamp = pd.Timestamp(match.group("timestamp"))
+        asset = match.group("asset")
+        if shorten_asset_name:
+            asset_split = asset.split("_")
+            asset = "_".join([asset_split[0], PROD_TYPE_IN_LP.get(asset_split[1], asset_split[1])])
+        full_variable = match.group("component") + "-" + match.group("var")
+
+        variable = PYPSA_TO_EXPLICIT_VAR_NAMES.get(full_variable, full_variable)
+
+        time_idx = timestamp_to_idx[timestamp]
+
+        simplified_name = f"{variable}_{asset}_{time_idx}"
+
+        simplified[lp_name] = simplified_name
+
+    return simplified
 
 
 @dataclass
@@ -587,8 +655,10 @@ class PypsaModel:
                                       n_constraints=len(linopy_model.constraints.flat))
 
     def optimize_network(self, year: int, n_countries: int, period_start: datetime, save_lp_file: bool = True,
-                         toy_model_output: bool = False, countries: List[str] = None,
-                         output_tag: str = None) -> PYPSA_RESULT_TYPE:
+                         save_explicit_vars_corresp: bool = False, save_explicit_consts_corresp: bool = False,
+                         toy_model_output: bool = False, countries: List[str] = None, output_tag: str = None,
+                         save_lp_with_explicit_names: bool = False) \
+            -> PYPSA_RESULT_TYPE:
         """
         Solve the optimization UC problem associated to current network
         :param year: of the considered UC problem
@@ -596,17 +666,34 @@ class PypsaModel:
         :param period_start
         :param save_lp_file: to get a standard saving of optim. model (that can be re-used with solvers outside of this
         environment)
+        :param save_explicit_vars_corresp: save corresp. between xi variable names in PyPSA and explicit ones?
+        :param save_explicit_consts_corresp: idem, for constraint names
         :param toy_model_output
         :param countries
         :param output_tag: used for output folder
+        :param save_lp_with_explicit_names: save lp with explicit variable and/or constraint names?
         :returns a tuple (xxx, status of resolution)
         """
         logging.info('Optimise "network" - i.e. solve associated UC problem')
         result = self.network.optimize.solve_model(solver_name=self.optim_solver_params.name)
         logging.info(f'Obtained result: {result}')
         if save_lp_file:
-            save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
-                          toy_model_output=toy_model_output, countries=countries, output_tag=output_tag)
+            lp_filepath = save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
+                                        toy_model_output=toy_model_output, countries=countries, output_tag=output_tag)
+            if save_explicit_vars_corresp:
+                logging.info(f"Save correspondence between PyPSA abstract variable names and explicit ones")
+                lp_var_mapping = self.get_lp_variable_mapping()
+                df_var_mapping = pd.DataFrame(lp_var_mapping.items(), columns=["pypsa", "explicit"])
+                df_var_mapping.to_csv(lp_filepath.replace(".lp", f"_var-mapping.csv"), index=False)
+            if save_explicit_consts_corresp:
+                logging.info(f"Save correspondence between PyPSA abstract constraint names and explicit ones")
+                lp_const_mapping = None
+                # df_const_mapping = pd.DataFrame(lp_const_mapping.items(), columns=["pypsa", "explicit"])
+                # df_const_mapping.to_csv(lp_filepath.replace(".lp", f"_const-mapping.csv"), index=False)
+            if save_lp_with_explicit_names and (lp_var_mapping is not None or lp_const_mapping is not None):
+                rename_elts_in_lp_model(lp_filepath=lp_filepath, var_readable_mapping=lp_var_mapping,
+                                        const_readable_mapping=lp_const_mapping)
+
         return result
 
     def set_uc_opt_solution(self) -> UCOptimalSolution:
@@ -655,6 +742,52 @@ class PypsaModel:
                                           toy_model_output=toy_model_output, output_tag=output_tag))
             plt.close()
 
+    import numpy as np
+
+    def get_lp_variable_mapping(self, simplify_mapping: bool = True) -> dict[str, str]:
+        """
+        Build a mapping between LP variable names (x1, x2, ...)
+        and their corresponding PyPSA/Linopy variable names.
+        Returns
+        -------
+        dict[str, str]
+            Dictionary of the form
+
+                {
+                    "x1": "Generator-p[Gen1,2025-01-01 00:00:00]",
+                    "x2": "Generator-p[Gen1,2025-01-01 01:00:00]",
+                    ...
+                }
+        """
+
+        mapping = {}
+
+        for var_name, var in self.network.model.variables.items():
+
+            labels = np.asarray(var.labels).ravel()
+
+            # Build a coordinate array with the same shape as labels
+            coord_arrays = np.meshgrid(
+                *[var.coords[dim].values for dim in var.dims],
+                indexing="ij",
+            )
+
+            flat_coords = list(zip(*(c.ravel() for c in coord_arrays)))
+
+            for label, coords in zip(labels, flat_coords):
+
+                # Negative labels correspond to empty positions
+                if label < 0:
+                    continue
+
+                coord_str = ", ".join(str(c) for c in coords)
+
+                mapping[f"x{label}"] = f"{var_name}[{coord_str}]"
+
+        if simplify_mapping:
+            mapping = simplify_variable_mapping(mapping=mapping, snapshots=self.network.snapshots)
+
+        return mapping
 
 # def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
 #     str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
@@ -712,7 +845,7 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False,
-                  output_tag: str = None):
+                  output_tag: str = None) -> str:
     from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
 
     # In PyPSA 1.0+, opt.create_model is removed. Instead we use the built-in linopy model.
@@ -755,3 +888,31 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
     lp_filepath = f'{output_folder_data}/model_{file_suffix}.lp'
     logging.info(f'Save model in .lp file: {lp_filepath}')
     m.to_file(Path(lp_filepath))
+    return lp_filepath
+
+
+def rename_elts_in_lp_model(lp_filepath: str, var_readable_mapping: dict[str, str] = None,
+                            const_readable_mapping: dict[str, str] = None):
+    renamed_elts = []
+    if var_readable_mapping is not None:
+        renamed_elts.append("variables")
+    if const_readable_mapping is not None:
+        renamed_elts.append("constraints")
+    info_msg = " and ".join(renamed_elts)
+    logging.info(f"Rename {info_msg} explicitly in file {os.path.split(lp_filepath)[1]}")
+    with open(lp_filepath, encoding="utf-8") as f:
+        content = f.read()
+
+    mapping_dict = {"var": var_readable_mapping, "const": const_readable_mapping}
+    for elt_name, readable_mapping in mapping_dict.items():
+        if readable_mapping is not None:
+            # Replace longest names first
+            for old_name in sorted(readable_mapping, key=len, reverse=True):
+                content = re.sub(
+                    rf"\b{re.escape(old_name)}\b",
+                    readable_mapping[old_name],
+                    content,
+                )
+
+    with open(lp_filepath, "w", encoding="utf-8") as f:
+        f.write(content)

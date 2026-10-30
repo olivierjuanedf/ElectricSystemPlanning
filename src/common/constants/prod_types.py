@@ -30,6 +30,30 @@ class ProdTypeNames:  # by alpha. order
     wind_onshore: str = 'wind_onshore'
 
 
+PROD_TYPE_IN_LP = {
+    ProdTypeNames.batteries: "bat",
+    ProdTypeNames.biofuel: "biofuel",
+    ProdTypeNames.coal: "coal",
+    ProdTypeNames.csp_no_storage: "csp",
+    ProdTypeNames.demand_side_response: "dsr",
+    ProdTypeNames.failure: "fail",
+    ProdTypeNames.gas: "gas",
+    ProdTypeNames.hard_coal: "hcoal",
+    ProdTypeNames.hydro_pondage: "h_pondage",
+    ProdTypeNames.hydro_pump_storage_closed: "h_psc",
+    ProdTypeNames.hydro_pump_storage_open: "h_pso",
+    ProdTypeNames.hydro_reservoir: "h_res",
+    ProdTypeNames.hydro_ror: "ror",
+    ProdTypeNames.lignite: "lig",
+    ProdTypeNames.nuclear: "nuc",
+    ProdTypeNames.oil: "oil",
+    ProdTypeNames.others_non_renewable: "o_nonren",
+    ProdTypeNames.others_renewable: "o_ren",
+    ProdTypeNames.solar_pv: "pv",
+    ProdTypeNames.solar_thermal: "solth",
+    ProdTypeNames.wind_offshore: "windoff",
+    ProdTypeNames.wind_onshore: "windon",
+}
 PT_ORDER_IN_DATA_OUTPUT = [
     # 1st renewables
     ProdTypeNames.solar_pv, ProdTypeNames.solar_thermal, ProdTypeNames.wind_onshore,

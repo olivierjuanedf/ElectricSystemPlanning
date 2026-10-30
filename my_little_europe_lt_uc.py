@@ -149,8 +149,8 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
 
 
 def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: int, uc_period_start: datetime,
-                              solver_params: SolverParams = DEFAULT_OPTIM_SOLVER_PARAMS, output_tag: str = None) \
-        -> PYPSA_RESULT_TYPE:
+                              solver_params: SolverParams = DEFAULT_OPTIM_SOLVER_PARAMS, output_tag: str = None,
+                              save_explicit_corresp_for_lp_elts: bool = False) -> PYPSA_RESULT_TYPE:
     """
     Solve PyPSA network (UC) model, using an optimisation solver
     :param pypsa_model: to be solved
@@ -159,6 +159,8 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
     :param uc_period_start: date of the beginning of UC pb
     :param solver_params: name/license file, if not default solver (highs) used
     :param output_tag: used to have a more explicit output folder arborescence
+    :param save_explicit_corresp_for_lp_elts: save files with correspondence between PyPSA "abstract"
+    variable/constraint names and explicit ones?
     :returns (xxx, optim status)
     """
     logging.info(f'{TITLE_LOG_SEP} IV) Get a solution for European UC model {TITLE_LOG_SEP}')
@@ -166,7 +168,9 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
     # with gurobi.lic file provided at root of this project (see readme.md on procedure to obtain such a lic file)
     pypsa_model.set_optim_solver(solver_params=solver_params)
     result = pypsa_model.optimize_network(year=year, n_countries=n_countries, period_start=uc_period_start,
-                                          output_tag=output_tag)
+                                          output_tag=output_tag,
+                                          save_explicit_vars_corresp=save_explicit_corresp_for_lp_elts,
+                                          save_explicit_consts_corresp=save_explicit_corresp_for_lp_elts)
     # Get optim. pb main characteristics (to check if coherent with resolution time?!)
     optim_pb_characts = pypsa_model.get_optim_pb_characteristics()
     logging.info(f'Corresp. to solved {str(optim_pb_characts)}')
@@ -354,7 +358,9 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     result = solve_pypsa_network_model(pypsa_model=pypsa_model, year=uc_run_params.selected_target_year,
                                        n_countries=len(uc_run_params.selected_countries),
                                        uc_period_start=uc_run_params.uc_period_start, solver_params=solver_params,
-                                       output_tag=uc_run_params.output_tag)
+                                       output_tag=uc_run_params.output_tag,
+                                       save_explicit_corresp_for_lp_elts=
+                                       uc_run_params.save_explicit_corresp_for_lp_elts)
 
     uc_summary_metrics = save_data_and_fig_results(pypsa_model=pypsa_model, uc_run_params=uc_run_params,
                                                    result_optim_status=result[1])

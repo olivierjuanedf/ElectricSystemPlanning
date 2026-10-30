@@ -72,6 +72,8 @@ class UCRunParams:
     add_date_tag_to_output: bool = False
     add_run_idx_tag_to_output: bool = False
     output_tag: str = None
+    # save files with correspondence between PyPSA "abstract" variable/constraint names and explicit ones
+    save_explicit_corresp_for_lp_elts: bool = False
 
     def __repr__(self):
         repr_sep = '\n- '
