@@ -12,11 +12,15 @@ class CountryJsonParamNames:
 
 @dataclass
 class EuropeJsonParamNames:
+    add_date_tag_to_output: str = 'add_date_tag_to_output'
+    add_run_idx_tag_to_output: str = 'add_run_idx_tag_to_output'
     extra_params: str = 'extra_params'
     failure_penalty: str = 'failure_penalty'
     failure_power_capa: str = 'failure_power_capa'
     interco_capas_tb_overwritten: str = 'interco_capas_tb_overwritten'
     mode: str = 'mode'
+    output_tag: str = 'output_tag'
+    save_explicit_corresp_for_lp_elts: str = 'save_explicit_corresp_for_lp_elts'
     selected_climatic_year: str = 'selected_climatic_year'
     selected_countries: str = 'selected_countries'
     selected_target_year: str = 'selected_target_year'

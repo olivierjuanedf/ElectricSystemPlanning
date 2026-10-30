@@ -12,6 +12,7 @@ from src.common.constants.aggreg_operations import AggregOpeNames
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.eraa_data import ERAAParamNames
+from src.common.constants.optimisation import CustomConstraintNames
 from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
 from src.common.constants.temporal import Timescale
@@ -568,7 +569,7 @@ class Dataset:
     # get optional data from ERAA data folder?
     # A this stage only min./max. (generation) levels params from data (1 file common to all countries, directly in
     # ERAA format -> easier if provided by teachers)? Or input folder alternatively (for students to modify these infos)
-    get_optional_const_from_data_folder: bool = False
+    get_optional_const_from_data_folder: Dict[str, bool] = None
     # data to be read hereafter
     demand: Dict[str, pd.DataFrame] = None  # {country: df of data}
     net_demand: Dict[str, pd.DataFrame] = None  # idem
@@ -618,7 +619,7 @@ class Dataset:
         # set per hydro. datatype folder path to be used to get data (may be in data/input depending on the cases)
         per_hydro_dt_folder = (
             set_per_dt_hydro_folders(get_hydro_reservoir_opt_const_from_data_folder=
-                                     self.get_optional_const_from_data_folder)
+                                     self.get_optional_const_from_data_folder[CustomConstraintNames.hydro])
         )
 
         self.demand = {}
@@ -676,7 +677,7 @@ class Dataset:
         if DATATYPE_NAMES.hydro_levels_min in dts_tb_read or DATATYPE_NAMES.hydro_levels_max in dts_tb_read:
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_levels_min]
             # get from data folder -> on "teachers' side"
-            if self.get_optional_const_from_data_folder:
+            if self.get_optional_const_from_data_folder[CustomConstraintNames.hydro]:
                 hydro_extr_levels_data, countries_wo_data = (
                     get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_levels_min, folder=current_folder,
                                    countries=uc_run_params.selected_countries,
@@ -707,7 +708,7 @@ class Dataset:
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_gen_min]
             current_folder = per_hydro_dt_folder[DATATYPE_NAMES.hydro_levels_min]
             # get from data folder -> on "teachers' side"
-            if self.get_optional_const_from_data_folder:
+            if self.get_optional_const_from_data_folder[CustomConstraintNames.hydro]:
                 hydro_gen_extr_levels_data, countries_wo_data = (
                     get_hydro_data(hydro_dt=DATATYPE_NAMES.hydro_gen_min, folder=current_folder,
                                    countries=uc_run_params.selected_countries,
@@ -962,11 +963,11 @@ class Dataset:
                     if check_if_from_eraa_data(param_key=inflow_key,
                                                complem_params_pt=units_complem_params_per_agg_pt[agg_pt]):
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {inflow_key}')
-                        current_pt_inflow_data = self.hydro_inflows_data[country]
-                        # set column according to type of hydro asset
-                        inflow_value_col = 'cum_inflow_into_reservoirs' if agg_pt == ProdTypeNames.hydro_reservoir \
-                            else 'cum_nat_inflow_into_pump-storage_reservoirs'
                         try:
+                            current_pt_inflow_data = self.hydro_inflows_data[country]
+                            # set column according to type of hydro asset
+                            inflow_value_col = 'cum_inflow_into_reservoirs' if agg_pt == ProdTypeNames.hydro_reservoir \
+                                else 'cum_nat_inflow_into_pump-storage_reservoirs'
                             current_inflows_data = np.array(current_pt_inflow_data[inflow_value_col])
                         except:
                             data_name = "inflows"
@@ -985,8 +986,8 @@ class Dataset:
                     if check_if_from_eraa_data(param_key=soc_level_extr_key,
                                                complem_params_pt=units_complem_params_per_agg_pt[agg_pt]):
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {soc_level_extr_key} (min and max)')
-                        current_pt_soc_level_min_data = self.hydro_reservoir_levels_min_data[country]
                         try:
+                            current_pt_soc_level_min_data = self.hydro_reservoir_levels_min_data[country]
                             current_soc_level_min_data = np.array(current_pt_soc_level_min_data[COLUMN_NAMES.value])
                         except:
                             data_name = "SOC level min"
@@ -1000,12 +1001,13 @@ class Dataset:
                                                     agg_prod_type=agg_pt, default_value=default_value)
                             # Q: ok to set constant float and not vector for this PyPSA attr.?
                             current_soc_level_min_data = default_value
-                        current_pt_soc_level_max_data = self.hydro_reservoir_levels_max_data[country]
                         try:
+                            current_pt_soc_level_max_data = self.hydro_reservoir_levels_max_data[country]
                             current_soc_level_max_data = np.array(current_pt_soc_level_max_data[COLUMN_NAMES.value])
                         except:
                             data_name = "SOC level max"
-                            default_value = 1e12
+                            # PU value (conversion to ABSOLUTE values, to be used in PyPSA, made after in the code)
+                            default_value = 1
                             if agg_warn_over_cases:
                                 if data_name not in aggreg_warning:
                                     aggreg_warning[data_name] = []
@@ -1021,8 +1023,8 @@ class Dataset:
                     if check_if_from_eraa_data(param_key=gen_level_extr_key,
                                                complem_params_pt=units_complem_params_per_agg_pt[agg_pt]):
                         logging.debug(2 * N_SPACES_MSG * ' ' + f'-> add {gen_level_extr_key} (min and max)')
-                        current_pt_gen_level_min_data = self.hydro_reservoir_gen_min_data[country]
                         try:
+                            current_pt_gen_level_min_data = self.hydro_reservoir_gen_min_data[country]
                             current_gen_level_min_data = np.array(current_pt_gen_level_min_data[COLUMN_NAMES.value])
                         except:
                             data_name = "gen. level min"
@@ -1036,8 +1038,8 @@ class Dataset:
                                                     agg_prod_type=agg_pt, default_value=default_value)
                             # Q: ok to set constant float and not vector for this PyPSA attr.?
                             current_gen_level_min_data = default_value
-                        current_pt_gen_level_max_data = self.hydro_reservoir_gen_max_data[country]
                         try:
+                            current_pt_gen_level_max_data = self.hydro_reservoir_gen_max_data[country]
                             current_gen_level_max_data = np.array(current_pt_gen_level_max_data[COLUMN_NAMES.value])
                         except:
                             data_name = "gen. level max"
@@ -1173,14 +1175,14 @@ class Dataset:
                                                                 countries=[set_country_trigram(country=country)],
                                                                 unit_types=[ProdTypeNames.hydro_reservoir])
                                  for country, units_data in self.generation_units_data.items()}
-        hydro_soc_min = {elt.name: elt.soc_min
-                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
-        hydro_soc_max = {elt.name: elt.soc_max
-                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
+        hydro_soc_min_pu = {elt.name: elt.soc_min
+                            for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
+        hydro_soc_max_pu = {elt.name: elt.soc_max
+                            for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
         # energy capacity, obtained as power capacity * max_hours duration
         hydro_e_capa = {elt.name: float(elt.max_hours * elt.p_nom)
                         for c, reservoirs_data in hydro_reservoirs_data.items() for elt in reservoirs_data}
-        return hydro_soc_min, hydro_soc_max, hydro_e_capa
+        return hydro_soc_min_pu, hydro_soc_max_pu, hydro_e_capa
 
     def get_hydro_params_for_gen_levels_const(self) -> (
             Dict[str, np.ndarray], Dict[str, np.ndarray], Dict[str, float]):

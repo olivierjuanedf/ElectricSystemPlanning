@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from dateutil.relativedelta import relativedelta
 
-from src.common.constants.optimisation import WHOLE_PERIOD_GRANULARITY
 from src.common.constants.temporal import Timescale
 from src.utils.basic_utils import get_default_values
 from src.utils.dates import get_n_days_in_period, get_n_weeks_in_period, get_n_months_in_period, get_n_days_in_month, \
@@ -24,8 +23,8 @@ class Timeseries:
     def check(self, period_start: datetime, period_end: datetime, with_whole_period_gran: bool = False):
         allowed_timescales = get_default_values(obj=Timescale)
         # add whole period "granularity"? In this case value must be of length 1
-        if with_whole_period_gran:
-            allowed_timescales.append(WHOLE_PERIOD_GRANULARITY)
+        if not with_whole_period_gran:
+            allowed_timescales.remove(Timescale.whole_period)
         # that timescale be in the list of allowed ones
         if self.timescale not in allowed_timescales:
             raise Exception(f'Timeseries with non-allowed timescale {self.timescale}; '
@@ -38,7 +37,7 @@ class Timeseries:
                 Timescale.week: get_n_weeks_in_period,
                 Timescale.month: get_n_months_in_period,
             }
-            if self.timescale == WHOLE_PERIOD_GRANULARITY:
+            if self.timescale == Timescale.whole_period:
                 n_ts_in_period = 1
             else:
                 n_ts_in_period = timescale_to_func.get(self.timescale)(start=period_start, end=period_end)
@@ -48,11 +47,21 @@ class Timeseries:
                                 f'with start {period_start: %Y/%m/%d}, end {period_end: %Y/%m/%d} and timescale '
                                 f'{self.timescale}')
 
-    def set_dates(self, period_start: datetime, period_end: datetime):
+    def set_dates(self, period_start: datetime, period_end: datetime, new_year: int = None):
+        """
+        :param period_start
+        :param period_end
+        :param new_year: if dates have to be considered in a new year (e.g., switching from 1 900 for inputs of this
+        env. to ERAA considered target year)
+        """
         if self.dates is not None:
             logging.warning(f'Timeseries dates will be overwritten based on period start/end '
                             f'and timescale {self.timescale}')
-        if self.timescale in [Timescale.day, Timescale.week]:
+        if new_year is not None:
+            period_start = period_start.replace(year=new_year)
+            period_end = period_end.replace(year=new_year)
+
+        if self.timescale in [Timescale.day, Timescale.week, Timescale.whole_period]:
             period_start_day = datetime(year=period_start.year, month=period_start.month, day=period_start.day)
             period_end_day = datetime(year=period_end.year, month=period_end.month, day=period_end.day)
             start_date = period_start_day
@@ -68,7 +77,7 @@ class Timeseries:
             if not period_end.day == 1:
                 end_date += relativedelta(months=1)
         # easy using date range...
-        if self.timescale in [Timescale.day, Timescale.week]:
+        if self.timescale in [Timescale.day, Timescale.week, Timescale.whole_period]:
             range_freq = '1d' if self.timescale == Timescale.day else '7d'
             period_date_range = pd.date_range(start=start_date, end=end_date, freq=range_freq).to_list()
             period_date_range = [timestamp_to_datetime(my_date=date) for date in period_date_range]
@@ -79,18 +88,36 @@ class Timeseries:
             while current_date + relativedelta(months=1) <= end_date:
                 current_date += relativedelta(months=1)
                 period_date_range.append(current_date)
+
         # set dates as date range
         self.dates = period_date_range
         # then correct first/last
         self.dates[0] = period_start
         self.dates[-1] = period_end
 
-    def weigh_values(self, period_start: datetime, period_end: datetime):
+    def vectorize(self):
+        if isinstance(self.value, float):
+            if self.dates is None:
+                logging.warning("Vectorization of timeserie cannot be done, as dates list is None")
+            else:
+                self.value = self.value * np.ones(len(self.dates))
+
+    def weigh_values(self, period_start: datetime, period_end: datetime, new_year: int = None):
         """
         Apply weight to first and last element in value, to account for possibly uncomplete timescale
         :param period_start: start of the period (included)
         :param period_end: end of the period, NOT included
+        :param new_year: if dates have to be considered in a new year (e.g., switching from 1 900 for inputs of this
+        env. to ERAA considered target year)
         """
+        # in this case no weighting needed
+        if self.timescale == Timescale.whole_period:
+            return
+
+        if new_year is not None:
+            period_start = period_start.replace(year=new_year)
+            period_end = period_end.replace(year=new_year)
+
         if self.timescale == Timescale.day:
             start_hour = period_start.hour
             if start_hour > 0:
@@ -108,6 +135,8 @@ class Timeseries:
             start_isoweekday = period_start.isoweekday()  # assumption that hour is always 0
             if not start_isoweekday == 1:  # not a Monday
                 first_weight = (8 - start_isoweekday) / 7
+                logging.info(f"First value of bounds of weekly sum-prod constraints will be weighted "
+                             f"by {first_weight:.2f}")
             else:
                 first_weight = 1
             end_isoweekday = period_end.isoweekday()
@@ -115,6 +144,8 @@ class Timeseries:
             # otherwise nber of days in considered last week is end_isoweekday - 1
             if len(self.value) > 1 and end_isoweekday > 1:
                 last_weight = (end_isoweekday - 1) / 7
+                logging.info(f"Last value of bounds of weekly sum-prod constraints will be weighted "
+                             f"by {last_weight:.2f}")
             else:
                 last_weight = 1
         elif self.timescale == Timescale.month:
@@ -123,6 +154,8 @@ class Timeseries:
             if not start_day == 1:
                 n_days_in_month_start = get_n_days_in_month(year=period_start.year, month=period_start.month)
                 first_weight = (n_days_in_month_start - start_day + 1) / n_days_in_month_start
+                logging.info(f"First value of bounds of monthly sum-prod constraints "
+                             f"will be weighted by {first_weight:.2f}")
             else:
                 first_weight = 1
             end_day = period_end.day
@@ -131,6 +164,8 @@ class Timeseries:
             # strictly before from 1st one in current month
             if not end_day == n_days_in_month_end:
                 last_weight = (end_day - 1) / n_days_in_month_end
+                logging.info(f"Last value of bounds of monthly sum-prod constraints will be weighted "
+                             f"by {last_weight:.2f}")
             else:
                 last_weight = 1
         # apply obtained weights for first and last time-slots

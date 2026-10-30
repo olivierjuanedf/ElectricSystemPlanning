@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from itertools import product
 from pathlib import Path
-from typing import Iterator, List
+from typing import Iterator, List, Optional
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
@@ -135,7 +135,9 @@ HYDRO_DATA_RESAMPLE_METHODS = {DATATYPE_NAMES.hydro_ror: ResampleMethods.uniform
                                DATATYPE_NAMES.hydro_levels_max: ResampleMethods.all_at_first_ts,
                                DATATYPE_NAMES.hydro_gen_min: ResampleMethods.all_at_first_ts,  # TODO: check if ok
                                DATATYPE_NAMES.hydro_gen_max: ResampleMethods.all_at_first_ts}  # TODO: idem
-HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1e10}
+# in input data min/max levels are in p.u., relative to stock capacity
+# (ATTENTION in PyPSA, absolute values will have to be used)
+HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1}
 # TODO: more robust way to complete path from root folder
 INPUT_ERAA_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "ERAA_2023-2"))
 INPUT_FOLDER = 'input'
@@ -267,9 +269,11 @@ def get_json_fuel_sources_file() -> str:
 
 
 def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True,
-                       n_bus: int = None) -> str:
-    output_folder = set_full_lt_uc_output_folder(folder_type='figures', country=country,
-                                                 toy_model_output=toy_model_output)
+                       n_bus: int = None, output_tag: str = None) -> str:
+    output_folder = (
+        set_full_lt_uc_output_folder(folder_type='figures', country=country, toy_model_output=toy_model_output,
+                                     output_tag=output_tag)
+    )
     if create_subdir:
         make_dir(full_path=output_folder)
 
@@ -291,10 +295,10 @@ def get_output_file_named(name: str, extension: str, output_dir: str, country: s
     return f'{output_dir}/{name}_{file_suffix}.{extension}'
 
 
-def get_figure_file_named(name: str, country: str, year: int, climatic_year: int = None,
-                          start_horizon: datetime = None, toy_model_output: bool = False) -> str:
+def get_figure_file_named(name: str, country: str, year: int, climatic_year: int = None, start_horizon: datetime = None,
+                          toy_model_output: bool = False, output_tag: str = None) -> str:
     output_folder = set_full_lt_uc_output_folder(folder_type='figures', country=country,
-                                                 toy_model_output=toy_model_output)
+                                                 toy_model_output=toy_model_output, output_tag=output_tag)
     return get_output_file_named(name=name, extension='png', output_dir=output_folder, country=country, year=year,
                                  climatic_year=climatic_year, start_horizon=start_horizon)
 
@@ -313,28 +317,57 @@ class FigNamesPrefix:
 
 
 def get_output_figure(fig_name: str, country: str, year: int, climatic_year: int = None, start_horizon: datetime = None,
-                      toy_model_output: bool = False, create_subdir: bool = True) -> str:
+                      toy_model_output: bool = False, create_subdir: bool = True, output_tag: str = None) -> str:
     output_fig_filepath = get_figure_file_named(name=fig_name, country=country, year=year, climatic_year=climatic_year,
-                                                start_horizon=start_horizon, toy_model_output=toy_model_output)
+                                                start_horizon=start_horizon, toy_model_output=toy_model_output,
+                                                output_tag=output_tag)
     if create_subdir:
         subdir = os.path.split(output_fig_filepath)[0]
         make_dir(full_path=subdir)
     return output_fig_filepath
 
 
-def set_full_lt_uc_output_folder(folder_type: str = None, country: str = None, toy_model_output: bool = False) -> str:
+def add_tag_to_output_folder(output_folder: str, tag: str) -> str:
+    return f"{output_folder}_{tag}"
+
+
+def set_full_lt_uc_output_folder(folder_type: str = None, country: str = None, toy_model_output: bool = False,
+                                 output_tag: str = None) -> str:
     subfolder = f'{OUTPUT_FOLDER_TOY_MODEL}_{set_country_trigram(country=country)}' if toy_model_output else f'{OUTPUT_FOLDER_LT}'
     folders_tb_join = [subfolder]
 
     if folder_type is not None:
-        folders_tb_join.append(OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG)
+        # data/fig subfolder, possibly with output tag to distinguish it from previous runs
+        per_type_subfolder = OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG
+        if output_tag is not None:
+            per_type_subfolder = add_tag_to_output_folder(output_folder=per_type_subfolder, tag=output_tag)
+        folders_tb_join.append(per_type_subfolder)
     return str(Path(*folders_tb_join))
+
+
+def get_per_tag_subfolder_idx(subfolder_name: str) -> Optional[int]:
+    idx_suffix = subfolder_name.split("_")[-1]
+    if idx_suffix.isdigit():
+        return int(idx_suffix)
+    return None
+
+
+def get_current_run_idx_in_output_folder(output_folder: str, output_tag: str) -> int:
+    data_subfolder_prefix = add_tag_to_output_folder(output_folder=OutputFolderNames.data, tag=output_tag)
+    data_subfolder_selec = [elt for elt in os.listdir(output_folder) if elt.startswith(data_subfolder_prefix)]
+    past_run_idx = [get_per_tag_subfolder_idx(subfolder_name=elt) for elt in data_subfolder_selec]
+    # first subfolder with idx
+    if all([idx is None for idx in past_run_idx]):
+        return 1
+    max_past_idx = max([idx for idx in past_run_idx if idx is not None])
+    return max_past_idx + 1
 
 
 # TODO: merge 2 following functions
 def get_csv_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime,
-                       toy_model_output: bool = False, create_subdir: bool = True) -> str:
-    output_folder = set_full_lt_uc_output_folder(folder_type='data', country=country, toy_model_output=toy_model_output)
+                       toy_model_output: bool = False, create_subdir: bool = True, output_tag: str = None) -> str:
+    output_folder = set_full_lt_uc_output_folder(folder_type=OutputFolderNames.data, country=country,
+                                                 toy_model_output=toy_model_output, output_tag=output_tag)
     if create_subdir:
         make_dir(full_path=output_folder)
 
@@ -342,8 +375,9 @@ def get_csv_file_named(name: str, country: str, year: int, climatic_year: int, s
 
 
 def get_json_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime,
-                        toy_model_output: bool = False, create_subdir: bool = True) -> str:
-    output_folder = set_full_lt_uc_output_folder(folder_type='data', country=country, toy_model_output=toy_model_output)
+                        toy_model_output: bool = False, create_subdir: bool = True, output_tag: str = None) -> str:
+    output_folder = set_full_lt_uc_output_folder(folder_type=OutputFolderNames.data, country=country,
+                                                 toy_model_output=toy_model_output, output_tag=output_tag)
     if create_subdir:
         make_dir(full_path=output_folder)
 
@@ -351,30 +385,30 @@ def get_json_file_named(name: str, country: str, year: int, climatic_year: int, 
 
 
 def get_opt_power_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
-                       toy_model_output: bool = False) -> str:
+                       toy_model_output: bool = False, output_tag: str = None) -> str:
     return get_csv_file_named(name='opt_power', country=country, year=year, climatic_year=climatic_year,
-                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+                              start_horizon=start_horizon, toy_model_output=toy_model_output, output_tag=output_tag)
 
 
 def get_storage_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
-                             toy_model_output: bool = False) -> str:
+                             toy_model_output: bool = False, output_tag: str = None) -> str:
     return get_csv_file_named(name='storage_opt_decisions', country=country, year=year, climatic_year=climatic_year,
-                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+                              start_horizon=start_horizon, toy_model_output=toy_model_output, output_tag=output_tag)
 
 
 def get_link_flow_opt_dec_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
-                               toy_model_output: bool = False) -> str:
+                               toy_model_output: bool = False, output_tag: str = None) -> str:
     return get_csv_file_named(name='link-flow_opt_decisions', country=country, year=year, climatic_year=climatic_year,
-                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+                              start_horizon=start_horizon, toy_model_output=toy_model_output, output_tag=output_tag)
 
 
 def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
-                             toy_model_output: bool = False) -> str:
-    return get_csv_file_named(name='marginal_prices', country=country, year=year, climatic_year=climatic_year,
-                              start_horizon=start_horizon, toy_model_output=toy_model_output)
+                             toy_model_output: bool = False, output_tag: str = None) -> str:
+    return get_csv_file_named(name='marginal-prices', country=country, year=year, climatic_year=climatic_year,
+                              start_horizon=start_horizon, toy_model_output=toy_model_output, output_tag=output_tag)
 
 
 def get_uc_summary_file(country: str, year: int, climatic_year: int, start_horizon: datetime,
-                        toy_model_output: bool = False) -> str:
+                        toy_model_output: bool = False, output_tag: str = None) -> str:
     return get_json_file_named(name='uc-summary', country=country, year=year, climatic_year=climatic_year,
-                               start_horizon=start_horizon, toy_model_output=toy_model_output)
+                               start_horizon=start_horizon, toy_model_output=toy_model_output, output_tag=output_tag)

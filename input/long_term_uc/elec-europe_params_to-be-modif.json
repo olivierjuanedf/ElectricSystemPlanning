@@ -40,5 +40,23 @@
     "scandinavia2italy": 0,
     "scandinavia2iberian-peninsula": 0,
     "germany2italy": 0
-  }
+  },
+  "extra_params": {
+    "max_co2_emis_constraints": {
+      "cases": [
+        {
+          "countries": [
+            "france",
+            "germany"
+          ],
+          "upper_bound": 3.14
+        }
+      ]
+    },
+    "co2_emis_price": 10
+  },
+  "output_tag": "preliminar",
+  "add_date_tag_to_output": false,
+  "add_run_idx_tag_to_output": true,
+  "save_explicit_corresp_for_lp_elts": true
 }

@@ -120,6 +120,7 @@ def set_json_fuel_sources_tb_modif() -> dict:
 
 def set_usage_params(json_usage_params_data: dict) -> UsageParameters:
     usage_params = UsageParameters(**json_usage_params_data)
+    usage_params.check()
     usage_params.process()
     return usage_params
 
@@ -317,8 +318,8 @@ def read_solver_params() -> SolverParams:
     return SolverParams(**solver_params_data)
 
 
-def read_given_phase_specific_key_from_plot_params(phase_name: str, param_to_be_set: str) -> Union[
-    FigureStyle, List[str]]:
+def read_given_phase_specific_key_from_plot_params(phase_name: str, param_to_be_set: str) \
+        -> Union[FigureStyle, List[str]]:
     """
     Read given phase specific parameters from plot_params.json file
     Args:
