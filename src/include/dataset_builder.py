@@ -808,12 +808,12 @@ class PypsaModel:
             lp_filepath = save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
                                         toy_model_output=toy_model_output, countries=countries, output_tag=output_tag)
             if save_explicit_vars_corresp:
-                logging.info(f"Save correspondence between PyPSA abstract variable names and explicit ones")
+                logging.info(f"Save correspondence between PyPSA abstract VARIABLE names and explicit ones")
                 lp_var_mapping = self.get_lp_variable_mapping()
                 df_var_mapping = pd.DataFrame(lp_var_mapping.items(), columns=["pypsa", "explicit"])
                 df_var_mapping.to_csv(lp_filepath.replace(".lp", f"_var-mapping.csv"), index=False)
             if save_explicit_consts_corresp:
-                logging.info(f"Save correspondence between PyPSA abstract constraint names and explicit ones")
+                logging.info(f"Save correspondence between PyPSA abstract CONSTRAINT names and explicit ones")
                 lp_const_mapping = self.get_lp_constraint_mapping()
                 df_const_mapping = pd.DataFrame(lp_const_mapping.items(), columns=["pypsa", "explicit"])
                 df_const_mapping.to_csv(lp_filepath.replace(".lp", f"_const-mapping.csv"), index=False)
