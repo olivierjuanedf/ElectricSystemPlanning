@@ -225,11 +225,8 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                 hydro_soc_max = (
                     pypsa_model.get_constraint_bound_value(constraint_name=CustomConstraintNames.hydro_soc_max)
                 )
-                if hydro_soc_min is not None or hydro_soc_max is not None:
-                    uc_optimal_solution.plot_stock_soc(hydro_soc_min=hydro_soc_min, hydro_soc_max=hydro_soc_max)
-                else:
-                    logging.warning(f"Plot {PlotNames.stock_soc} will not be done, as no lower/upper bound on stock "
-                                    f"SoC in current PyPSA model")
+                # TODO: finish and reactivate
+                uc_optimal_solution.plot_stock_soc(hydro_soc_min=hydro_soc_min, hydro_soc_max=hydro_soc_max)
 
         # then plots at the scale of all countries (Europe)
         # 'marginal price' figure
@@ -240,6 +237,12 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                                                      start_horizon=uc_run_params.uc_period_start,
                                                      output_tag=uc_run_params.output_tag)
              )
+
+        # summary of links saturation
+        if PlotNames.link_capa_saturation in plots_tb_done:
+            # TODO: finish and reactivate (adding this plot name into plot_params.json to activate it)
+            bob = 1
+            # uc_optimal_solution.plot_link_capa_saturation()
 
         # save optimal prod. decision to an output file
         (uc_optimal_solution.save_decisions_to_csv(year=uc_run_params.selected_target_year,

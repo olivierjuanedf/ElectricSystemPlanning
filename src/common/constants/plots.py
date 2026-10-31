@@ -6,5 +6,6 @@ class PlotNames:
     prod_stacked: str = 'prod_stacked'
     prod_stacked_with_stock: str = 'prod_stacked_with_stock'
     link_flows: str = 'link_flows'
+    link_capa_saturation: str = 'link_capa_saturation'
     marginal_price: str = 'marginal_price'
     stock_soc: str = 'stock_soc'

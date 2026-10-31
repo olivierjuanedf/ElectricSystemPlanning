@@ -6,11 +6,13 @@ from itertools import product
 import pandas as pd
 import numpy as np
 from dataclasses import dataclass, asdict
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Literal, Union, Optional
 import json
 import pypsa
 import xarray
 from matplotlib import pyplot as plt
+import plotly.express as px
+from __future__ import annotations
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.links import set_link_name, REVERSE_SIGN
@@ -461,6 +463,8 @@ class UCOptimalSolution:
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            country_suffix = f" for country {country}" if not country == "europe" else ""
+            logging.info(f"Plot marginal price{country_suffix}")
             sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual, cols_ordered=plot_params_zone.order)
             sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh',
                                             color=plot_params_zone.per_case_color)
@@ -470,6 +474,126 @@ class UCOptimalSolution:
                                           toy_model_output=toy_model_output, output_tag=output_tag)
                         )
             plt.close()
+
+    def plot_link_capa_saturation(self, n_time_blocks: int = 4, saturation_threshold: float = 0.999,
+                                  time_label_mode: Literal["blocks", "dates"] = "blocks"):
+        """
+        Plot a 3-level sunburst showing transmission link saturations.
+
+        Levels:
+            1. Link
+            2. Saturation direction
+            3. Time block
+
+        Parameters
+        ----------
+        link_capacities :
+            Mapping {link_name_without_suffix: capacity}.
+        n_time_blocks :
+            Number of temporal aggregation blocks.
+        saturation_threshold :
+            Saturation threshold as a fraction of nominal capacity.
+        time_label_mode :
+            "blocks" -> Block 1, ..., Block N
+            "dates"  -> Explicit time interval labels
+        """
+        logging.info('Plot link capacity saturation (stat. aggrega. view)')
+        df_link_flow_opt_direct = self.link_flow_direct  # TODO: check if coherent with version of code below
+        link_capacities = {}  # TODO: get from objects here
+
+        if len(df_link_flow_opt_direct) == 0:
+            raise ValueError("df_uc is empty.")
+
+        records = []
+
+        n_snapshots = len(df_link_flow_opt_direct)
+        block_edges = np.linspace(
+            0,
+            n_snapshots,
+            n_time_blocks + 1,
+            dtype=int,
+        )
+
+        for link_name, capacity in link_capacities.items():
+
+            col = f"{link_name}_ac"
+
+            if col not in df_link_flow_opt_direct.columns:
+                continue
+
+            flow = df_link_flow_opt_direct[col]
+
+            origin_bus, destination_bus = link_name.split("_", maxsplit=1)
+
+            sat_pos = flow >= saturation_threshold * capacity
+            sat_neg = flow <= -saturation_threshold * capacity
+
+            directions = {
+                f"{origin_bus} → {destination_bus}": sat_pos,
+                f"{destination_bus} → {origin_bus}": sat_neg,
+            }
+
+            for direction, sat_mask in directions.items():
+
+                for block_id in range(n_time_blocks):
+
+                    start = block_edges[block_id]
+                    end = block_edges[block_id + 1]
+
+                    block_mask = sat_mask.iloc[start:end]
+
+                    proportion_total_time = block_mask.sum() / n_snapshots
+
+                    if proportion_total_time == 0:
+                        continue
+
+                    if time_label_mode == "blocks":
+                        time_label = f"Block {block_id + 1}"
+
+                    elif time_label_mode == "dates":
+
+                        start_ts = df_link_flow_opt_direct.index[start]
+                        end_ts = df_link_flow_opt_direct.index[end - 1]
+
+                        time_label = (
+                            f"{start_ts:%Y-%m-%d}"
+                            f" → "
+                            f"{end_ts:%Y-%m-%d}"
+                        )
+
+                    else:
+                        raise ValueError(
+                            "time_label_mode must be 'blocks' or 'dates'."
+                        )
+
+                    records.append(
+                        {
+                            "link": link_name,
+                            "direction": direction,
+                            "time_block": time_label,
+                            "proportion": proportion_total_time,
+                        }
+                    )
+
+        sunburst_df = pd.DataFrame(records)
+
+        if sunburst_df.empty:
+            raise ValueError("No saturation detected.")
+
+        fig = px.sunburst(
+            sunburst_df,
+            path=["link", "direction", "time_block"],
+            values="proportion",
+        )
+
+        fig.update_traces(
+            textinfo="label+percent parent",
+            branchvalues="total",
+        )
+
+        fig.update_layout(
+            title="Transmission Link Saturation Breakdown",
+        )
 
     def save_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,
