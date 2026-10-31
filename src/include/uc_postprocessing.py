@@ -12,7 +12,6 @@ import pypsa
 import xarray
 from matplotlib import pyplot as plt
 import plotly.express as px
-from __future__ import annotations
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.links import set_link_name, REVERSE_SIGN

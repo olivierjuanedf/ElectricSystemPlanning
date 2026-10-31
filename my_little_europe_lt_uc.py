@@ -242,7 +242,7 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
         if PlotNames.link_capa_saturation in plots_tb_done:
             # TODO: finish and reactivate (adding this plot name into plot_params.json to activate it)
             bob = 1
-            # uc_optimal_solution.plot_link_capa_saturation()
+            uc_optimal_solution.plot_link_capa_saturation()
 
         # save optimal prod. decision to an output file
         (uc_optimal_solution.save_decisions_to_csv(year=uc_run_params.selected_target_year,

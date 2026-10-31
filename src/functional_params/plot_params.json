@@ -280,6 +280,7 @@
       "prod_stacked",
       "prod_stacked_with_stock",
       "marginal_price",
-      "stock_soc"
+      "stock_soc",
+      "link_capa_saturation"
     ]
   }
