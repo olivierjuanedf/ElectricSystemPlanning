@@ -14,7 +14,7 @@ from matplotlib import pyplot as plt
 import plotly.express as px
 
 from src.common.constants.countries import set_country_trigram
-from src.common.constants.links import set_link_name, REVERSE_SIGN
+from src.common.constants.links import set_link_name, REVERSE_SIGN, get_bus_from_link_name
 from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
     get_prod_type_from_unit_name, set_gen_unit_name, get_country_from_unit_name, PT_ORDER_IN_DATA_OUTPUT, \
     STORAGE_COL_SUFFIX
@@ -474,7 +474,9 @@ class UCOptimalSolution:
                         )
             plt.close()
 
-    def plot_link_capa_saturation(self, n_time_blocks: int = 4, saturation_threshold: float = 0.999,
+    def plot_link_capa_saturation(self, link_capacities: dict[str, float], year: int, climatic_year: int,
+                                  start_horizon: datetime, output_tag: str = None, n_time_blocks: int = 4,
+                                  saturation_threshold: float = 0.999,
                                   time_label_mode: Literal["blocks", "dates"] = "blocks"):
         """
         Plot a 3-level sunburst showing transmission link saturations.
@@ -487,7 +489,15 @@ class UCOptimalSolution:
         Parameters
         ----------
         link_capacities :
-            Mapping {link_name_without_suffix: capacity}.
+            Mapping {link_name: capacity}.
+        year :
+            Of UC simulated
+        climatic_year :
+            Idem
+        start_horizon :
+            Of UC period simulated
+        output_tag :
+            On output folder, to be more explicit
         n_time_blocks :
             Number of temporal aggregation blocks.
         saturation_threshold :
@@ -496,12 +506,11 @@ class UCOptimalSolution:
             "blocks" -> Block 1, ..., Block N
             "dates"  -> Explicit time interval labels
         """
-        logging.info('Plot link capacity saturation (stat. aggrega. view)')
-        df_link_flow_opt_direct = self.link_flow_direct  # TODO: check if coherent with version of code below
-        link_capacities = {}  # TODO: get from objects here
+        logging.info('Plot link capacity saturation (stat. aggregated view)')
+        df_link_flow_opt_direct = self.link_flow_direct
 
         if len(df_link_flow_opt_direct) == 0:
-            raise ValueError("df_uc is empty.")
+            raise ValueError("Link flow df is empty (after UC optim.) -> plot not possible")
 
         records = []
 
@@ -515,14 +524,12 @@ class UCOptimalSolution:
 
         for link_name, capacity in link_capacities.items():
 
-            col = f"{link_name}_ac"
-
-            if col not in df_link_flow_opt_direct.columns:
+            if link_name not in df_link_flow_opt_direct.columns:
                 continue
 
-            flow = df_link_flow_opt_direct[col]
+            flow = df_link_flow_opt_direct[link_name]
 
-            origin_bus, destination_bus = link_name.split("_", maxsplit=1)
+            origin_bus, destination_bus = get_bus_from_link_name(link_name=link_name)
 
             sat_pos = flow >= saturation_threshold * capacity
             sat_neg = flow <= -saturation_threshold * capacity
@@ -593,6 +600,11 @@ class UCOptimalSolution:
         fig.update_layout(
             title="Transmission Link Saturation Breakdown",
         )
+
+        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.link_capacity, country="europe", year=year,
+                                      climatic_year=climatic_year, start_horizon=start_horizon, output_tag=output_tag)
+                    )
+        plt.close()
 
     def save_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,

@@ -312,6 +312,7 @@ class OutputFolderNames:
 @dataclass
 class FigNamesPrefix:
     capacity: str = 'capa'
+    link_capacity: str = 'link_capa'
     production: str = 'prod'
     prices: str = 'prices'
 

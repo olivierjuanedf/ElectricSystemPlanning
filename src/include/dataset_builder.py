@@ -23,7 +23,7 @@ from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP, \
     get_prod_type_from_unit_name
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames, PYPSA_TO_EXPLICIT_VAR_NAMES, \
-    PYPSA_TO_EXPLICIT_CONST_NAMES
+    PYPSA_TO_EXPLICIT_CONST_NAMES, PypsaOptimConstNames, GenUnitsPypsaParams
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
@@ -712,6 +712,9 @@ class PypsaModel:
         if lexico_sort:
             link_names = sort_lexicographically(strings=link_names)
         return link_names
+
+    def get_link_capacities(self) -> dict[str, float]:
+        return self.network.links[GenUnitsPypsaParams.power_capa].to_dict()
 
     def get_per_bus_total_installed_capa(self):
         bus_names = self.get_bus_names()
