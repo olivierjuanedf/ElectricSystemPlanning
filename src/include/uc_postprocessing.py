@@ -431,9 +431,148 @@ class UCOptimalSolution:
         #                 )
         #     plt.close()
 
-    def plot_stock_soc(self, hydro_soc_min: xarray.DataArray = None, hydro_soc_max: xarray.DataArray = None):
-        df_soc_opt = self.storage_soc
-        bob = 1
+    def plot_stock_soc(self, plot_params_agg_pt: PlotParams, country: str, year: int, climatic_year: int,
+                       start_horizon: datetime, storage_const_soc_max: dict[str, float],
+                       hydro_soc_min: xarray.DataArray = None, hydro_soc_max: xarray.DataArray = None,
+                       plot_in_pu: bool = True, toy_model_output: bool = False,
+                       output_tag: str = None):
+        """
+        Plot storage state of charge.
+
+            Top subplot:
+                Hydro reservoirs with optional min/max SOC bounds.
+
+            Bottom subplot:
+                All other storage units.
+
+        """
+        df_soc_opt = self.storage_soc.copy()
+        if country != "europe":
+            country_prefix = f"{set_country_trigram(country=country)}_"
+            current_country_assets = [col for col in df_soc_opt.columns if col.startswith(country_prefix)]
+            df_soc_opt = df_soc_opt[current_country_assets]
+
+        # select two different classes of stocks for two different subplots
+        hydro_reservoirs = [col for col in df_soc_opt.columns
+                            if get_prod_type_from_unit_name(prod_unit_name=col) == ProdTypeNames.hydro_reservoir]
+
+        other_stocks = [col for col in df_soc_opt.columns if col not in hydro_reservoirs]
+
+        hydro_soc_min_plot = None
+        hydro_soc_max_plot = None
+
+        # convert all values in per unit (of storage CONSTANT capacity)
+        if plot_in_pu:
+
+            for col in df_soc_opt.columns:
+                if col not in storage_const_soc_max:
+                    continue
+
+                capacity = storage_const_soc_max[col]
+
+                df_soc_opt[col] /= capacity
+
+            if hydro_soc_min is not None:
+                hydro_soc_min_plot = hydro_soc_min.copy()
+
+                for asset in hydro_soc_min_plot:
+                    hydro_soc_min_plot[asset] /= storage_const_soc_max[asset]
+
+            if hydro_soc_max is not None:
+                hydro_soc_max_plot = hydro_soc_max.copy()
+
+                for asset in hydro_soc_max_plot:
+                    hydro_soc_max_plot[asset] /= storage_const_soc_max[asset]
+
+        else:
+            hydro_soc_min_plot = hydro_soc_min
+            hydro_soc_max_plot = hydro_soc_max
+
+        # conditional def. of the axes and subplots
+        has_hydro_res = len(hydro_reservoirs) > 0
+        has_other_stocks = len(other_stocks) > 0
+
+        if not has_hydro_res and not has_other_stocks:
+            msg_suffix = f" for country {country}" if country != "europe" else ""
+            logging.warning(f"No storage units available to plot stock SoC{msg_suffix}")
+            return
+
+        if has_hydro_res and has_other_stocks:
+
+            fig, (ax_hydro_res, ax_other) = plt.subplots(2, 1, figsize=(16, 10),
+                                                         sharex=True, constrained_layout=True)
+
+        elif has_hydro_res:
+
+            fig, ax_hydro_res = plt.subplots(1, 1, figsize=(16, 5), constrained_layout=True)
+            ax_other = None
+
+        else:  # has_other
+
+            fig, ax_other = plt.subplots(1, 1, figsize=(16, 5), constrained_layout=True)
+            ax_hydro_res = None
+
+        # common plot elements
+        snapshots = df_soc_opt.index
+        y_label = "SOC (p.u.)" if plot_in_pu else "SOC (MWh)"
+
+        # Hydro reservoirs
+        if ax_hydro_res is not None:
+            for asset in hydro_reservoirs:
+
+                line = ax_hydro_res.plot(snapshots, df_soc_opt[asset], label=asset)[0]
+                color = line.get_color()
+                # TODO: use parametrized colors
+                # plot_params_agg_pt.per_case_color[col]
+
+                if hydro_soc_min_plot is not None and asset in hydro_soc_min_plot:
+                    ax_hydro_res.plot(snapshots, hydro_soc_min_plot[asset],
+                                      linestyle="--", color=color, alpha=0.8)
+
+                if hydro_soc_max_plot is not None and asset in hydro_soc_max_plot:
+                    ax_hydro_res.plot(snapshots, hydro_soc_max_plot[asset],
+                                      linestyle="--", color=color, alpha=0.8)
+
+            ax_hydro_res.set_title("Hydro reservoir SOC")
+            ax_hydro_res.set_ylabel(y_label)
+            ax_hydro_res.grid(True, alpha=0.3)
+
+            if hydro_reservoirs:
+                ax_hydro_res.legend(fontsize=8, ncol=2)
+
+        # Other storage units
+        if ax_other is not None:
+            for asset in other_stocks:
+
+                line = ax_other.plot(snapshots, df_soc_opt[asset], label=asset)[0]
+
+                if not plot_in_pu:
+                    # TODO: use parametrized colors
+                    # plot_params_agg_pt.per_case_color[col]
+                    ax_other.axhline(y=storage_const_soc_max[asset], color=line.get_color(), linestyle="--", alpha=0.8)
+
+            ax_other.set_title("Other storage SOC")
+            ax_other.set_ylabel(y_label)
+            ax_other.set_xlabel("Time")
+            ax_other.grid(True, alpha=0.3)
+
+            if other_stocks:
+                ax_other.legend(fontsize=8, ncol=2)
+
+        fig.suptitle(f"Storage state of charge - {country}", fontsize=14)
+
+        output_file = get_output_figure(
+            fig_name=FigNamesPrefix.stock_soc,
+            country=country,
+            year=year,
+            climatic_year=climatic_year,
+            start_horizon=start_horizon,
+            toy_model_output=toy_model_output,
+            output_tag=output_tag,
+        )
+
+        plt.savefig(output_file, bbox_inches="tight")
+        plt.close(fig)
 
     def plot_cum_export_flows(self):
         # TODO: aggreg. plot with sum of exported flow per country (as a function of time)

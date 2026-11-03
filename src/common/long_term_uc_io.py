@@ -315,6 +315,7 @@ class FigNamesPrefix:
     link_capa_saturation: str = 'link_capa_sat'
     production: str = 'prod'
     prices: str = 'prices'
+    stock_soc: str = 'stock_soc'
 
 
 def get_output_figure(fig_name: str, country: str, year: int, climatic_year: int = None, start_horizon: datetime = None,

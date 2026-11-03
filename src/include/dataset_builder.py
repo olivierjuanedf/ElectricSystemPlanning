@@ -32,7 +32,7 @@ from src.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
 from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
                                    format_with_spaces, get_default_values)
 from src.utils.dir_utils import make_dir
-from src.utils.pypsa_utils import get_network_obj_value
+from src.utils.pypsa_utils import get_network_obj_value, from_xarray_to_dict
 from src.utils.serializer import array_serializer
 
 
@@ -716,6 +716,30 @@ class PypsaModel:
     def get_link_capacities(self) -> dict[str, float]:
         return self.network.links[GenUnitsPypsaParams.power_capa].to_dict()
 
+    def get_storage_constant_soc_max(self, snapshot_idx_to_get_val: int = 0) -> dict[str, float]:
+        """
+        Get SoC max - supposedly CONSTANT - value of storages
+        :param snapshot_idx_to_get_val: snapshot index from which constant value will be obtained
+        """
+
+        storage_soc_max_const = self.network.model.constraints[PypsaOptimConstNames.storage_soc_ub]
+
+        rhs = storage_soc_max_const.rhs
+
+        snapshot = rhs.snapshot.values[snapshot_idx_to_get_val]
+
+        rhs_at_snapshot = rhs.sel(snapshot=snapshot)
+
+        storage_soc_max = {
+            storage_name: float(value)
+            for storage_name, value in zip(
+                rhs_at_snapshot["StorageUnit-fix"].values,
+                rhs_at_snapshot.values,
+            )
+        }
+
+        return storage_soc_max
+
     def get_per_bus_total_installed_capa(self):
         bus_names = self.get_bus_names()
         df_generators = self.network.generators
@@ -849,9 +873,12 @@ class PypsaModel:
             f'{objective_value_refmted} (M€) -> output data (resp. figures) can be generated')
         return objective_value
 
-    def get_constraint_bound_value(self, constraint_name: str) -> Optional[xarray.DataArray]:
+    def get_constraint_bound_value(self, constraint_name: str, return_as_dict: bool = True) -> Optional[xarray.DataArray]:
         if constraint_name in self.network.model.constraints:
-            return self.network.model.constraints[constraint_name].rhs
+            rhs_data_array = self.network.model.constraints[constraint_name].rhs
+            if return_as_dict:
+                return from_xarray_to_dict(data_array=rhs_data_array)
+            return rhs_data_array
         else:
             logging.warning(f"Bound cannot be obtained for constraint {constraint_name}, "
                             f"not present in current PyPSA model")

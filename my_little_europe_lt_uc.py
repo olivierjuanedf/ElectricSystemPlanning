@@ -227,8 +227,15 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                 hydro_soc_max = (
                     pypsa_model.get_constraint_bound_value(constraint_name=CustomConstraintNames.hydro_soc_max)
                 )
+                storage_const_soc_max = pypsa_model.get_storage_constant_soc_max()
                 # TODO: finish and reactivate
-                uc_optimal_solution.plot_stock_soc(hydro_soc_min=hydro_soc_min, hydro_soc_max=hydro_soc_max)
+                uc_optimal_solution.plot_stock_soc(plot_params_agg_pt=plot_params_agg_pt, country=country,
+                                                   year=uc_run_params.selected_target_year,
+                                                   climatic_year=uc_run_params.selected_climatic_year,
+                                                   start_horizon=uc_run_params.uc_period_start,
+                                                   storage_const_soc_max=storage_const_soc_max,
+                                                   hydro_soc_min=hydro_soc_min, hydro_soc_max=hydro_soc_max,
+                                                   output_tag=uc_run_params.output_tag)
 
         # then plots at the scale of all countries (Europe)
         # 'marginal price' figure
