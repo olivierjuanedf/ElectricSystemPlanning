@@ -10,7 +10,7 @@ from src.common.constants.datadims import DataDimensions
 from src.common.constants.extract_eraa_data import ERAADatasetDescr
 from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     CustomConstraintNames
-from src.common.constants.plots import PlotNames
+from src.common.constants.plots import PlotNames, PER_COUNTRY_PLOT
 from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
 from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
@@ -195,6 +195,8 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
         plot_params_zone = per_dim_plot_params[DataDimensions.zone]
 
         # plot - first the ones per country
+        per_country_elts_plot = [elt for elt in PER_COUNTRY_PLOT if elt in plots_tb_done]
+        logging.info(f"Per country, plot {', '.join(per_country_elts_plot)}")
         for country in uc_run_params.selected_countries:
             # opt. prod profiles 'stacked'
             if PlotNames.prod_stacked in plots_tb_done:
@@ -226,7 +228,7 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                     pypsa_model.get_constraint_bound_value(constraint_name=CustomConstraintNames.hydro_soc_max)
                 )
                 # TODO: finish and reactivate
-                # uc_optimal_solution.plot_stock_soc(hydro_soc_min=hydro_soc_min, hydro_soc_max=hydro_soc_max)
+                uc_optimal_solution.plot_stock_soc(hydro_soc_min=hydro_soc_min, hydro_soc_max=hydro_soc_max)
 
         # then plots at the scale of all countries (Europe)
         # 'marginal price' figure
@@ -242,11 +244,11 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
         if PlotNames.link_capa_saturation in plots_tb_done:
             # TODO: finish and reactivate (adding this plot name into plot_params.json to activate it)
             link_capas = pypsa_model.get_link_capacities()
-            uc_optimal_solution.plot_link_capa_saturation(link_capacities=link_capas,
-                                                          year=uc_run_params.selected_target_year,
-                                                          climatic_year=uc_run_params.selected_climatic_year,
-                                                          start_horizon=uc_run_params.uc_period_start,
-                                                          output_tag=uc_run_params.output_tag)
+            # uc_optimal_solution.plot_link_capa_saturation(link_capacities=link_capas,
+            #                                               year=uc_run_params.selected_target_year,
+            #                                               climatic_year=uc_run_params.selected_climatic_year,
+            #                                               start_horizon=uc_run_params.uc_period_start,
+            #                                               output_tag=uc_run_params.output_tag)
 
         # save optimal prod. decision to an output file
         (uc_optimal_solution.save_decisions_to_csv(year=uc_run_params.selected_target_year,

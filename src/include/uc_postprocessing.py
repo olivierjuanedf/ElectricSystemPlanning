@@ -479,7 +479,7 @@ class UCOptimalSolution:
                                   saturation_threshold: float = 0.999,
                                   time_label_mode: Literal["blocks", "dates"] = "blocks"):
         """
-        Plot a 3-level sunburst showing transmission link saturations.
+        Plot a 3-level sunburst showing transmission link capacity saturation.
 
         Levels:
             1. Link
@@ -499,7 +499,8 @@ class UCOptimalSolution:
         output_tag :
             On output folder, to be more explicit
         n_time_blocks :
-            Number of temporal aggregation blocks.
+            Number of temporal aggregation blocks. Ex: if 4, then number saturation occurrences will be considered for
+            blocks [0AM, 6AM], [6AM, 0PM], [0PM, 6PM], [6PM, 0AM next day]
         saturation_threshold :
             Saturation threshold as a fraction of nominal capacity.
         time_label_mode :
@@ -601,10 +602,16 @@ class UCOptimalSolution:
             title="Transmission Link Saturation Breakdown",
         )
 
-        plt.savefig(get_output_figure(fig_name=FigNamesPrefix.link_capacity, country="europe", year=year,
-                                      climatic_year=climatic_year, start_horizon=start_horizon, output_tag=output_tag)
-                    )
-        plt.close()
+        fig.write_image(
+            get_output_figure(
+                fig_name=FigNamesPrefix.link_capa_saturation,
+                country="europe",
+                year=year,
+                climatic_year=climatic_year,
+                start_horizon=start_horizon,
+                output_tag=output_tag,
+            )
+        )
 
     def save_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,
