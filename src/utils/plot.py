@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Union, Dict, List, Tuple, Optional
+import colorsys
+import matplotlib.colors as mcolors
 
 from src.common.constants.datadims import DataDimensions
 from src.common.constants.temporal import DAY_OF_WEEK
@@ -332,3 +334,32 @@ def simple_plot(x: Union[np.ndarray, list], y: Union[np.ndarray, list, Dict[str,
     # save and close figure
     plt.savefig(fig_file)
     plt.close()
+
+
+def get_similar_color(color: str, hue_shift: float = 0.05, sat_factor: float = 1.1, val_factor: float = 0.9) -> str:
+    """
+    Return a color visually close to the input color but sufficiently different
+    to distinguish two curves.
+
+    Parameters
+    ----------
+    color : str
+        Any matplotlib-compatible color.
+    hue_shift : float
+        Hue shift in [0, 1].
+    sat_factor : float
+        Multiplicative factor applied to saturation.
+    val_factor : float
+        Multiplicative factor applied to value (brightness).
+    """
+    r, g, b = mcolors.to_rgb(color)
+
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+
+    h = (h + hue_shift) % 1.0
+    s = min(1.0, s * sat_factor)
+    v = min(1.0, v * val_factor)
+
+    r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
+
+    return mcolors.to_hex((r2, g2, b2))

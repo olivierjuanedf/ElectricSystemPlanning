@@ -123,3 +123,8 @@ def add_suffix_to_storage_unit_col(col: str, col_type: str) -> str:
         raise Exception(f'Suffix cannot be added to storage column {col}; unknown type {col_type} '
                         f'(it must be in {list(STORAGE_COL_SUFFIX)})')
     return col + UNIT_NAME_SEP + STORAGE_COL_SUFFIX[col_type]
+
+
+def rm_country_from_prod_unit_name(prod_unit_name: str) -> str:
+    country = get_country_from_unit_name(prod_unit_name)
+    return prod_unit_name[len(country) + len(UNIT_NAME_SEP):]

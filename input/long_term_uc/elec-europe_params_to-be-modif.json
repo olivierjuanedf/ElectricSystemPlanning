@@ -58,5 +58,6 @@
   "output_tag": "preliminar",
   "add_date_tag_to_output": false,
   "add_run_idx_tag_to_output": true,
-  "save_explicit_corresp_for_lp_elts": true
+  "save_explicit_corresp_for_lp_elts": true,
+  "plot_stock_soc_in_pu": false
 }

@@ -17,12 +17,13 @@ from src.common.constants.countries import set_country_trigram
 from src.common.constants.links import set_link_name, REVERSE_SIGN, get_bus_from_link_name
 from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
     get_prod_type_from_unit_name, set_gen_unit_name, get_country_from_unit_name, PT_ORDER_IN_DATA_OUTPUT, \
-    STORAGE_COL_SUFFIX
+    STORAGE_COL_SUFFIX, rm_country_from_prod_unit_name
 from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
     get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file
 from src.common.plot_params import PlotParams
 from src.utils.basic_utils import format_with_spaces, get_default_values, dict_to_str
-from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values
+from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values, is_column_constant
+from src.utils.plot import get_similar_color
 
 OUTPUT_DATE_COL = 'date'
 
@@ -100,6 +101,17 @@ def set_full_cols_for_storage_df(df: pd.DataFrame, col_type: str) -> pd.DataFram
     new_cols = {col: add_suffix_to_storage_unit_col(col=col, col_type=col_type) for col in old_cols}
     df = rename_df_columns(df=df, old_to_new_cols=new_cols)
     return df
+
+
+def set_stock_color(prod_type: str, per_pt_colors: dict[str, str], used_colors: list[str] = None) -> str:
+    if used_colors is None:
+        used_colors = []
+
+    color = per_pt_colors[prod_type]
+    while color in used_colors:
+        color = get_similar_color(color)
+    used_colors.append(color)
+    return color, used_colors
 
 
 @dataclass
@@ -446,6 +458,7 @@ class UCOptimalSolution:
                 All other storage units.
 
         """
+        # TODO: txt with assets with SOC=0 for all t, to avoid saturating graph...
         df_soc_opt = self.storage_soc.copy()
         if country != "europe":
             country_prefix = f"{set_country_trigram(country=country)}_"
@@ -489,20 +502,24 @@ class UCOptimalSolution:
             hydro_soc_max_plot = hydro_soc_max
 
         # conditional def. of the axes and subplots
-        has_hydro_res = len(hydro_reservoirs) > 0
-        has_other_stocks = len(other_stocks) > 0
+        hydro_res_with_nonconst_zero_soc = \
+            [asset for asset in hydro_reservoirs if not is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+        other_stocks_with_nonconst_zero_soc = \
+            [asset for asset in other_stocks if not is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+        has_hydro_res_to_plot = len(hydro_res_with_nonconst_zero_soc) > 0
+        has_other_stocks_to_plot = len(other_stocks_with_nonconst_zero_soc) > 0
 
-        if not has_hydro_res and not has_other_stocks:
+        if not has_hydro_res_to_plot and not has_other_stocks_to_plot:
             msg_suffix = f" for country {country}" if country != "europe" else ""
             logging.warning(f"No storage units available to plot stock SoC{msg_suffix}")
             return
 
-        if has_hydro_res and has_other_stocks:
+        if has_hydro_res_to_plot and has_other_stocks_to_plot:
 
             fig, (ax_hydro_res, ax_other) = plt.subplots(2, 1, figsize=(16, 10),
                                                          sharex=True, constrained_layout=True)
 
-        elif has_hydro_res:
+        elif has_hydro_res_to_plot:
 
             fig, ax_hydro_res = plt.subplots(1, 1, figsize=(16, 5), constrained_layout=True)
             ax_other = None
@@ -518,12 +535,14 @@ class UCOptimalSolution:
 
         # Hydro reservoirs
         if ax_hydro_res is not None:
-            for asset in hydro_reservoirs:
+            used_colors = []
+            for asset in hydro_res_with_nonconst_zero_soc:
 
-                line = ax_hydro_res.plot(snapshots, df_soc_opt[asset], label=asset)[0]
-                color = line.get_color()
-                # TODO: use parametrized colors
-                # plot_params_agg_pt.per_case_color[col]
+                line = ax_hydro_res.plot(snapshots, df_soc_opt[asset],
+                                         label=rm_country_from_prod_unit_name(asset))[0]
+                color, used_colors = set_stock_color(prod_type=ProdTypeNames.hydro_reservoir,
+                                                     per_pt_colors=plot_params_agg_pt.per_case_color,
+                                                     used_colors=used_colors)
 
                 if hydro_soc_min_plot is not None and asset in hydro_soc_min_plot:
                     ax_hydro_res.plot(snapshots, hydro_soc_min_plot[asset],
@@ -542,14 +561,19 @@ class UCOptimalSolution:
 
         # Other storage units
         if ax_other is not None:
-            for asset in other_stocks:
+            used_colors = []
 
-                line = ax_other.plot(snapshots, df_soc_opt[asset], label=asset)[0]
+            for asset in other_stocks_with_nonconst_zero_soc:
+                prod_type = get_prod_type_from_unit_name(asset)
+                color, used_colors = set_stock_color(prod_type=prod_type,
+                                                     per_pt_colors=plot_params_agg_pt.per_case_color,
+                                                     used_colors=used_colors)
+
+                line = ax_other.plot(snapshots, df_soc_opt[asset],
+                                     label=rm_country_from_prod_unit_name(asset), color=color)[0]
 
                 if not plot_in_pu:
-                    # TODO: use parametrized colors
-                    # plot_params_agg_pt.per_case_color[col]
-                    ax_other.axhline(y=storage_const_soc_max[asset], color=line.get_color(), linestyle="--", alpha=0.8)
+                    ax_other.axhline(y=storage_const_soc_max[asset], color=color, linestyle="--", alpha=0.8)
 
             ax_other.set_title("Other storage SOC")
             ax_other.set_ylabel(y_label)
@@ -560,6 +584,23 @@ class UCOptimalSolution:
                 ax_other.legend(fontsize=8, ncol=2)
 
         fig.suptitle(f"Storage state of charge - {country}", fontsize=14)
+
+        # text to indicate stocks with always SoC = 0
+        const_zero_soc_assets = (
+                [asset for asset in hydro_reservoirs if is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+                + [asset for asset in other_stocks if is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+        )
+        if const_zero_soc_assets:
+            # remove country trigrams to simplify block of text
+            const_zero_soc_assets = [rm_country_from_prod_unit_name(asset) for asset in const_zero_soc_assets]
+            txt = (
+                    "Assets not shown (SOC = 0 for all snapshots):\n"
+                    + "\n".join(sorted(const_zero_soc_assets))
+            )
+
+            fig.text(0.99, 0.01, txt, ha="right", va="bottom", fontsize=8,
+                     bbox={"facecolor": "white", "alpha": 0.8, "edgecolor": "black"},
+                     )
 
         output_file = get_output_figure(
             fig_name=FigNamesPrefix.stock_soc,

@@ -108,7 +108,7 @@ def rename_df_columns(df: pd.DataFrame, old_to_new_cols: dict) -> pd.DataFrame:
     return df
 
 
-def replace_none_values_in_df(df: pd.DataFrame, per_col_repl_values: dict, key_cols: list = None, 
+def replace_none_values_in_df(df: pd.DataFrame, per_col_repl_values: dict, key_cols: list = None,
                               deactivate_verbose_warn: bool = True) -> pd.DataFrame:
     if key_cols is None:
         key_cols = list(set(df.columns) - set(per_col_repl_values))
@@ -148,8 +148,8 @@ def set_key_columns(col_names: list, tuple_values: List[tuple], n_repeat: int = 
     return pd.DataFrame(data=concat_keys, columns=col_names)
 
 
-def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, method: str, start_date: datetime = None, 
-                            end_date: datetime = None, resample_divisor: float = None, fill_na_vals: dict = None, 
+def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, method: str, start_date: datetime = None,
+                            end_date: datetime = None, resample_divisor: float = None, fill_na_vals: dict = None,
                             key_cols: list = None, freq: str = 'h') -> pd.DataFrame:
     """
     Resample a DataFrame from daily to a finer frequency (e.g., hourly),
@@ -170,7 +170,7 @@ def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, m
         if start_date > first_date:
             raise ValueError('Start date cannot be later than the first index date for df resampling')
         first_date = start_date
-        
+
     last_date = df.index.max()
     if end_date is not None:
         if end_date < last_date:
@@ -189,7 +189,7 @@ def resample_and_distribute(df: pd.DataFrame, date_col: str, value_cols: list, m
         if resample_divisor is not None:
             for col in value_cols:
                 resampled[col] = resampled[col] / resample_divisor
-        
+
     elif method == ResampleMethods.all_at_first_ts:
         full_range = pd.date_range(first_date, last_date, freq=freq)
         resampled = df.reindex(full_range)
@@ -209,6 +209,11 @@ def sort_out_cols_with_zero_values(df: pd.DataFrame, abs_val_threshold: float) -
     return df
 
 
+def is_column_constant(df: pd.DataFrame, col_name: str, value: float, atol: float = 1e-9) -> bool:
+    """Return True if all values in the column are equal to 0 within tolerance."""
+    return np.isclose(df[col_name], value, atol=atol, rtol=0.0).all()
+
+
 if __name__ == '__main__':
     data = {
         'date': pd.date_range('2025-11-10', periods=3, freq='D'),
@@ -216,10 +221,12 @@ if __name__ == '__main__':
         'value': [240, 480, 720],
         'value2': [24, 48, 72]
     }
-    df = pd.DataFrame(data)
+    df_test = pd.DataFrame(data)
 
     # Apply function
-    hourly_df = resample_and_distribute(df, date_col='date', value_cols=['value', 'value2'], key_cols=['region'],
-                                        freq='h', resample_divisor=24, start_date=datetime(2025, 11, 9), end_date=datetime(2025,11,12,23),
-                                        method=ResampleMethods.all_at_first_ts, fill_na_vals={'value': 0, 'value2': 1000})
+    hourly_df = resample_and_distribute(df_test, date_col='date', value_cols=['value', 'value2'], key_cols=['region'],
+                                        freq='h', resample_divisor=24, start_date=datetime(2025, 11, 9),
+                                        end_date=datetime(2025, 11, 12, 23),
+                                        method=ResampleMethods.all_at_first_ts,
+                                        fill_na_vals={'value': 0, 'value2': 1000})
     bob = 1

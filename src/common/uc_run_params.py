@@ -74,6 +74,8 @@ class UCRunParams:
     output_tag: str = None
     # save files with correspondence between PyPSA "abstract" variable/constraint names and explicit ones
     save_explicit_corresp_for_lp_elts: bool = False
+    # plot stock SoC in per-unit (of energy capacity
+    plot_stock_soc_in_pu: bool = True
 
     def __repr__(self):
         repr_sep = '\n- '
