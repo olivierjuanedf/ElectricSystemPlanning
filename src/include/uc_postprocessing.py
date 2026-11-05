@@ -18,6 +18,7 @@ from src.common.constants.links import set_link_name, REVERSE_SIGN, get_bus_from
 from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
     get_prod_type_from_unit_name, set_gen_unit_name, get_country_from_unit_name, PT_ORDER_IN_DATA_OUTPUT, \
     STORAGE_COL_SUFFIX, rm_country_from_prod_unit_name
+from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
     get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file
 from src.common.plot_params import PlotParams
@@ -171,6 +172,7 @@ class UCSummaryMetrics:
         file = get_uc_summary_file(country=country, year=year, climatic_year=climatic_year,
                                    start_horizon=start_horizon, toy_model_output=toy_model_output,
                                    output_tag=output_tag)
+        logging.info(f"Save UC summary metrics to file {format_relative_path_for_log(path=file)}")
         with open(file, "w", encoding="utf-8") as f:
             json.dump(summary_dict, f)
 
@@ -803,7 +805,8 @@ class UCOptimalSolution:
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
                                             start_horizon=start_horizon, toy_model_output=toy_model_output,
                                             output_tag=output_tag)
-        logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv file {opt_p_csv_file}')
+        logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv '
+                     f'file {format_relative_path_for_log(path=opt_p_csv_file)}')
         df_prod_opt = self.prod
         df_prod_opt = process_data_to_csv(data_type="prod", df=df_prod_opt, rename_snapshot_col=rename_snapshot_col,
                                           order_cols=lexico_order_prod_cols)
@@ -813,7 +816,8 @@ class UCOptimalSolution:
             get_storage_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
                                      start_horizon=start_horizon, toy_model_output=toy_model_output,
                                      output_tag=output_tag)
-        logging.info(f'Save Storage optimal decisions to csv file {storage_opt_dec_csv_file}')
+        logging.info(f'Save Storage optimal decisions to csv '
+                     f'file {format_relative_path_for_log(path=storage_opt_dec_csv_file)}')
         # join the 3 Storage result dfs
         df_prod_opt = self.storage_prod
         df_cons_opt = self.storage_cons
@@ -836,7 +840,8 @@ class UCOptimalSolution:
             get_link_flow_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
                                        start_horizon=start_horizon, toy_model_output=toy_model_output,
                                        output_tag=output_tag)
-        logging.info(f'Save link flow optimal decisions to csv file {link_flow_opt_dec_csv_file}')
+        logging.info(f'Save link flow optimal decisions to csv '
+                     f'file {format_relative_path_for_log(path=link_flow_opt_dec_csv_file)}')
         df_link_flow_opt_direct = self.link_flow_direct
         df_link_flow_opt_reverse = self.link_flow_reverse
         # add reverse suffix to reverse flows

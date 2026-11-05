@@ -82,3 +82,26 @@ def get_files_from_prefix(folder: str, file_prefix: str, return_full_path: bool 
     if return_full_path:
         selec_files = [os.path.join(folder, file) for file in selec_files]
     return selec_files
+
+
+def get_relative_path(path: Union[str, Path], parent_dir: Union[str, Path]) -> Union[str, Path]:
+    is_path_str = isinstance(path, str)
+    if is_path_str:
+        path = Path(path)
+    if isinstance(parent_dir, str):
+        parent_dir = Path(parent_dir)
+
+    relative_path = path.resolve().relative_to(parent_dir)
+    if is_path_str:
+        return Path(relative_path)
+    return relative_path
+
+
+def add_relative_path_prefix(relative_path: str) -> str:
+    if relative_path.startswith(("./", ".\\")):
+        return relative_path
+
+    if "\\" in relative_path:
+        return f".\\{relative_path}"
+
+    return f"./{relative_path}"
