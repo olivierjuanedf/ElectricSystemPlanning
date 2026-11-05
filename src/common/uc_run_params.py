@@ -159,7 +159,8 @@ class UCRunParams:
                 )
             # and process + check that they are coherently defined
             for constraint in self.sum_prod_constraints:
-                constraint.process(optim_start=self.uc_period_start, optim_end=self.uc_period_end)
+                constraint.process(optim_start=self.uc_period_start, optim_end=self.uc_period_end,
+                                   selected_countries=self.selected_countries)
                 constraint.check(available_countries=available_countries, optim_start=self.uc_period_start,
                                  optim_end=self.uc_period_end, target_year=self.selected_target_year)
         if self.add_date_tag_to_output and self.add_run_idx_tag_to_output:

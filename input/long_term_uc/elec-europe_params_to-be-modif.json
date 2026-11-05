@@ -45,10 +45,7 @@
     "max_co2_emis_constraints": {
       "cases": [
         {
-          "countries": [
-            "france",
-            "germany"
-          ],
+          "countries": ["europe"],
           "upper_bound": 3.14
         }
       ]

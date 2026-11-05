@@ -164,7 +164,8 @@ These constraints can be added in the proposed environment, adding a dictionary 
      - **max_co2_emis_constraints**
        - **cases**: on which this sumprod constraint is to be applied, each of them consisting in a dict. with fields:
          - **countries**: list of countries on which the sum must be calculated - in addition to the temporal sum 
-         done on whole temporal period.
+         done on whole temporal period. "europe" can also be used to apply this constraint on whole continent - i.e.
+         on all selected countries for the UC simulated.
          - **upper_bound**: a float, the maximal amount of CO2 emissions (XXX unit XXX).
 
 Ex: to add a (unique) constraint of this type on France-Germany
