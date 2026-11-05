@@ -108,19 +108,6 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
 
 **ATTENTION** (for next class): actually marginal cost values for Eur. UC model are extracted from following file... put it in the list of the ones to be modified by students?
 
-- **[NOT TO BE MODIFIED]** [elec-europe_params_fixed.json](../../input/long_term_uc/elec-europe_params_fixed.json): 
-    - "<span style="color:#32B032; font-weight:bold">aggreg_prod_types_def</span>": **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise
-    - "<span style="color:#32B032; font-weight:bold">available_climatic_years</span>", "available countries", "available_target_years" (or simply years; "target year" is the used terminology in ERAA): **available values for the dimensions of provided extract of ERAA data**
-    - "<span style="color:#32B032; font-weight:bold">gps_coordinates</span>": the ones of the capitals excepting meta-countries with coordinates of Rotterdam for "benelux", Madrid for "iberian-peninsula", and Stockholm for "scandinavia". **N.B.** Only for plotting - very schematic - representation of the "network" associated to your UC model
-    - "<span style="color:#32B032; font-weight:bold">eraa_edition</span>": edition of ERAA data used - 2023.2 (one/two ERAA editions per year from 2021)
-
-- **[NOT TO BE MODIFIED]** [functional_available-values.json](../../input/long_term_uc/functional_available-values.json):  
-    - "<span style="color:#32B032; font-weight:bold">datatypes</span>": list of **type of data names**. Used only for the data crunch session; based on script [my_little_europe_data_analysis.py](../my_little_europe_data_analysis.py) - see associated doc
-  
-- **[NOT TO BE MODIFIED]** [pypsa_static_params.json](../../input/long_term_uc/pypsa_static_params.json):  
-    - "<span style="color:#32B032; font-weight:bold">min_unit_params_per_agg_pt</span>": list of minimal parameters to be provided when creating different types of generators in PyPSA
-    - "<span style="color:#32B032; font-weight:bold">generator_params_default_vals</span>": default values applied when creating PyPSA generators
-
 ## Optional functionalities
 
 To integrate these additional functionalities - at this stage constraints, it consists in adding/filling files in

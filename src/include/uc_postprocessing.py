@@ -118,7 +118,7 @@ def set_stock_color(prod_type: str, per_pt_colors: dict[str, str], used_colors: 
 class UCSummaryMetrics:
     ENERGY_UNIT = 'GWh'
     COST_UNIT = 'M€'
-    CO2_EMIS_UNIT = '??'
+    CO2_EMIS_UNIT = 'ktCO2eq.'
     # Energy Not Served (ENS), as the sum of failure volumes over horizon simulated
     # (attention, in GWh)
     per_country_ens: Dict[str, float]
