@@ -143,6 +143,7 @@ INPUT_ERAA_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER
 INPUT_FOLDER = 'input'
 CODE_FOLDER = 'src'
 INPUT_FUEL_SOURCES_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "fuel_sources"))
+INPUT_ENV_PARAMS_SUBFOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, INPUT_FOLDER, "_env_params"))
 INPUT_LT_UC_SUBFOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, INPUT_FOLDER, "long_term_uc"))
 INPUT_LT_UC_COUNTRY_SUBFOLDER = uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, "countries"))
 INPUT_LT_UC_OPTIONAL_SUBFOLDER = "optional"
@@ -225,7 +226,7 @@ def get_json_usage_params_file() -> str:
 
 
 def get_json_fixed_params_file() -> str:
-    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'elec-europe_params_fixed.json'))
+    return uniformize_path_os(path_str=os.path.join(INPUT_ENV_PARAMS_SUBFOLDER, 'elec-europe_params_fixed.json'))
 
 
 def get_json_eraa_avail_values_file() -> str:
@@ -237,7 +238,7 @@ def get_json_params_tb_modif_file() -> str:
 
 
 def get_json_solver_params_file() -> str:
-    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'solver_params.json'))
+    return uniformize_path_os(path_str=os.path.join(INPUT_ENV_PARAMS_SUBFOLDER, 'solver_params.json'))
 
 
 def get_json_fuel_sources_tb_modif_file() -> str:
@@ -252,7 +253,7 @@ def get_json_params_modif_country_files() -> Iterator[str]:
 
 
 def get_json_pypsa_static_params_file() -> str:
-    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, 'pypsa_static_params.json'))
+    return uniformize_path_os(path_str=os.path.join(INPUT_ENV_PARAMS_SUBFOLDER, 'pypsa_static_params.json'))
 
 
 def get_json_data_analysis_params_file() -> str:
