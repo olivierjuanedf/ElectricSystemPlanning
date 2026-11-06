@@ -21,7 +21,8 @@ from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames
 from src.common.constants.pypsa_params import PypsaOptimConstNames
 from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
-    get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file
+    get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file, \
+    get_link_capa_dual_vars_file
 from src.common.plot_params import PlotParams
 from src.utils.basic_utils import format_with_spaces, get_default_values, dict_to_str
 from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values, is_column_constant, \
@@ -301,8 +302,11 @@ def process_data_to_csv(data_type: str, df: pd.DataFrame, rename_snapshot_col: b
 
 
 def duals_to_link_dual_dict(duals: xarray.DataArray) -> dict[str, np.ndarray]:
-
-    link_dim = next(dim for dim in duals.dims if dim.startswith("Link"))
+    link_dim = next((dim for dim in duals.dims if dim.startswith("Link") or dim == "name"), None)
+    if link_dim is None:
+        link_dim = next((dim for dim in duals.dims if dim != "snapshot"), None)
+    if link_dim is None:
+        raise ValueError(f"Could not identify link dimension in duals with dims: {duals.dims}")
 
     duals = duals.transpose(link_dim, "snapshot")
 
@@ -887,14 +891,14 @@ class UCOptimalSolution:
 
     def save_link_capa_dual_vars_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                                         output_tag: str = None):
-        link_capa_duals_csv_file = get_link_flow_opt_dec_file(year=year, climatic_year=climatic_year,
-                                                              start_horizon=start_horizon, output_tag=output_tag)
+        link_capa_duals_csv_file = get_link_capa_dual_vars_file(year=year, climatic_year=climatic_year,
+                                                                start_horizon=start_horizon, output_tag=output_tag)
         logging.info(f'Save link capacity dual variables to .csv file '
                      f'{format_relative_path_for_log(path=link_capa_duals_csv_file)}')
 
         df_link_capa_duals = create_df_from_dict(data=self.link_capa_dual, key_col_name="link",
                                                  value_col_name="dual_variable")
-        df_link_capa_duals.to_csv(link_capa_duals_csv_file)
+        df_link_capa_duals.to_csv(link_capa_duals_csv_file, index=False)
 
     def get_prod_given_bus(self, bus_name: str) -> Optional[pd.DataFrame]:
         if self.prod is None:
