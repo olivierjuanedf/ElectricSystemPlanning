@@ -1,0 +1,2 @@
+GW_IN_LOG = True
+POWER_UNIT_IN_LOG = "GW" if GW_IN_LOG else "MW"

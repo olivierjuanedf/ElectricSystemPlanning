@@ -139,9 +139,11 @@ class UCSummaryMetrics:
         if europe_name is not None:
             uc_summary_metrics_str += f'for {europe_name}'
         uc_summary_metrics_str += \
-            f'{metric_sep}Energy Not Served ({self.ENERGY_UNIT}): {dict_to_str(d=self.per_country_ens)}'
+            (f'{metric_sep}Energy Not Served ({self.ENERGY_UNIT}): '
+             f'{dict_to_str(d=self.per_country_ens, nbers_with_spaces=True)}')
         uc_summary_metrics_str += \
-            f'{metric_sep}Number of failure hours: {dict_to_str(d=self.per_country_n_failure_hours)}'
+            (f'{metric_sep}Number of failure hours: '
+             f'{dict_to_str(d=self.per_country_n_failure_hours, nbers_with_spaces=True)}')
         uc_summary_metrics_str += \
             f'{metric_sep}Total cost (over Europe, {self.COST_UNIT}): {format_with_spaces(number=self.total_cost)}'
         uc_summary_metrics_str += \

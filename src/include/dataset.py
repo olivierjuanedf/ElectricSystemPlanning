@@ -12,6 +12,7 @@ from src.common.constants.aggreg_operations import AggregOpeNames
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.eraa_data import ERAAParamNames
+from src.common.constants.logs import GW_IN_LOG, POWER_UNIT_IN_LOG
 from src.common.constants.optimisation import CustomConstraintNames
 from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
@@ -23,7 +24,7 @@ from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDE
     INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER, HYDRO_FILES, HYDRO_DTS_OPT_FROM_INPUT_FOLDER
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset_builder import GenerationUnitData, select_gen_units_data
-from src.utils.basic_utils import get_intersection_of_lists
+from src.utils.basic_utils import get_intersection_of_lists, dict_to_str
 from src.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row, resample_and_distribute
 from src.utils.dir_utils import uniformize_path_os
@@ -330,7 +331,12 @@ def separate_hydro_extr_levels_data(hydro_extr_levels_data: Dict[str, pd.DataFra
 def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[str, Dict[str, float]],
                              country: str) -> pd.DataFrame:
     if df_gen_capa is not None and country in new_power_capas:
-        logging.info(f'OVERWRITTEN ERAA prod. capacity values, in MW: {new_power_capas[country]}')
+        current_new_power_capas = deepcopy(new_power_capas[country])
+        if GW_IN_LOG:
+            current_new_power_capas = {prod_type: int(capa / 1e3)
+                                       for prod_type, capa in current_new_power_capas.items()}
+        logging.info(f'OVERWRITTEN ERAA prod. capacity values, in {POWER_UNIT_IN_LOG}: '
+                     f'{dict_to_str(d=current_new_power_capas, nbers_with_spaces=True, key_val_sep="=")}')
         for agg_prod_type, new_capa_val in new_power_capas[country].items():
             df_gen_capa.loc[
                 df_gen_capa[PROD_TYPE_AGG_COL] == agg_prod_type, 'power_capacity'] = new_capa_val
@@ -353,7 +359,10 @@ def add_failure_asset_to_capas_data(df_gen_capa: pd.DataFrame, failure_power_cap
 def capa_info_log(df_gen_capa: pd.DataFrame):
     # get dict. with only power capacity values to get less verbose logs
     power_capa_dict = create_dict_from_cols_in_df(df=df_gen_capa, key_col=PROD_TYPE_AGG_COL, val_col='power_capacity')
-    logging.info(f'-> power capacity values, in MW: {power_capa_dict}')
+    if GW_IN_LOG:
+        power_capa_dict = {prod_type: int(capa / 1e3) for prod_type, capa in power_capa_dict.items()}
+    logging.info(f'-> power capacity values, in {POWER_UNIT_IN_LOG}: '
+                 f'{dict_to_str(d=power_capa_dict, nbers_with_spaces=True, key_val_sep="=")}')
 
 
 def calc_cf_capa_prod(df_gen_capa: pd.DataFrame, df_agg_cf: pd.DataFrame, cf_agg_prod_types_tb_read: List[str],
