@@ -20,7 +20,9 @@ Following are additional info vs. *European-system_tutorial.md* doc, not put in 
     N.B. This tag is applied prioritarily versus the run index one (activated with parameter **add_run_idx_tag_to_output**)
     - (optional) "<span style="color:#32B032; font-weight:bold">save_explicit_corresp_for_lp_elts</span>": save two files with 
     correspondence between PyPSA "abstract" variable/constraint names (e.g., xi for variables) and explicit ones? Default: do not save these files.
-
+    - (optional) "<span style="color:#32B032; font-weight:bold">plot_link_capa_saturation</span>": plot sunburst with 3-levels (1. non-oriented link, 2. direction, 3. period of the day)
+    to illustrate in an aggregate manner the saturation of link capacities
+  
 - On "Sumprod" constraints -> env. allow a more complex usage than the one actually described to the students 
   - Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
 problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost. N.B. In current version of 
