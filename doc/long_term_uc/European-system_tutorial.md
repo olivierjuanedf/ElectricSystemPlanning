@@ -86,9 +86,7 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
     - (optional) "<span style="color:#32B032; font-weight:bold">output_tag</span>": to **add a tag to the obtained data/figure** output folders. Default: no tag, in this case a previous run results may be overwritten.
     Ex: if output_tag="preliminar", results will be obtained in "data_preliminar"/"figures_preliminar" subfolders
     - (optional) "<span style="color:#32B032; font-weight:bold">add_run_idx_tag_to_output</span>": to **add a tag indicating the run index** to the obtained data/figure output folders. Default: no such index, in this case a previous run results may be overwritten.
-    - (optional) "<span style="color:#32B032; font-weight:bold">save_explicit_corresp_for_lp_elts</span>": save two files with 
-    correspondence between PyPSA "abstract" variable/constraint names (e.g., xi for variables) and explicit ones? Default: do not save these files.
-
+    
 - [countries/](../../input/long_term_uc/countries/){**country**}.json*: 
     - "<span style="color:#32B032; font-weight:bold">team</span>": **name of your team**, i.e. name of the country you are "responsible for" (*str*, that must be in the set {"benelux", "germany", "iberian-peninsula", "poland", "scandinavia"} - use lower letters)
     - "<span style="color:#32B032; font-weight:bold">selected_prod_types</span>": list of **production types - using aggregate classes** defined in [input/long_term_uc/elec-europe_eraa-available-values.json](../../input/long_term_uc/elec-europe_eraa-available-values.json) file/field "aggreg_prod_types" (<span style="color:#257cbd; font-weight:bold">dictionary</span> {country name: list of aggreg. production types to be selected for run}). Ex: {"france": ["nuclear", "failure"], "germany": ["coal", "wind_onshore", "wind_offshore"]} will lead to a run with only nuclear and failure (resp. coal and wind on-/off-shore) units in France (resp. Germany) 
