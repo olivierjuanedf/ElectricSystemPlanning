@@ -367,7 +367,7 @@ def get_current_run_idx_in_output_folder(output_folder: str, output_tag: str) ->
 
 
 # TODO: merge 2 following functions
-def get_csv_file_named(name: str, country: str, year: int, climatic_year: int, start_horizon: datetime,
+def get_csv_file_named(name: str, year: int, climatic_year: int, start_horizon: datetime, country: str = None,
                        toy_model_output: bool = False, create_subdir: bool = True, output_tag: str = None) -> str:
     output_folder = set_full_lt_uc_output_folder(folder_type=OutputFolderNames.data, country=country,
                                                  toy_model_output=toy_model_output, output_tag=output_tag)
@@ -409,6 +409,11 @@ def get_marginal_prices_file(country: str, year: int, climatic_year: int, start_
                              toy_model_output: bool = False, output_tag: str = None) -> str:
     return get_csv_file_named(name='marginal-prices', country=country, year=year, climatic_year=climatic_year,
                               start_horizon=start_horizon, toy_model_output=toy_model_output, output_tag=output_tag)
+
+
+def get_link_capa_dual_vars_file(year: int, climatic_year: int, start_horizon: datetime, output_tag: str = None) -> str:
+    return get_csv_file_named(name='link-capa-duals', year=year, climatic_year=climatic_year,
+                              start_horizon=start_horizon, output_tag=output_tag)
 
 
 def get_uc_summary_file(country: str, year: int, climatic_year: int, start_horizon: datetime,

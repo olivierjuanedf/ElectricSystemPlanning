@@ -57,5 +57,5 @@
   "add_run_idx_tag_to_output": true,
   "save_explicit_corresp_for_lp_elts": true,
   "plot_stock_soc_in_pu": false,
-  "plot_link_capa_saturation": true
+  "save_link_capa_dual_vars": true
 }

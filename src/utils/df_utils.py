@@ -214,6 +214,13 @@ def is_column_constant(df: pd.DataFrame, col_name: str, value: float, atol: floa
     return np.isclose(df[col_name], value, atol=atol, rtol=0.0).all()
 
 
+def create_df_from_dict(data: dict, key_col_name: str = "key", value_col_name: str = "value") -> pd.DataFrame:
+    """
+    Convert a dict {key: value} into a DataFrame with custom column names.
+    """
+    return pd.DataFrame(data.items(), columns=[key_col_name, value_col_name])
+
+
 if __name__ == '__main__':
     data = {
         'date': pd.date_range('2025-11-10', periods=3, freq='D'),

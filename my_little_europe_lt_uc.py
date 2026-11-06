@@ -319,6 +319,10 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
                                                          start_horizon=uc_run_params.uc_period_start,
                                                          output_tag=uc_run_params.output_tag)
          )
+        # link capacity dual variables
+        if uc_run_params.save_link_capa_dual_vars:
+            bob = 1
+
         # set UC summary metrics (Energy Not Served, number of failure hours, costs)
         uc_summary_metrics = (
             uc_optimal_solution.set_uc_summary_metrics(network=pypsa_model.network, total_cost=objective_value,

@@ -23,6 +23,7 @@ class EuropeJsonParamNames:
     plot_link_capa_saturation: str = 'plot_link_capa_saturation'
     plot_stock_soc_in_pu: str = 'plot_stock_soc_in_pu'
     save_explicit_corresp_for_lp_elts: str = 'save_explicit_corresp_for_lp_elts'
+    save_link_capa_dual_vars: str = 'save_link_capa_dual_vars'
     selected_climatic_year: str = 'selected_climatic_year'
     selected_countries: str = 'selected_countries'
     selected_target_year: str = 'selected_target_year'
