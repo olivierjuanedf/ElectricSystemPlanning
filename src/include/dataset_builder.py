@@ -34,6 +34,7 @@ from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_
 from src.utils.dir_utils import make_dir
 from src.utils.pypsa_utils import get_network_obj_value, from_xarray_to_dict
 from src.utils.serializer import array_serializer
+from src.include.hydro_bounds_preprocessor import preprocess_all_hydro_soc_bounds
 
 
 @dataclass
@@ -559,18 +560,28 @@ class PypsaModel:
 
     def add_hydro_extreme_levels_constraint(self, soc_min_pu: Dict[str, Union[float, np.ndarray]],
                                             soc_max_pu: Dict[str, Union[float, np.ndarray]],
-                                            energy_capa: Dict[str, float]):
+                                            energy_capa: Dict[str, float],
+                                            auto_relax_bounds: bool = True):
         """
         Add constraint on hydro extreme SOC levels
-        :param soc_min_pu: dict {unit name: soc min vector} - with SoC min an absolute value,
-        NOT AS A PERCENTAGE of capacity
+        :param soc_min_pu: dict {unit name: soc min vector} - with SoC min in per unit [0, 1]
         :param soc_max_pu: idem, max
         :param energy_capa: dict {unit name: energy capa value}
+        :param auto_relax_bounds: run minimal LP slack preprocessor to guarantee feasibility
         """
         logging.info("Add hydro extreme SoC levels constraints")
-        # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
-        # or bigger than energy capacity), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
+
+        # Preprocess and minimally relax bounds using LP reachability to guarantee mathematical feasibility
+        if auto_relax_bounds:
+            soc_min_pu, soc_max_pu = preprocess_all_hydro_soc_bounds(
+                network=self.network,
+                soc_min_pu=soc_min_pu,
+                soc_max_pu=soc_max_pu,
+                energy_capa=energy_capa,
+                n_ts=n_ts
+            )
+
         # from PU to ABSOLUTE values of min/max SoC (ABSOLUTE values have to be used in PyPSA)
         soc_min = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_min_pu.items()}
         soc_max = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_max_pu.items()}
