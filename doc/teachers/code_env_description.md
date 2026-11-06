@@ -18,6 +18,11 @@ Following are additional info vs. *European-system_tutorial.md* doc, not put in 
 - [elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json):  
     - (optional) "<span style="color:#32B032; font-weight:bold">add_date_tag_to_output</span>": to **add a tag indicating the run date** to the obtained data/figure output folders. Default: no such tag, in this case a previous run results may be overwritten.
     N.B. This tag is applied prioritarily versus the run index one (activated with parameter **add_run_idx_tag_to_output**)
+    - (optional) "<span style="color:#32B032; font-weight:bold">save_explicit_corresp_for_lp_elts</span>": save two files with 
+    correspondence between PyPSA "abstract" variable/constraint names (e.g., xi for variables) and explicit ones? Default: do not save these files.
+    - (optional) "<span style="color:#32B032; font-weight:bold">plot_link_capa_saturation</span>": plot sunburst with 3-levels (1. non-oriented link, 2. direction, 3. period of the day)
+    to illustrate in an aggregate manner the saturation of link capacities. Default: do not plot (and save associated file)
+  
 - On "Sumprod" constraints -> env. allow a more complex usage than the one actually described to the students 
   - Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
 problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost. N.B. In current version of 
@@ -59,6 +64,19 @@ student environment only CO2 emissions bound available
   }
 }
 ```
+
+- **[NOT TO BE MODIFIED]** [elec-europe_params_fixed.json](../../input/long_term_uc/elec-europe_params_fixed.json): 
+    - "<span style="color:#32B032; font-weight:bold">aggreg_prod_types_def</span>": **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise
+    - "<span style="color:#32B032; font-weight:bold">available_climatic_years</span>", "available countries", "available_target_years" (or simply years; "target year" is the used terminology in ERAA): **available values for the dimensions of provided extract of ERAA data**
+    - "<span style="color:#32B032; font-weight:bold">gps_coordinates</span>": the ones of the capitals excepting meta-countries with coordinates of Rotterdam for "benelux", Madrid for "iberian-peninsula", and Stockholm for "scandinavia". **N.B.** Only for plotting - very schematic - representation of the "network" associated to your UC model
+    - "<span style="color:#32B032; font-weight:bold">eraa_edition</span>": edition of ERAA data used - 2023.2 (one/two ERAA editions per year from 2021)
+
+- **[NOT TO BE MODIFIED]** [functional_available-values.json](../../input/long_term_uc/functional_available-values.json):  
+    - "<span style="color:#32B032; font-weight:bold">datatypes</span>": list of **type of data names**. Used only for the data crunch session; based on script [my_little_europe_data_analysis.py](../my_little_europe_data_analysis.py) - see associated doc
+  
+- **[NOT TO BE MODIFIED]** [pypsa_static_params.json](../../input/long_term_uc/pypsa_static_params.json):  
+    - "<span style="color:#32B032; font-weight:bold">min_unit_params_per_agg_pt</span>": list of minimal parameters to be provided when creating different types of generators in PyPSA
+    - "<span style="color:#32B032; font-weight:bold">generator_params_default_vals</span>": default values applied when creating PyPSA generators
 
 ## output
 

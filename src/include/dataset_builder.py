@@ -27,6 +27,7 @@ from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptim
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
+from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
 from src.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
 from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
@@ -1108,7 +1109,7 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
                                                       toy_model_output=toy_model_output, output_tag=output_tag)
     make_dir(full_path=output_folder_data)
     lp_filepath = f'{output_folder_data}/model_{file_suffix}.lp'
-    logging.info(f'Save model in .lp file: {lp_filepath}')
+    logging.info(f'Save model in .lp file: {format_relative_path_for_log(path=lp_filepath)}')
     m.to_file(Path(lp_filepath))
     return lp_filepath
 

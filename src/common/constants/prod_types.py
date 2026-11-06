@@ -10,7 +10,9 @@ class ProdTypeNames:  # by alpha. order
     biofuel: str = 'biofuel'
     coal: str = 'coal'
     csp_no_storage: str = 'csp_nostorage'
+    # TODO: merge 2 following names...
     demand_side_response: str = 'demand_side_response_capacity'  # TODO: why capa in this name?
+    dsr: str = 'dsr'
     failure: str = 'failure'
     gas: str = 'gas'
     hard_coal: str = 'hard_coal'
@@ -24,6 +26,7 @@ class ProdTypeNames:  # by alpha. order
     oil: str = 'oil'
     others_non_renewable: str = 'others_non-renewable'  # TODO: with '_' instead of '-'? (TB tested)
     others_renewable: str = 'others_renewable'
+    others_fatal: str = 'others_fatal'
     solar_pv: str = 'solar_pv'
     solar_thermal: str = 'solar_thermal'
     wind_offshore: str = 'wind_offshore'
@@ -36,6 +39,7 @@ PROD_TYPE_IN_LP = {
     ProdTypeNames.coal: "coal",
     ProdTypeNames.csp_no_storage: "csp",
     ProdTypeNames.demand_side_response: "dsr",
+    ProdTypeNames.dsr: "dsr",
     ProdTypeNames.failure: "fail",
     ProdTypeNames.gas: "gas",
     ProdTypeNames.hard_coal: "hcoal",
@@ -49,6 +53,7 @@ PROD_TYPE_IN_LP = {
     ProdTypeNames.oil: "oil",
     ProdTypeNames.others_non_renewable: "o_nonren",
     ProdTypeNames.others_renewable: "o_ren",
+    ProdTypeNames.others_fatal: "o_fatal",
     ProdTypeNames.solar_pv: "pv",
     ProdTypeNames.solar_thermal: "solth",
     ProdTypeNames.wind_offshore: "windoff",
@@ -63,9 +68,9 @@ PT_ORDER_IN_DATA_OUTPUT = [
     ProdTypeNames.nuclear,  # thermal - nuclear
     ProdTypeNames.biofuel, ProdTypeNames.coal, ProdTypeNames.hard_coal, ProdTypeNames.lignite,
     ProdTypeNames.oil, ProdTypeNames.gas,  # thermal - others
-    "others_fatal",  # TODO: include it in dataclass above?
+    ProdTypeNames.others_fatal,  # TODO: include it in dataclass above?
     ProdTypeNames.others_non_renewable,  # others
-    ProdTypeNames.batteries, ProdTypeNames.demand_side_response,  # other storage-like assets
+    ProdTypeNames.batteries, ProdTypeNames.demand_side_response, ProdTypeNames.dsr,  # other storage-like assets
     ProdTypeNames.failure  # last failure (fictive prod.)
 ]
 STOCK_LIKE_PROD_TYPES = [ProdTypeNames.hydro_reservoir, ProdTypeNames.hydro_pump_storage_closed,

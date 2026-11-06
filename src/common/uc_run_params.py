@@ -76,6 +76,7 @@ class UCRunParams:
     save_explicit_corresp_for_lp_elts: bool = False
     # plot stock SoC in per-unit (of energy capacity
     plot_stock_soc_in_pu: bool = True
+    plot_link_capa_saturation: bool = False
 
     def __repr__(self):
         repr_sep = '\n- '

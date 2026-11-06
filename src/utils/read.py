@@ -4,6 +4,7 @@ import logging
 
 from src.common.constants.optimisation import SolverParams
 from src.common.constants.plots import PlotNames
+from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
     get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
@@ -51,14 +52,15 @@ def apply_per_country_json_file_params(countries_data: dict, available_countries
             # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
             if mode_name == 'solo':
                 for c, _ in json_country[k].items():
-                    logging.info(f'Updating {k} for {c} from file {file}')
+                    logging.info(f'Updating {k} for {c} from file {format_relative_path_for_log(path=file)}')
                     countries_data[k][c] = json_country[k][c]
             else:
-                logging.info(f'Updating {k} for {country} from file {file}')
+                logging.info(f'Updating {k} for {country} from file {format_relative_path_for_log(path=file)}')
                 countries_data[k][country] = json_country[k][country]
                 for c, _ in json_country[k].items():
                     if c != country:
-                        logging.warning(f'Ignoring {k} for {country} from file {file}')
+                        logging.warning(f'Ignoring {k} for {country} from '
+                                        f'file {format_relative_path_for_log(path=file)}')
     return countries_data
 
 
@@ -223,7 +225,8 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
         info_msg = 'Get ERAA data description parameters'
     else:
         json_params_tb_modif_file = get_json_params_tb_modif_file()
-        info_msg = f'Read and check long-term UC parameters; the ones modified in file {json_params_tb_modif_file}'
+        info_msg = (f'Read and check long-term UC parameters; the ones modified '
+                    f'in file {format_relative_path_for_log(path=json_params_tb_modif_file)}')
     logging.info(info_msg)
 
     # get JSON fixed parameters -> ERAA data description object - including in particular the set of
