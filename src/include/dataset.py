@@ -24,7 +24,7 @@ from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDE
     INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER, HYDRO_FILES, HYDRO_DTS_OPT_FROM_INPUT_FOLDER
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset_builder import GenerationUnitData, select_gen_units_data
-from src.utils.basic_utils import get_intersection_of_lists, dict_to_str
+from src.utils.basic_utils import get_intersection_of_lists, dict_to_str, format_with_spaces
 from src.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row, resample_and_distribute
 from src.utils.dir_utils import uniformize_path_os
@@ -529,10 +529,21 @@ def print_out_agg_warning_gen_units_data(aggreg_warning: Dict[str, List[Tuple[st
             raise Exception(f"Data names with multiple (different) default values: {data_names_with_mult_def_vals}")
     # Set warning msg
     warning_msg = "Issue to access following data:"
+    soc_unit = 'p.u. (of capacity)'
+    power_unit = 'MW'
+    unit_per_data = {'gen. level min': power_unit, 'gen. level max': power_unit,
+                     'SOC level min': soc_unit, 'SOC level max': soc_unit, 'inflows': 'MWh'}
     for name, cases in aggreg_warning.items():
         cases_join = ", ".join([f"({country}, {agg_pt})" for (country, agg_pt, _) in cases])
         common_default_value = cases[0][2]
-        warning_msg += f"\n- {name} for {cases_join}\n-> set to {common_default_value}"
+        unit = unit_per_data[name]
+        if unit in ["MW", "MWh"] and GW_IN_LOG:
+            common_default_value /= 1e3
+            unit = "GW" if unit == "MW" else "GWh"
+        # format number for nice log
+        if unit in ["MW", "GW", "MWh", "GWh"]:
+            common_default_value = format_with_spaces(number=int(common_default_value))
+        warning_msg += f"\n- {name} for {cases_join}\n-> set to {common_default_value} {unit}"
     logging.warning(warning_msg)
 
 

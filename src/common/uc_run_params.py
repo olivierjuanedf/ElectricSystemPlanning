@@ -93,7 +93,7 @@ class UCRunParams:
             constraints_msg_elts = [f'{const_nber} {const_type}'
                                     for const_type, const_nber in n_constraints_per_type.items()]
             constraints_msg = '; '.join(constraints_msg_elts)
-            repr_str += f'{repr_sep}custom constraints: {constraints_msg}'
+            repr_str += f'{repr_sep}custom constraints (number per type): {constraints_msg}'
         return repr_str
 
     def process(self, available_countries: List[str], fullfill_selected_pt: bool = True):
