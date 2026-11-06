@@ -110,7 +110,7 @@ def set_stock_color(prod_type: str, per_pt_colors: dict[str, str], used_colors: 
 
     color = per_pt_colors[prod_type]
     while color in used_colors:
-        color = get_similar_color(color)
+        color = get_similar_color(color=color, hue_shift=0.1)
     used_colors.append(color)
     return color, used_colors
 
