@@ -23,7 +23,7 @@ from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDE
     HYDRO_VALUE_COLUMNS, HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS, \
     INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER, HYDRO_FILES, HYDRO_DTS_OPT_FROM_INPUT_FOLDER
 from src.common.uc_run_params import UCRunParams
-from src.include.dataset_builder import GenerationUnitData, select_gen_units_data
+from src.include.dataset_builder import GenerationUnitData, select_gen_units_data, is_gen_unit_storage_data
 from src.utils.basic_utils import get_intersection_of_lists, dict_to_str, format_with_spaces
 from src.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row, resample_and_distribute
@@ -1088,6 +1088,8 @@ class Dataset:
                     # overwrite specific turbine/pumping (injection/offtake) max values by power capa. if provided
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
+                    # no commitable attribute for these assets
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = None
                 # DSR with reinjection??
                 elif power_capacity_turbine > 0:
                     p_nom = abs(power_capacity_turbine)
@@ -1102,6 +1104,14 @@ class Dataset:
 
         if agg_warn_over_cases and len(aggreg_warning) > 0:
             print_out_agg_warning_gen_units_data(aggreg_warning=aggreg_warning)
+
+    # TODO: suppr-now
+    # def set_commitable_to_none_for_storages(self):
+    #     for country, gen_units_data in self.generation_units_data.items():
+    #         for gen_unit_data in gen_units_data:
+    #             pypsa_gen_unit_dict = gen_unit_data.__dict__
+    #             if is_gen_unit_storage_data(gen_unit_data=pypsa_gen_unit_dict):
+    #                 gen_unit_data.committable = None
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
         self.generation_units_data = gen_units_data
@@ -1120,7 +1130,7 @@ class Dataset:
                     if country not in per_country_modif_values:
                         per_country_modif_values[country] = []
                     per_country_modif_values[country].append(unit_data.name)
-                unit_data.committable = False
+                    unit_data.committable = False
         logging.info(f'Set committable PyPSA parameter to False, i.e. run without dynamic constraints; '
                      f'modified values (True -> False) for units: {per_country_modif_values}')
 

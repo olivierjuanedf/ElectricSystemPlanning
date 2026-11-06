@@ -38,6 +38,10 @@ from src.utils.serializer import array_serializer
 from src.include.hydro_bounds_preprocessor import preprocess_all_hydro_soc_bounds
 
 
+def is_gen_unit_storage_data(gen_unit_data: dict) -> bool:
+    return gen_unit_data.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None
+
+
 @dataclass
 class GenerationUnitData:
     name: str
@@ -352,7 +356,7 @@ class PypsaModel:
                     continue
 
                 # case of storage units, identified via the presence of max_hours param
-                if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
+                if is_gen_unit_storage_data(gen_unit_data=pypsa_gen_unit_dict):
                     if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.soc_init, None) is None:
                         # initial SoC fixed to 80% statically here
                         if agg_info_over_cases:
