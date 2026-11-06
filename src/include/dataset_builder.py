@@ -448,11 +448,11 @@ class PypsaModel:
 
     def build_model_before_adding_custom_const(self):
         logging.info('Build PyPSA network model before adding custom constraints')
-        # In PyPSA 1.0+, build_only=True works natively without solving.
-        # We attempt with quiet/logfile options first, then fallback to standard build_only.
-        try:
-            self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
-        except Exception:
+        # In PyPSA (with Linopy engine), create_model() builds the optimization formulation
+        # without invoking the solver, avoiding a redundant solve.
+        if hasattr(self.network.optimize, "create_model"):
+            self.network.optimize.create_model()
+        else:
             self.network.optimize(build_only=True)
 
     def add_sum_of_prod_custom_const(self, prod_sum_const: ZoneAndTempProdSumConstraint):
@@ -730,12 +730,17 @@ class PypsaModel:
 
         rhs_at_snapshot = rhs.sel(snapshot=snapshot)
 
+        storage_dims = [d for d in rhs.dims if d != 'snapshot']
+        if len(storage_dims) == 0:
+            return {}
+
+        storage_dim = storage_dims[0]
+        storage_names = rhs_at_snapshot.coords[storage_dim].values
+        storage_values = rhs_at_snapshot.values
+
         storage_soc_max = {
-            storage_name: float(value)
-            for storage_name, value in zip(
-                rhs_at_snapshot["StorageUnit-fix"].values,
-                rhs_at_snapshot.values,
-            )
+            str(storage_name): float(value)
+            for storage_name, value in zip(storage_names, storage_values)
         }
 
         return storage_soc_max
@@ -1060,7 +1065,10 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
             m = opt.create_model(network)
         except (ImportError, AttributeError):
             # Fallback for PyPSA 1.0+ if model is not built yet
-            network.optimize(build_only=True)
+            if hasattr(network.optimize, "create_model"):
+                network.optimize.create_model()
+            else:
+                network.optimize(build_only=True)
             m = network.model
 
     # set prefix
