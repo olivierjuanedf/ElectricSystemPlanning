@@ -20,6 +20,10 @@ Following are additional info vs. *European-system_tutorial.md* doc, not put in 
     N.B. This tag is applied prioritarily versus the run index one (activated with parameter **add_run_idx_tag_to_output**)
     - (optional) "<span style="color:#32B032; font-weight:bold">save_explicit_corresp_for_lp_elts</span>": save two files with 
     correspondence between PyPSA "abstract" variable/constraint names (e.g., xi for variables) and explicit ones? Default: do not save these files.
+    N.B. The variable names mapping is not necessarily complete, in the sense that a variable xj may be absent for some index j, 
+   whereas variables x_{j-k} and x_{j+k'} are provided. In the present model, this situation typically arises for spillage variables, 
+   which are undefined for some production units e.g., DSR units and batteries. By contrast, the mapping between constraints is complete 
+   and well-defined for all indices between 1 and the number of modeled constraints.
     - (optional) "<span style="color:#32B032; font-weight:bold">plot_link_capa_saturation</span>": plot sunburst with 3-levels (1. non-oriented link, 2. direction, 3. period of the day)
     to illustrate in an aggregate manner the saturation of link capacities. Default: do not plot (and save associated file)
   
