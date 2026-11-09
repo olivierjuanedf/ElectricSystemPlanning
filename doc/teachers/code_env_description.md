@@ -26,7 +26,15 @@ Following are additional info vs. *European-system_tutorial.md* doc, not put in 
    and well-defined for all indices between 1 and the number of modeled constraints.
     - (optional) "<span style="color:#32B032; font-weight:bold">plot_link_capa_saturation</span>": plot sunburst with 3-levels (1. non-oriented link, 2. direction, 3. period of the day)
     to illustrate in an aggregate manner the saturation of link capacities. Default: do not plot (and save associated file)
-  
+
+## Optional functionalities
+
+### Hydro
+
+(POssibility to activate these constraints from data in input folder)
+Note that **for both these inputs, the presence of a file for considered year, and country, will imply that such constraints will be 
+added to the UC model** simulated (if file in proper format!).
+
 - On "Sumprod" constraints -> env. allow a more complex usage than the one actually described to the students 
   - Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
 problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost. N.B. In current version of 
