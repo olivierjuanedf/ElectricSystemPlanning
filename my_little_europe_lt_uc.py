@@ -228,6 +228,7 @@ def solve_pypsa_network_model(pypsa_model: PypsaModel, year: int, n_countries: i
 
 def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParams,
                               result_optim_status: str) -> Optional[UCSummaryMetrics]:
+    logging.info(f'{TITLE_LOG_SEP} V) Save data - at the optimum of UC problem - and plot graphs {TITLE_LOG_SEP}')
     pypsa_opt_resol_status = OPTIM_RESOL_STATUS.optimal
     # if optimal resolution status, save output data and plot associated figures
     if result_optim_status == pypsa_opt_resol_status:
@@ -410,6 +411,9 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
         debug_mode = extra_params['debug_mode']
     else:
         debug_mode = False
+
+    logging.info(f'{TITLE_LOG_SEP} II) Get data for UC model {TITLE_LOG_SEP}')
+
     eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr,
                                         debug_mode=debug_mode, debug_output_folder=output_folder,
                                         get_optional_const_from_data_folder=
