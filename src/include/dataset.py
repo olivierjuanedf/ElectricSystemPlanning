@@ -14,7 +14,8 @@ from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.eraa_data import ERAAParamNames
 from src.common.constants.logs import GW_IN_LOG, POWER_UNIT_IN_LOG
 from src.common.constants.optimisation import CustomConstraintNames
-from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
+from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name, get_prod_type_from_unit_name, \
+    set_per_bus_asset_msg
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
@@ -1120,7 +1121,7 @@ class Dataset:
                      for country, gen_units_data in self.generation_units_data.items()}
         json_dump(data=data_dict, filepath=filepath)
 
-    def set_committable_param_to_false(self):
+    def set_committable_param_to_false(self, info_as_per_country_item: bool = True):
         per_country_modif_values = {}
         for country, units_data in self.generation_units_data.items():
             for unit_data in units_data:
@@ -1129,8 +1130,16 @@ class Dataset:
                         per_country_modif_values[country] = []
                     per_country_modif_values[country].append(unit_data.name)
                     unit_data.committable = False
+        if info_as_per_country_item:
+            all_prod_types = [prod_type for _, prod_types in per_country_modif_values.items()
+                              for prod_type in prod_types]
+            modif_vals_msg = set_per_bus_asset_msg(asset_names=all_prod_types)
+        # simplify country names as trigrams, and remove country trigram from prod unit names to have more concise logs
+        else:
+            modif_vals_msg = {set_country_trigram(country): [get_prod_type_from_unit_name(unit) for unit in prod_units]
+                              for country, prod_units in per_country_modif_values.items()}
         logging.info(f'Set committable PyPSA parameter to False, i.e. run without dynamic constraints; '
-                     f'modified values (True -> False) for units: {per_country_modif_values}')
+                     f'modified values (True -> False) for units: {modif_vals_msg}')
 
     def control_min_pypsa_params_per_gen_units(self, pypsa_min_unit_params_per_agg_pt: Dict[str, List[str]]):
         """

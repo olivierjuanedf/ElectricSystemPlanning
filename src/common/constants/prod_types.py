@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from src.common.constants.countries import set_country_trigram
+from src.utils.basic_utils import sort_dict_and_values
 
 
 @dataclass
@@ -133,3 +134,24 @@ def add_suffix_to_storage_unit_col(col: str, col_type: str) -> str:
 def rm_country_from_prod_unit_name(prod_unit_name: str) -> str:
     country = get_country_from_unit_name(prod_unit_name)
     return prod_unit_name[len(country) + len(UNIT_NAME_SEP):]
+
+
+def set_per_bus_asset_msg(asset_names: list[str], alpha_sort: bool = True):
+    """
+    List of {bus name}_{asset name} to be converted to more elegant msg
+    """
+    # get dict. gathering asset names per bus
+    per_bus_assets = {}
+    for full_name in asset_names:
+        bus_name = get_country_from_unit_name(full_name)
+        prod_type = get_prod_type_from_unit_name(full_name)
+        if bus_name not in per_bus_assets:
+            per_bus_assets[bus_name] = []
+        per_bus_assets[bus_name].append(prod_type)
+    if alpha_sort:
+        per_bus_assets = sort_dict_and_values(per_bus_assets)
+    # get log message with one line per bus
+    per_bus_msg = ''
+    for bus, assets in per_bus_assets.items():
+        per_bus_msg += f'\n- {bus}: {assets}'
+    return per_bus_msg

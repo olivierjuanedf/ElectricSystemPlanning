@@ -21,7 +21,7 @@ from src.common.constants.links import set_link_name, get_bus_from_link_name
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP, \
-    get_prod_type_from_unit_name
+    get_prod_type_from_unit_name, set_per_bus_asset_msg
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames, PYPSA_TO_EXPLICIT_VAR_NAMES, \
     PYPSA_TO_EXPLICIT_CONST_NAMES, PypsaOptimConstNames, GenUnitsPypsaParams
 from src.common.constants.temporal import Timescale
@@ -95,27 +95,6 @@ def check_gen_unit_params(params: dict, n_ts: int) -> bool:
                 if not len(param_value) == n_ts:
                     return False
     return True
-
-
-def set_per_bus_asset_msg(asset_names: List[str]):
-    """
-    List of {bus name}_{asset name} to be converted to more elegant msg
-    """
-    name_sep = '_'
-    # get dict. gathering asset names per bus
-    per_bus_assets = {}
-    for full_name in asset_names:
-        name_split = full_name.split(name_sep)
-        bus_name = name_split[0]
-        asset_name = name_sep.join(name_split[1:])
-        if bus_name not in per_bus_assets:
-            per_bus_assets[bus_name] = []
-        per_bus_assets[bus_name].append(asset_name)
-    # get log message with one line per bus
-    per_bus_msg = ''
-    for bus, assets in per_bus_assets.items():
-        per_bus_msg += f'\n- {bus}: {assets}'
-    return per_bus_msg
 
 
 def set_per_origin_bus_links_msg(link_names: List[str]) -> str:

@@ -218,6 +218,13 @@ def sort_lexicographically(strings: list[str]) -> list[str]:
     return sorted(strings)
 
 
+def sort_dict_and_values(d: dict) -> dict:
+    return {
+        key: sorted(values)
+        for key, values in sorted(d.items())
+    }
+
+
 def check_all_values_equal(d: dict) -> bool:
     """
     Check that all values in a nested dict. are equal
