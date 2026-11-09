@@ -1088,7 +1088,11 @@ class Dataset:
                     # overwrite specific turbine/pumping (injection/offtake) max values by power capa. if provided
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
-                    # no commitable attribute for these assets
+                    # no committable attribute for these assets (cast as storage_units in PyPSA)
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = None
+                # TODO: make cleaner fix (cleaner treatment of DSR units in this env.)
+                elif agg_pt == "dsr" and current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] > 0:
+                    # no committable attribute for these assets (cast as storage_units in PyPSA)
                     current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = None
                 # DSR with reinjection??
                 elif power_capacity_turbine > 0:
@@ -1099,19 +1103,13 @@ class Dataset:
                     # idem overwrite by power capa. value if provided
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
+                    # no committable attribute for these assets (cast as storage_units in PyPSA)
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = None
 
                 self.generation_units_data[country].append(GenerationUnitData(**current_assets_data[agg_pt]))
 
         if agg_warn_over_cases and len(aggreg_warning) > 0:
             print_out_agg_warning_gen_units_data(aggreg_warning=aggreg_warning)
-
-    # TODO: suppr-now
-    # def set_commitable_to_none_for_storages(self):
-    #     for country, gen_units_data in self.generation_units_data.items():
-    #         for gen_unit_data in gen_units_data:
-    #             pypsa_gen_unit_dict = gen_unit_data.__dict__
-    #             if is_gen_unit_storage_data(gen_unit_data=pypsa_gen_unit_dict):
-    #                 gen_unit_data.committable = None
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
         self.generation_units_data = gen_units_data

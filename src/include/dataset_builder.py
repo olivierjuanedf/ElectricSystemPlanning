@@ -457,6 +457,9 @@ class PypsaModel:
         # In PyPSA (with Linopy engine), create_model() builds the optimization formulation
         # without invoking the solver, avoiding a redundant solve.
         if hasattr(self.network.optimize, "create_model"):
+            # TODO: suppr. this temporary fix
+            for comp in self.network.iterate_components():
+                comp.static.index = comp.static.index.astype(object)
             self.network.optimize.create_model()
         else:
             self.network.optimize(build_only=True)
