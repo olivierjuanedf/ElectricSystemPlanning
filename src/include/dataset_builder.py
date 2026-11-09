@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import re
 
 from src.common.constants.countries import set_country_trigram, is_country_trigram
-from src.common.constants.links import set_link_name, get_bus_from_link_name
+from src.common.constants.links import set_link_name, get_bus_from_link_name, set_per_origin_bus_links_msg
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP, \
@@ -95,27 +95,6 @@ def check_gen_unit_params(params: dict, n_ts: int) -> bool:
                 if not len(param_value) == n_ts:
                     return False
     return True
-
-
-def set_per_origin_bus_links_msg(link_names: List[str]) -> str:
-    link_sep = '-'
-    links_msg = ''
-    n_links = len(link_names)
-    i_link = 0
-    while i_link < n_links:
-        common_origin_links = [link_names[i_link]]
-        origin = link_names[i_link].split(link_sep)[0]
-        j = 1
-        while i_link + j < n_links:
-            current_origin = link_names[i_link + j].split(link_sep)[0]
-            if current_origin == origin:
-                common_origin_links.append(link_names[i_link + j])
-                j += 1
-            else:
-                break
-        links_msg += f'\n- from {origin}: {[tuple(elt_link.split(link_sep)) for elt_link in common_origin_links]}'
-        i_link += j
-    return links_msg
 
 
 def set_optim_pb_type(model: linopy.model.Model) -> Optional[str]:
