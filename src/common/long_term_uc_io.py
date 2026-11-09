@@ -421,3 +421,7 @@ def get_uc_summary_file(country: str, year: int, climatic_year: int, start_horiz
                         toy_model_output: bool = False, output_tag: str = None) -> str:
     return get_json_file_named(name='uc-summary', country=country, year=year, climatic_year=climatic_year,
                                start_horizon=start_horizon, toy_model_output=toy_model_output, output_tag=output_tag)
+
+
+def get_country_name_from_json(json_path: str | Path) -> str:
+    return Path(json_path).stem
