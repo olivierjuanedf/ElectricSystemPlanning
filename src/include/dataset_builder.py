@@ -971,20 +971,21 @@ class PypsaModel:
 
         return mapping
 
-# def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
-#     str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
-#     for _, units_data in generation_units_data.items():
-#         # loop over all units in current country
-#         for indiv_unit_data in units_data:
-#             current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
-#             if current_prod_type in updated_fuel_sources_params:
-#                 # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
-#                 if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
-#                     indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
-#                         GEN_UNITS_PYPSA_PARAMS.marginal_cost]
-#
-#         # TODO: from units data info on fuel source extract and apply updated params values
-#         updated_fuel_sources_params = None
+
+def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
+    str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
+    for _, units_data in generation_units_data.items():
+        # loop over all units in current country
+        for indiv_unit_data in units_data:
+            current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
+            if current_prod_type in updated_fuel_sources_params:
+                # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
+                if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
+                    indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
+                        GEN_UNITS_PYPSA_PARAMS.marginal_cost]
+
+        # TODO: from units data info on fuel source extract and apply updated params values
+        updated_fuel_sources_params = None
 
 
 def get_country_bus_name(country: str) -> str:

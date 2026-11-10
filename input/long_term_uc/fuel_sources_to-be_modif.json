@@ -5,7 +5,7 @@
     },
     "biofuel": {
       "marginal_cost": 1,
-      "co2_emissions": null
+      "co2_emissions": 3.14
     },
     "coal": {
       "marginal_cost": null,

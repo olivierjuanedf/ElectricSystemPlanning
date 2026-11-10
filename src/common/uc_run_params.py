@@ -11,7 +11,8 @@ from src.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA,
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT, Timescale
 from src.common.constants.uc_json_inputs import ALL_KEYWORD
 from src.common.error_msgs import uncoherent_param_stop
-from src.common.long_term_uc_io import get_current_run_idx_in_output_folder
+from src.common.logger import format_relative_path_for_log
+from src.common.long_term_uc_io import get_current_run_idx_in_output_folder, get_json_fuel_sources_tb_modif_file
 from src.include.timeseries import Timeseries
 from src.utils.basic_utils import are_lists_eq
 from src.utils.dates import get_period_str
@@ -131,6 +132,10 @@ class UCRunParams:
                 if len(new_params) > 0:
                     new_updated_fuel_source_params[source] = new_params
             self.updated_fuel_sources_params = new_updated_fuel_source_params
+            if len(self.updated_fuel_sources_params) > 0:
+                json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
+                logging.info(f"Following fuel sources param values {self.updated_fuel_sources_params} will be "
+                             f"updated based on file {json_fuel_param_filepath}")
 
         # process custom sum-prod. constraints data, e.g. max CO2 emissions one
         self.sum_prod_constraints = []

@@ -62,7 +62,7 @@ from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_
 from src.common.constants.plots import PlotNames, PER_COUNTRY_PLOT
 from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
-from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
+from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource, update_fuel_sources
 from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
 from src.common.long_term_uc_io import set_full_lt_uc_output_folder
 from src.common.plot_params import PlotParamsKeysInJson
@@ -411,6 +411,10 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
         debug_mode = extra_params['debug_mode']
     else:
         debug_mode = False
+
+    if uc_run_params.updated_fuel_sources_params is not None:
+        fuel_sources = update_fuel_sources(fuel_sources=fuel_sources,
+                                           updated_params=uc_run_params.updated_fuel_sources_params)
 
     logging.info(f'{TITLE_LOG_SEP} II) Get data for UC model {TITLE_LOG_SEP}')
 

@@ -47,6 +47,9 @@ class FuelSource:
         else:
             self.primary_cost = 0
 
+    def set_co2_emissions(self, value: float):
+        self.co2_emissions = value
+
 
 def add_other_sources(fuel_sources: Dict[str, FuelSource]) -> Dict[str, FuelSource]:
     source_matching = {FuelNames.other_renewables: FuelNames.biomass, FuelNames.other_non_renewables: FuelNames.oil}
@@ -68,6 +71,22 @@ def set_fuel_sources_from_json(add_other_fs: bool = True) -> Dict[str, FuelSourc
         fuel_sources[fuel_name] = FuelSource(**param_vals)
     if add_other_fs:
         fuel_sources = add_other_sources(fuel_sources=fuel_sources)
+    return fuel_sources
+
+
+def update_fuel_sources(fuel_sources: dict[str, FuelSource],
+                        updated_params: dict[str, dict[str, float]]) -> dict[str, FuelSource]:
+    """
+    Update some marginal cost, CO2 emission values based on JSON file in input folder
+    """
+    for name, fuel_source in fuel_sources.items():
+        if name in updated_params:
+            values_tb_modif = updated_params[name]
+            if "co2_emissions" in values_tb_modif:
+                fuel_source.set_co2_emissions(values_tb_modif["co2_emissions"])
+            if "marginal_cost" in values_tb_modif:
+                # TODO: fix this
+                bob = 1
     return fuel_sources
 
 

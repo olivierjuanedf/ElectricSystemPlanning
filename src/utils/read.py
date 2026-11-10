@@ -1,4 +1,5 @@
 import json
+import os.path
 from typing import List, Dict, Optional, Union
 import logging
 
@@ -97,7 +98,7 @@ def update_country_json_params(countries_data: dict, json_params_tb_modif: dict,
             file_country = countr_overwr_from_other_countr.get(elt_country, elt_country)
             suffix = solo_mode_msg_suffix if not file_country == elt_country else ""
             logging.info(f'Selected production type(s) overwritten for {elt_country} - based on countries'
-                         f'/{file_country}.json{suffix}: {new_prod_types} (and not all the ones from ERAA)')
+                         f'\\{file_country}.json{suffix}: {new_prod_types} (and not all the ones from ERAA)')
             json_params_tb_modif[selected_pt_param_name][elt_country] = new_prod_types
     # suppress pt selection key in countries data dict, not to have multiple values for same attr.
     # when creating UCRunParams object hereafter
@@ -139,9 +140,11 @@ def set_json_params_tb_modif() -> dict:
     return check_and_load_json_file(json_file=get_json_params_tb_modif_file(), file_descr='JSON params to be modif.')
 
 
-def set_json_fuel_sources_tb_modif() -> dict:
-    return check_and_load_json_file(json_file=get_json_fuel_sources_tb_modif_file(),
-                                    file_descr='JSON fuel sources params to be modif.')
+def set_json_fuel_sources_tb_modif() -> Optional[dict]:
+    json_tb_modif_file = get_json_fuel_sources_tb_modif_file()
+    if not os.path.exists(json_tb_modif_file):
+        return None
+    return check_and_load_json_file(json_file=json_tb_modif_file, file_descr='JSON fuel sources params to be modif.')
 
 
 def set_usage_params(json_usage_params_data: dict) -> UsageParameters:
@@ -158,8 +161,8 @@ def set_eraa_data_descr(json_params_fixed: dict) -> ERAADatasetDescr:
     return eraa_data_descr
 
 
-def set_uc_run_params(json_params_tb_modif: dict, countries_data: dict, json_fuel_sources_tb_modif: dict,
-                      eraa_data_descr: ERAADatasetDescr) -> UCRunParams:
+def set_uc_run_params(json_params_tb_modif: dict, countries_data: dict, eraa_data_descr: ERAADatasetDescr,
+                      json_fuel_sources_tb_modif: dict = None) -> UCRunParams:
     uc_run_params = UCRunParams(**json_params_tb_modif, **countries_data,
                                 updated_fuel_sources_params=json_fuel_sources_tb_modif)
     uc_run_params.process(available_countries=eraa_data_descr.available_countries)
