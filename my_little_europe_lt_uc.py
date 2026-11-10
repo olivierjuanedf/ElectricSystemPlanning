@@ -64,13 +64,12 @@ from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
 from src.common.fuel_sources import set_fuel_sources_from_raw_params_json, DUMMY_FUEL_SOURCES, FuelSource, \
     update_fuel_sources, get_fuel_sources_with_set_marg_cost
-from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP, \
-    format_relative_path_for_log
-from src.common.long_term_uc_io import set_full_lt_uc_output_folder, get_json_fuel_sources_tb_modif_file
+from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
+from src.common.long_term_uc_io import set_full_lt_uc_output_folder
 from src.common.plot_params import PlotParamsKeysInJson
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset import Dataset
-from src.include.dataset_builder import PypsaModel, PYPSA_RESULT_TYPE, GenerationUnitData
+from src.include.dataset_builder import PypsaModel, PYPSA_RESULT_TYPE
 from src.include.uc_postprocessing import UCSummaryMetrics
 from src.include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
 from src.utils.basic_utils import print_non_default

@@ -27,7 +27,7 @@ from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDE
     INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER, HYDRO_FILES, HYDRO_DTS_OPT_FROM_INPUT_FOLDER, \
     get_json_fuel_sources_tb_modif_file
 from src.common.uc_run_params import UCRunParams
-from src.include.dataset_builder import GenerationUnitData, select_gen_units_data, is_gen_unit_storage_data
+from src.include.dataset_builder import GenerationUnitData, select_gen_units_data
 from src.utils.basic_utils import get_intersection_of_lists, dict_to_str, format_with_spaces
 from src.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row, resample_and_distribute
