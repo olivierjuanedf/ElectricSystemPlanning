@@ -1,4 +1,4 @@
-# To start with: some general documentation
+# I) To start with: some general documentation
 
 See [doc/useful_references.md](doc/useful_references.md) file to get 
 - infos about ERAA (data) and PyPSA (framework/modeler)
@@ -7,9 +7,9 @@ See [doc/useful_references.md](doc/useful_references.md) file to get
 See [doc/glossary.md](doc/glossary.md) to get the **definition of some concepts or abbreviations** you may not be familiar 
 with: starting with CY (Climatic Year) and TY (Target Year) that will be used repeatedly in this class.
 
-# Tutorial - Long-Term Unit Commitment (UC) part
+# II) Tutorial for Long-Term Unit Commitment (UC)
 
-## Input files
+## II.1) Input files
 
 With the provided code environment you will be able to **run a European Unit Commitment model by simply modifying the values in the 2 following files**:
 
@@ -17,30 +17,32 @@ With the provided code environment you will be able to **run a European Unit Com
 
 2) [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite the ones of preceding file**. This is to make your own country choice. **N.B.** In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighboring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter.
 
-## Two modes : "Solo" and "Europe"
+## II.2) Two modes : "Solo" and "Europe"
+
 **You can choose between two different code behaviors: "solo" mode or "europe" one** - as defined in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), field "mode":
 - if mode is set to **"solo", all country parameters (for your own country, but also for the rest of them) will be read from your own file *{country}.json***. 
 Example: if in [germany.json](../../input/long_term_uc/countries/germany.json) dictionary associated to key "capacities_tb_overwritten" contains "france": {"nuclear": 0}, the French nuclear capacity will be set to 0 MW for the UC simulated
 - if mode is **"europe", parameters of each country will be extracted from file *{country}.json*; the rest of the values in this file being not accounted for**. Example: specifying "france": {"nuclear": 0} 
 in [germany.json](../../input/long_term_uc/countries/germany.json) will be useless in this mode, as nuclear capacity value will be obtained from [france.json](../../input/long_term_uc/countries/france.json)
 
-## Python script
+## II.3) Python script to be run
 
 - **Open and run [my_little_europe_lt_uc.py](../../my_little_europe_lt_uc.py)**
 - You should **get a log "THE END of ERAA-PyPSA long-term UC simulation!"** in the terminal window. If not, the "checkers" should have indicated you some aspects to be corrected in your - modified - parametrization (e.g., using some unavailable values for country or production types). 
 
-N.B. Even if normally not the case with parametrizations used in this class... it can be that no optimal solution 
+N.B. Even if normally not the case with parametrization used in this class... it can be that no optimal solution 
 be found (e.g., when the problem is "infeasible"): in this case (i) Run stops correctly - with an explicit error message 
 indicating this infeasibility status in the logs but; (ii) No output data (neither figures) are obtained in the folders 
 described just below.
 
-## Output files
+## II.4) Output files
+
 **Obtained data (respectively plotted figures) results** are given in [output/long_term_uc/data](../../output/long_term_uc/data) (resp. [output/long_term_uc/figures](../../output/long_term_uc/figures)) folders.
 Note that, **as explained with the description of** [elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) input file in Appendix section, 
 **a "tag" - indicating name of the run**, and optionally a counter index - **can be added to data/figures subfolder to identify them more simply**.
 
-For all files obtained, suffixes indicate the (i) Country corresponding to the content ("europe" if for whole continent);
-(ii) TY and CY; (iii) Start date of the UC period simulated.
+For all files obtained, **suffixes indicate** the (i) **Country** corresponding to the content ("europe" if for whole continent);
+(ii) **TY and CY**; (iii) **Start date of the UC period** simulated. Typically, it is *_{country}_{TY and CY}_{start date}*.
 
 In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
 * (*data* subfolder) **optimal production of all generators** considered in Europe, in *opt_power_europe_{TY and CY}_{start date}.csv* file. 
@@ -74,7 +76,7 @@ N.B. Idem regarding the suffix.
 
 # Appendices
 
-## Input data description
+## A1) Input data description
 
 **Preliminary remarks**: 
 
@@ -178,45 +180,41 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
   
       N.B. Obtained by simple aggregation of ERAA data when multiple sub-zones are present in our (meta-)countries.
 
-**ATTENTION** (for next class): actually marginal cost values for Eur. UC model are extracted from following file... put it in the list of the ones to be modified by students?
+## A2) Optional functionalities
 
-## Optional functionalities
-
-### Hydraulic assets: a more realistic modelling - already integrated in provided environement
+### A2.1) Hydraulic assets: a more realistic modelling - already integrated in provided environement
 
 In order to get a dispatch of hydraulic assets closer to the one observed in reality - especially for (meta-)countries 
 in which it represents a significant part of the capacities (e.g., Scandinavia!), it may be useful to specify:
 - **min/max generation levels**: adding and completing a file XXX.
   
   **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
-    - "week": index in 1, ..., 53
-    - "climatic_year": at least the value used for simulation
-    - "min_value" (resp. "max_value"): min (resp. max) WEEKLY generation level (MWh). In turn, the sum of production decisions in the week will be lower- (resp. upper-) bounded by this value
+    - "<span style="color:#32B032; font-weight:bold">week</span>": index in 1, ..., 53 (<span style="color:#257cbd; font-weight:bold">int</span>).
+    - "<span style="color:#32B032; font-weight:bold">climatic_year</span>": indices in the set of available CY; must contain at least the value used for UC simulation (<span style="color:#257cbd; font-weight:bold">int</span>).
+    - "<span style="color:#32B032; font-weight:bold">min_value</span>" (resp. "<span style="color:#32B032; font-weight:bold">max_value</span>"): min (resp. max) WEEKLY generation level (<span style="color:#257cbd; font-weight:bold">non-negative float</span>, MWh). In turn, the sum of production decisions in the week will be lower- (resp. upper-) bounded by this value
 - **min/max reservoir levels** ("State-of-(Water) Charge" of the reservoir): idem with a file [PECD-hydro-weekly-reservoir-min-max-levels.csv](../../data/ERAA_2023-2/hydro/PECD-hydro-weekly-reservoir-min-max-levels.csv).
 
   **Format** (columns, ";" separator): week;climatic_year;min_value;max_value with
-    - "week": index in 1, ..., 53
-    - "min_value" (resp. "max_value"): min (resp. max) END-OF-WEEK reservoir charging level (%). In turn, the end-of-week SoC, i.e. the start-of-week SoC + sum of production - consumption decisions in the week  will be lower- 
+    - "<span style="color:#32B032; font-weight:bold">week</span>": index in 1, ..., 53 (<span style="color:#257cbd; font-weight:bold">int</span>).
+    - "<span style="color:#32B032; font-weight:bold">min_value</span>" (resp. "<span style="color:#32B032; font-weight:bold">max_value</span>"): min (resp. max) END-OF-WEEK reservoir charging level (<span style="color:#257cbd; font-weight:bold">non-negative float</span>, per-unit of capacity i.e. in [0, 1]). In turn, the end-of-week SoC, i.e. the start-of-week SoC + sum of production - consumption decisions in the week  will be lower- 
       (resp. upper-) bounded by this value
   
       N.B. On the contrary to the data in generation level, here the provided parameters are the same whatever the CY.
 
-### Bound on CO2 emissions - to activate on your side
+### A2.2) Bound on CO2 emissions - to be activated on your side
 
-To integrate this additional functionality, it consists in adding/filling files in
-[optional input folder](../../input/long_term_uc/optional). 
-
+To analyze the trade-off between electricity system cost and CO2 emissions, it can be useful to add an upper bound on the emissions generated
+in the UC problem.
 
 These constraints can be added in the proposed environment, adding a dictionary in file 
-[input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json): 
-   - in "extra_params" dict.
-   - with following fields
-     - **max_co2_emis_constraints**
-       - **cases**: on which this sumprod constraint is to be applied, each of them consisting in a dict. with fields:
-         - **countries**: list of countries on which the sum must be calculated - in addition to the temporal sum 
-         done on whole temporal period. "europe" can also be used to apply this constraint on whole continent - i.e.
-         on all selected countries for the UC simulated.
-         - **upper_bound**: a float, the maximal amount of CO2 emissions (XXX unit XXX).
+[input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json); in "<span style="color:#32B032; font-weight:bold">extra_params</span>" dictionary, with following fields:
+     
+- <span style="color:#32B032; font-weight:bold">max_co2_emis_constraints</span>: 
+  - <span style="color:#32B032; font-weight:bold">cases</span>: on which this constraint is to be applied, each of them consisting in a dictionary with fields:
+    - <span style="color:#32B032; font-weight:bold">countries</span>: list of countries on which the sum must be calculated - in addition to the temporal sum 
+    done on whole temporal period (<span style="color:#257cbd; font-weight:bold">list of string</span>). "europe" can also be used to apply this constraint on whole continent - i.e.
+    on all selected countries for the UC simulated.
+    - <span style="color:#32B032; font-weight:bold">upper_bound</span>: the maximal amount of CO2 emissions (XXX unit XXX) (<span style="color:#257cbd; font-weight:bold">float</span>).
 
 Ex: to add a (unique) constraint of this type on France-Germany
 ```json
@@ -234,3 +232,5 @@ Ex: to add a (unique) constraint of this type on France-Germany
   }
 }
 ```
+
+N.B. Multiple constraints of this type can be added to the UC problem, if (group of) countries have individual targets.

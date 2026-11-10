@@ -31,11 +31,15 @@ Following are additional info vs. *European-system_tutorial.md* doc, not put in 
 
 ### Hydro
 
+To integrate this additional functionality, it consists in adding/filling files in
+[optional input folder](../../input/long_term_uc/optional). 
+
 (POssibility to activate these constraints from data in input folder)
 Note that **for both these inputs, the presence of a file for considered year, and country, will imply that such constraints will be 
 added to the UC model** simulated (if file in proper format!).
 
-- On "Sumprod" constraints -> env. allow a more complex usage than the one actually described to the students 
+### On "Sumprod" constraints -> env. allow a more complex usage than the one actually described to the students 
+  -
   - Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
 problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost. N.B. In current version of 
 student environment only CO2 emissions bound available
