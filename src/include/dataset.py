@@ -19,10 +19,13 @@ from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name, ge
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
+from src.common.fuel_sources import FuelSource
+from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
     GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER, HYDRO_KEY_COLUMNS, \
     HYDRO_VALUE_COLUMNS, HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS, \
-    INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER, HYDRO_FILES, HYDRO_DTS_OPT_FROM_INPUT_FOLDER
+    INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER, HYDRO_FILES, HYDRO_DTS_OPT_FROM_INPUT_FOLDER, \
+    get_json_fuel_sources_tb_modif_file
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset_builder import GenerationUnitData, select_gen_units_data, is_gen_unit_storage_data
 from src.utils.basic_utils import get_intersection_of_lists, dict_to_str, format_with_spaces
@@ -1111,6 +1114,33 @@ class Dataset:
 
         if agg_warn_over_cases and len(aggreg_warning) > 0:
             print_out_agg_warning_gen_units_data(aggreg_warning=aggreg_warning)
+
+    def update_gen_units_marginal_costs(self, fuel_sources: list[FuelSource]):
+        """
+        Update generation units data marginal cost/CO2 emissions factor based on fuel sources data
+        :param fuel_sources: {name: FuelSource}
+        """
+        modif_params = {}
+        gen_units_data_new = {}
+        for country, units_data in self.generation_units_data.items():
+            gen_units_data_new[country] = []
+            for unit_data in units_data:
+                if unit_data.carrier in fuel_sources:
+                    fuel_source = fuel_sources[unit_data.carrier]
+                    if (fuel_source.marginal_cost is not None
+                            and not fuel_source.marginal_cost == unit_data.marginal_cost):
+                        modif_tuple = (unit_data.carrier, unit_data.marginal_cost, fuel_source.marginal_cost)
+                        unit_data.marginal_cost = fuel_source.marginal_cost
+                        if country not in modif_params:
+                            modif_params[country] = []
+                        modif_params[country].append(modif_tuple)
+                gen_units_data_new[country].append(unit_data)
+        if len(modif_params) > 0:
+            # TODO: improve msg
+            json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
+            logging.info(f"The following marginal cost values have been modified from file "
+                         f"{json_fuel_param_filepath}: {modif_params}")
+            self.set_generation_units_data(gen_units_data_new)
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
         self.generation_units_data = gen_units_data

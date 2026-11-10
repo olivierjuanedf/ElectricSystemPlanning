@@ -62,13 +62,15 @@ from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_
 from src.common.constants.plots import PlotNames, PER_COUNTRY_PLOT
 from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
-from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource, update_fuel_sources
-from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
-from src.common.long_term_uc_io import set_full_lt_uc_output_folder
+from src.common.fuel_sources import set_fuel_sources_from_raw_params_json, DUMMY_FUEL_SOURCES, FuelSource, \
+    update_fuel_sources, get_fuel_sources_with_set_marg_cost
+from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP, \
+    format_relative_path_for_log
+from src.common.long_term_uc_io import set_full_lt_uc_output_folder, get_json_fuel_sources_tb_modif_file
 from src.common.plot_params import PlotParamsKeysInJson
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset import Dataset
-from src.include.dataset_builder import PypsaModel, PYPSA_RESULT_TYPE
+from src.include.dataset_builder import PypsaModel, PYPSA_RESULT_TYPE, GenerationUnitData
 from src.include.uc_postprocessing import UCSummaryMetrics
 from src.include_runner.overwrite_uc_run_params import apply_fixed_uc_run_params
 from src.utils.basic_utils import print_non_default
@@ -78,13 +80,15 @@ from src.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_s
                             read_plot_params, read_usage_params, read_solver_params)
 
 
-def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr, debug_mode: bool = False,
-                         debug_output_folder: str = None, get_optional_const_from_data_folder: Dict[str, bool] = None) \
+def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr, fuel_sources: list[FuelSource],
+                         debug_mode: bool = False, debug_output_folder: str = None,
+                         get_optional_const_from_data_folder: Dict[str, bool] = None) \
         -> Dataset:
     """
     Get ERAA data which is needed for current UC simulation; extracted from the data folder of this project
     :param uc_run_params
     :param eraa_data_descr
+    :param fuel_sources: to update marginal cost values; if None no update
     :param debug_mode: to save some intermediate data in (JSON) files to more easily debug
     :param debug_output_folder: in which intermediate data must be saved
     :param get_optional_const_from_data_folder: get optional constraint parameters from ERAA data folder? Alternatively
@@ -113,6 +117,10 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
                                 pypsa_unit_params_per_agg_pt=eraa_data_descr.pypsa_unit_params_per_agg_pt,
                                 units_complem_params_per_agg_pt=eraa_data_descr.units_complem_params_per_agg_pt)
      )
+
+    fuel_sources_with_modif_marg_cost = get_fuel_sources_with_set_marg_cost(fuel_sources)
+    if len(fuel_sources_with_modif_marg_cost) > 0:
+        eraa_dataset.update_gen_units_marginal_costs(fuel_sources=fuel_sources_with_modif_marg_cost)
 
     # set 'committable' attribute to False, i.e. no 'dynamic constraints' modeled in the considered modeled
     eraa_dataset.set_committable_param_to_false()
@@ -389,7 +397,7 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
                  f'files {TITLE_LOG_SEP}')
 
     # set fuel sources objects from JSON
-    fuel_sources = set_fuel_sources_from_json()
+    fuel_sources = set_fuel_sources_from_raw_params_json()
 
     eraa_data_descr, uc_run_params = (
         read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model, usage_params=usage_params)
@@ -419,7 +427,8 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     logging.info(f'{TITLE_LOG_SEP} II) Get data for UC model {TITLE_LOG_SEP}')
 
     eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr,
-                                        debug_mode=debug_mode, debug_output_folder=output_folder,
+                                        fuel_sources=fuel_sources, debug_mode=debug_mode,
+                                        debug_output_folder=output_folder,
                                         get_optional_const_from_data_folder=
                                         usage_params.get_optional_const_from_data_folder)
     # and check that minimal parameters needed for model creation have been provided

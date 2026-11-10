@@ -265,8 +265,8 @@ def get_json_plot_params_file() -> str:
     return uniformize_path_os(path_str=os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'plot_params.json'))
 
 
-def get_json_fuel_sources_file() -> str:
-    return uniformize_path_os(path_str=os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'params.json'))
+def get_json_fuel_sources_raw_params_file() -> str:
+    return uniformize_path_os(path_str=os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'raw_params.json'))
 
 
 def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True,

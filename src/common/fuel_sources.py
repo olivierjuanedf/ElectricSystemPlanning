@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict
 
-from src.common.long_term_uc_io import get_json_fuel_sources_file
+from src.common.long_term_uc_io import get_json_fuel_sources_raw_params_file
 from src.utils.read import check_and_load_json_file
 
 """
@@ -37,6 +37,9 @@ class FuelSource:
     energy_density_per_ton: float = None  # in MWh / ton
     cost_per_ton: float = None
     primary_cost: float = None  # € / MWh (multiply this by the efficiency of your power plant to get the marginal cost)
+    # with a little abuse, associate marginal cost to fuel params to modify it from
+    # input/long_term_uc_fuel_params_to-be_modif.json
+    marginal_cost: float = None
 
     # [Coding trick] this function will be applied automatically at initialization of an object of this class
     def __post_init__(self):
@@ -50,6 +53,12 @@ class FuelSource:
     def set_co2_emissions(self, value: float):
         self.co2_emissions = value
 
+    def set_marginal_cost(self, value: float):
+        self.marginal_cost = value
+
+    def reset_marginal_cost(self):
+        self.marginal_cost = None
+
 
 def add_other_sources(fuel_sources: Dict[str, FuelSource]) -> Dict[str, FuelSource]:
     source_matching = {FuelNames.other_renewables: FuelNames.biomass, FuelNames.other_non_renewables: FuelNames.oil}
@@ -62,8 +71,12 @@ def add_other_sources(fuel_sources: Dict[str, FuelSource]) -> Dict[str, FuelSour
     return fuel_sources
 
 
-def set_fuel_sources_from_json(add_other_fs: bool = True) -> Dict[str, FuelSource]:
-    filepath = get_json_fuel_sources_file()
+def get_fuel_sources_with_set_marg_cost(fuel_sources: dict[str, list[FuelSource]]) -> dict[str, list[FuelSource]]:
+    return {name: source for name, source in fuel_sources.items() if source.marginal_cost is not None}
+
+
+def set_fuel_sources_from_raw_params_json(add_other_fs: bool = True) -> Dict[str, FuelSource]:
+    filepath = get_json_fuel_sources_raw_params_file()
     fuel_sources_data = check_and_load_json_file(json_file=filepath, file_descr='JSON fuel sources params')
     fuel_sources = {}
     for fuel_name, param_vals in fuel_sources_data.items():
@@ -85,8 +98,7 @@ def update_fuel_sources(fuel_sources: dict[str, FuelSource],
             if "co2_emissions" in values_tb_modif:
                 fuel_source.set_co2_emissions(values_tb_modif["co2_emissions"])
             if "marginal_cost" in values_tb_modif:
-                # TODO: fix this
-                bob = 1
+                fuel_source.set_marginal_cost(values_tb_modif["marginal_cost"])
     return fuel_sources
 
 

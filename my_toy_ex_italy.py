@@ -266,10 +266,10 @@ pypsa_model.add_gps_coordinates(countries_gps_coords=coordinates)
 # fictive alternative values instead -> plenty infos on Internet on this... sometimes of 'varying' quality! 
 # (keeping format of dataclass - sort of enriched dictionary -, just change values directly in
 # file input/toy_model_params/{country}_parameters.py)
-from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES
+from src.common.fuel_sources import set_fuel_sources_from_raw_params_json, DUMMY_FUEL_SOURCES
 from input.toy_model_params.italy_parameters import get_generators, set_gen_as_list_of_gen_units_data
 
-fuel_sources = set_fuel_sources_from_json()
+fuel_sources = set_fuel_sources_from_raw_params_json()
 
 # get properties of generators to be set on the unique considered bus here
 # -> from input/toy_model_params/italy_parameters.py script
