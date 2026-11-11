@@ -1,41 +1,64 @@
-# Description of the main elements parametrizing this code environment, in teacher role
+# A) More details about this environment, in teacher role
 
-## data
+Globally, the logic is to provide here some complements versus the doc available to the students [European-system_tutorial.md](../long_term_uc/European-system_tutorial.md):
 
-[data](../../data)
+1) Either some **detailed information related to UC modelling**, explaining some of the (simplifying) choices made when parameterizing the environment.
 
-Mainly containing ERAA data used to parametrize the UC problems simulated in this environment
+2) Or **some functionalities available in this environment that are not described in the student documentation**, in order to help students get started more easily with the tool.
 
-### Fuel sources subfolder
+To make the link between teachers and students doc straightforward references to the sections of the students doc 
+will be made hereafter
 
-[fuel_sources](../../data/fuel_sources)
+# B) About data
+
+In folder [data](../../data)
+
+Mainly containing ERAA data used to parametrize the UC problems simulated in this environment. 
+
+N.B. (Now a bit old) 2023 edition data is used; the main drawback being about the climatic years:
+1) They are in fact "weather scenarios" - not obtained after a projection of climatic conditions in the future
+2) However named climatic years (CY) in the data and in this environment
+Starting from 2024 edition climatic projections are accounted for in ERAA; using these data instead would make the terminology used in this environment coherent.
+
+## On composite - and possibly a bit complex! - fuel sources data
+
+In folder [fuel_sources](../../data/fuel_sources)
 
 It contains complementary data, provided for information but not all directly used in this code environment:
   
 - [fuel_data_description.txt](../../data/fuel_sources/fuel_data_description.txt): detailed description of the data 
-contained in this folder, i.e. the two following files
+contained in this folder, i.e. the one in the two following files.
 - [raw_params.json](../../data/fuel_sources/raw_params.json): detailed cost data, and CO2 emissions, 
-per production type. XXX TB confirmed XXX ONLY CO2 emissions are directly used in this environment; regarding detailed 
-cost values, they are provided for information, and the "<span style="color:#32B032; font-weight:bold">marginal_cost</span>" values of file 
-[elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json) are used (and can be overwritten 
-by the ones of file [fuel_sources_to-be_modif.json](../../input/long_term_uc/fuel_sources_to-be_modif.json), if 
+per production type. 
+  - **From this file, ONLY CO2 emissions are directly used in this environment**; 
+  - Regarding detailed cost values ("<span style="color:#32B032; font-weight:bold">energy_density_per_ton</span>", etc.), they are provided for information.
+  - Finally, the - very key for UC modelling! - "<span style="color:#32B032; font-weight:bold">marginal_cost</span>" values they
+  are obtained from [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json) (and can be overwritten 
+by the ones of [fuel_sources_to-be_modif.json](../../input/long_term_uc/fuel_sources_to-be_modif.json), if 
 present in the environment)
-- [technology.json](../../data/fuel_sources/technology.json) contains main technico-eco infos about the production type
-used in this environment. It is used in the "data crunch" session based on [data_crunch.ipynb](../../data_crunch.ipynb) - see Section XXX.
-N.B. [technology.json](../../data/fuel_sources/technology.json) (for data crunch) and [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json)
+- [technology.json](../../data/fuel_sources/technology.json) 
+  - Contains main technico-eco infos about the production types used in this environment. 
+  - It is used in the "data crunch" session based on [data_crunch.ipynb](../../data_crunch.ipynb) - see Section XXX.
+
+    N.B. [technology.json](../../data/fuel_sources/technology.json) (for data crunch) and [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json)
 (for UC simulation) values are coherent; in particular the formula used to obtain "<span style="color:#32B032; font-weight:bold">marginal_cost</span>"
 values from detailed parameters is XXX
 
-## doc
+# B) On doc about this environment
 
-Including all infos for students - distinguished per script of this environment, 
-and a specific folder for teachers [doc/teachers](../../doc/teachers)
+As briefly explained above: 
+- A **doc dedicated to the students** [European-system_tutorial.md](../long_term_uc/European-system_tutorial.md) to easily start with this environment, and the associated serious game.
+- The **present one to get more insights** - useful **for teachers** in particular.
 
-## input
+# C) About input folder
 
-Containing parameters to be changed by students to play with the different scripts of this environment
+Folder [input](../../input)
 
-Following are additional info vs. *European-system_tutorial.md* doc, not put in students doc for simplicity:
+## C.1) On main functionalities the students will be playing with
+
+Containing parameters to be changed by students to play with the different scripts of this environment.
+
+Following are **additional info versus the ones detailed in** [European-system_tutorial.md](../long_term_uc/European-system_tutorial.md) - in Sec. II.1):
 
 - [elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json):  
     - (optional) "<span style="color:#32B032; font-weight:bold">add_date_tag_to_output</span>": to **add a tag indicating the run date** to the obtained data/figure output folders. Default: no such tag, in this case a previous run results may be overwritten.
@@ -49,19 +72,26 @@ Following are additional info vs. *European-system_tutorial.md* doc, not put in 
     - (optional) "<span style="color:#32B032; font-weight:bold">plot_link_capa_saturation</span>": plot sunburst with 3-levels (1. non-oriented link, 2. direction, 3. period of the day)
     to illustrate in an aggregate manner the saturation of link capacities. Default: do not plot (and save associated file)
 
-## Optional functionalities
+## C.2) On optional functionalities
 
-### Hydro
+### C.2.1) To model more precisely hydro
 
-To integrate this additional functionality, it consists in adding/filling files in
-[optional input folder](../../input/long_term_uc/optional). 
+To add (i) min./max. generation or (ii) filling levels of the hydraulic assets, associated data (files described in 
+Appendix A2.1 of students doc) can be provided: 
+1) Either in [hydro](../../data/ERAA_2023-2/hydro) 
+2) Or in adding/filling files in [optional input folder](../../input/long_term_uc/optional). 
 
-(POssibility to activate these constraints from data in input folder)
-Note that **for both these inputs, the presence of a file for considered year, and country, will imply that such constraints will be 
+For the students to get more realistic hydraulic results from the beginning, option 1) has been activated in version used for this course
+
+XXX how to proceed for motivated students who would like to play with this data? XXX
+
+Note that **for both additional inputs (i) and (ii), the presence of a file for considered year, and country, will imply that such constraints will be 
 added to the UC model** simulated (if file in proper format!).
 
-### On "Sumprod" constraints -> env. allow a more complex usage than the one actually described to the students 
-  -
+### C.2.2) On "Sumprod" constraints: a more complex usage than the one actually described to the students for max. CO2 emissions is possible 
+
+**(TO BE FINALIZED)**
+
   - Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
 problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost. N.B. In current version of 
 student environment only CO2 emissions bound available
@@ -103,6 +133,11 @@ student environment only CO2 emissions bound available
 }
 ```
 
+### C.2.3) On additional - "fixed" information that are provided in input folder
+
+**(TO BE FINALIZED)**
+
+Even if not to be modified by the students, [input](../../input) folder containes the following additional infos: 
 - **[NOT TO BE MODIFIED]** [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json): 
     - "<span style="color:#32B032; font-weight:bold">aggreg_prod_types_def</span>": **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise
     - "<span style="color:#32B032; font-weight:bold">available_climatic_years</span>", "available countries", "available_target_years" (or simply years; "target year" is the used terminology in ERAA): **available values for the dimensions of provided extract of ERAA data**
@@ -116,15 +151,23 @@ student environment only CO2 emissions bound available
     - "<span style="color:#32B032; font-weight:bold">min_unit_params_per_agg_pt</span>": list of minimal parameters to be provided when creating different types of generators in PyPSA
     - "<span style="color:#32B032; font-weight:bold">generator_params_default_vals</span>": default values applied when creating PyPSA generators
 
-## output
+# D) On outputs
 
-Data obtaining after having run one of the scripts of this environement. Two main subfolders are distinguished:
-- **data_analysis**: for... data analysis script
+In folder [output](../../output)
+
+Data obtaining after having run one of the scripts of this environment. Two main subfolders are distinguished:
+- **data_analysis**: for... data analysis script (XXX suppr ? XXX)
 - **long_term_uc**: for the 1-country/European UC simulation. In this second subfolder 1-country/European output 
 folders will be obtained, in which **data** (.csv files, and .lp with optim model solved) and **figures** (.png) 
 outputs will be separated 
 
-## src\functional_params
+Normally the content of this folder is sufficiently detailed in students doc - Sec. II.4).
+
+# E) More expert mode... parametrizing the behaviour of this environment 
+
+**(TO BE FINALIZED)**
+
+Cf. parameters in [functional_params](../../src/functional_params), file by file:
 
 - [plot_params.json](../../src/functional_params/plot_params.json): a few parameters for (color) palette 
 definition - possibly using a standard one (e.g., the one of Eco2mix), linestyles, markers, orders of curves. 
@@ -135,10 +178,12 @@ operations for the students. Per parameter:
   - **allow_overwriting_eraa_interco_capa_vals**: possible to overwrite interco. capa values of ERAA? 
   (specifying values in [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json))
   - **allow_manually_adding_demand**: possible to add supplementary demand in addition to ERAA one? 
-  N.B. Not functional currently; could be used to integrate "exogeneous" Demand-Side-Response 
+  
+    N.B. Not functional currently; could be used to integrate "exogeneous" Demand-Side-Response 
   (e.g. based on Time-of-Use tariff, set independently of the UC solution)
   - **allow_manually_adding_generators**: ??
-  N.B. Idem
+    
+    N.B. Idem
   - **apply_cf_techno_breakthrough**: apply some "breakthrough" on a technology associated to CF data. In this case, 
   CF values will be applied an increasing transformation to represent this improvement
   - **apply_per_country_json_file_params**: dictionary with following values, indicating for each of the scripts if run
