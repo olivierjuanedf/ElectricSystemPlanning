@@ -17,11 +17,21 @@
     "energy_density_per_ton": 14.89,
     "cost_per_ton": 134.34
   },
+  "hard_coal": {
+    "co2_emissions": 0.341,
+    "energy_density_per_ton": 8,
+    "cost_per_ton": 111
+  },
   "hydro": {
     "co2_emissions": 0,
     "committable": "False",
     "energy_density_per_ton": 0,
     "cost_per_ton": 0
+  },
+  "lignite": {
+    "co2_emissions": 408,
+    "energy_density_per_ton": 8,
+    "cost_per_ton": 111
   },
   "oil": {
     "co2_emissions": 406,

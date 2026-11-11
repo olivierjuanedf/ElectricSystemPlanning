@@ -56,7 +56,10 @@ class FuelSource:
     def set_marginal_cost(self, value: float):
         self.marginal_cost = value
 
-    def reset_marginal_cost(self):
+    def reset_cost_params(self):
+        self.cost_per_ton = None
+        self.energy_density_per_ton = None
+        self.primary_cost = None
         self.marginal_cost = None
 
 
@@ -84,6 +87,16 @@ def set_fuel_sources_from_raw_params_json(add_other_fs: bool = True) -> Dict[str
         fuel_sources[fuel_name] = FuelSource(**param_vals)
     if add_other_fs:
         fuel_sources = add_other_sources(fuel_sources=fuel_sources)
+    return fuel_sources
+
+
+def reset_fuel_sources_cost_params(fuel_sources: dict[str, list[FuelSource]]) -> dict[str, list[FuelSource]]:
+    """
+    Rest (detailed) cost params of fuel sources, to avoid confusing with values set from
+    input/long_term_uc/fuel_sources_to-be_modif.json
+    """
+    for name, fuel_source in fuel_sources.items():
+        fuel_source.reset_cost_params()
     return fuel_sources
 
 

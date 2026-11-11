@@ -2,7 +2,29 @@
 
 ## data
 
+[data](../../data)
+
 Mainly containing ERAA data used to parametrize the UC problems simulated in this environment
+
+### Fuel sources subfolder
+
+[fuel_sources](../../data/fuel_sources)
+
+It contains complementary data, provided for information but not all directly used in this code environment:
+  
+- [fuel_data_description.txt](../../data/fuel_sources/fuel_data_description.txt): detailed description of the data 
+contained in this folder, i.e. the two following files
+- [raw_params.json](../../data/fuel_sources/raw_params.json): detailed cost data, and CO2 emissions, 
+per production type. XXX TB confirmed XXX ONLY CO2 emissions are directly used in this environment; regarding detailed 
+cost values, they are provided for information, and the "<span style="color:#32B032; font-weight:bold">marginal_cost</span>" values of file 
+[elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json) are used (and can be overwritten 
+by the ones of file [fuel_sources_to-be_modif.json](../../input/long_term_uc/fuel_sources_to-be_modif.json), if 
+present in the environment)
+- [technology.json](../../data/fuel_sources/technology.json) contains main technico-eco infos about the production type
+used in this environment. It is used in the "data crunch" session based on [data_crunch.ipynb](../../data_crunch.ipynb) - see Section XXX.
+N.B. [technology.json](../../data/fuel_sources/technology.json) (for data crunch) and [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json)
+(for UC simulation) values are coherent; in particular the formula used to obtain "<span style="color:#32B032; font-weight:bold">marginal_cost</span>"
+values from detailed parameters is XXX
 
 ## doc
 
@@ -81,7 +103,7 @@ student environment only CO2 emissions bound available
 }
 ```
 
-- **[NOT TO BE MODIFIED]** [elec-europe_params_fixed.json](../../input/long_term_uc/elec-europe_params_fixed.json): 
+- **[NOT TO BE MODIFIED]** [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json): 
     - "<span style="color:#32B032; font-weight:bold">aggreg_prod_types_def</span>": **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise
     - "<span style="color:#32B032; font-weight:bold">available_climatic_years</span>", "available countries", "available_target_years" (or simply years; "target year" is the used terminology in ERAA): **available values for the dimensions of provided extract of ERAA data**
     - "<span style="color:#32B032; font-weight:bold">gps_coordinates</span>": the ones of the capitals excepting meta-countries with coordinates of Rotterdam for "benelux", Madrid for "iberian-peninsula", and Stockholm for "scandinavia". **N.B.** Only for plotting - very schematic - representation of the "network" associated to your UC model

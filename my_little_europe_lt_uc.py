@@ -63,7 +63,7 @@ from src.common.constants.plots import PlotNames, PER_COUNTRY_PLOT
 from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
 from src.common.fuel_sources import set_fuel_sources_from_raw_params_json, DUMMY_FUEL_SOURCES, FuelSource, \
-    update_fuel_sources, get_fuel_sources_with_set_marg_cost
+    update_fuel_sources, get_fuel_sources_with_set_marg_cost, reset_fuel_sources_cost_params
 from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
 from src.common.long_term_uc_io import set_full_lt_uc_output_folder
 from src.common.plot_params import PlotParamsKeysInJson
@@ -397,6 +397,7 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
 
     # set fuel sources objects from JSON
     fuel_sources = set_fuel_sources_from_raw_params_json()
+    fuel_sources = reset_fuel_sources_cost_params(fuel_sources)
 
     eraa_data_descr, uc_run_params = (
         read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model, usage_params=usage_params)
