@@ -63,7 +63,7 @@ from src.common.constants.plots import PlotNames, PER_COUNTRY_PLOT
 from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
 from src.common.fuel_sources import set_fuel_sources_from_raw_params_json, DUMMY_FUEL_SOURCES, FuelSource, \
-    update_fuel_sources, get_fuel_sources_with_set_marg_cost, reset_fuel_sources_cost_params
+    update_fuel_sources, get_fuel_sources_with_set_marg_cost, reset_fuel_sources_marginal_costs
 from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
 from src.common.long_term_uc_io import set_full_lt_uc_output_folder
 from src.common.plot_params import PlotParamsKeysInJson
@@ -397,7 +397,6 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
 
     # set fuel sources objects from JSON
     fuel_sources = set_fuel_sources_from_raw_params_json()
-    fuel_sources = reset_fuel_sources_cost_params(fuel_sources)
 
     eraa_data_descr, uc_run_params = (
         read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model, usage_params=usage_params)
@@ -420,6 +419,8 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     else:
         debug_mode = False
 
+    # update fuel sources marginal cost and CO2 emission values from values read in
+    # input/long_term_uc/fuel_sources_to-be_modif.json
     if uc_run_params.updated_fuel_sources_params is not None:
         fuel_sources = update_fuel_sources(fuel_sources=fuel_sources,
                                            updated_params=uc_run_params.updated_fuel_sources_params)
@@ -431,6 +432,12 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
                                         debug_output_folder=output_folder,
                                         get_optional_const_from_data_folder=
                                         usage_params.get_optional_const_from_data_folder)
+
+    # updated marginal costs values have been modified in generation units data, and will be associated to generators
+    # in PyPSA modelling; for clarity reset this attribute to None in fuel sources - from which only CO2 emissions
+    # values will be set (to carriers)
+    fuel_sources = reset_fuel_sources_marginal_costs(fuel_sources)
+
     # and check that minimal parameters needed for model creation have been provided
     # -> to avoid 'obscure crash' hereafter
     check_min_pypsa_params_provided(eraa_dataset=eraa_dataset)

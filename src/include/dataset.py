@@ -1139,7 +1139,8 @@ class Dataset:
             # TODO: improve msg
             json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
             logging.info(f"The following marginal cost values have been modified from file "
-                         f"{json_fuel_param_filepath}: {modif_params}")
+                         f"{json_fuel_param_filepath} - each tuple of the form (source name, init. value, "
+                         f"new one): {modif_params}")
             self.set_generation_units_data(gen_units_data_new)
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):

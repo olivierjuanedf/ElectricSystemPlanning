@@ -1,7 +1,9 @@
+import logging
 from dataclasses import dataclass
 from typing import Dict
 
-from src.common.long_term_uc_io import get_json_fuel_sources_raw_params_file
+from src.common.logger import format_relative_path_for_log
+from src.common.long_term_uc_io import get_json_fuel_sources_raw_params_file, get_json_fuel_sources_tb_modif_file
 from src.utils.read import check_and_load_json_file
 
 """
@@ -62,6 +64,9 @@ class FuelSource:
         self.primary_cost = None
         self.marginal_cost = None
 
+    def reset_marginal_cost(self):
+        self.marginal_cost = None
+
 
 def add_other_sources(fuel_sources: Dict[str, FuelSource]) -> Dict[str, FuelSource]:
     source_matching = {FuelNames.other_renewables: FuelNames.biomass, FuelNames.other_non_renewables: FuelNames.oil}
@@ -78,7 +83,14 @@ def get_fuel_sources_with_set_marg_cost(fuel_sources: dict[str, list[FuelSource]
     return {name: source for name, source in fuel_sources.items() if source.marginal_cost is not None}
 
 
-def set_fuel_sources_from_raw_params_json(add_other_fs: bool = True) -> Dict[str, FuelSource]:
+def set_fuel_sources_from_raw_params_json(add_other_fs: bool = True, reset_detailed_cost_params: bool = True) \
+        -> dict[str, FuelSource]:
+    """
+    Set fuel sources paremeters from detailed file data/fuel_sources/raw_params.json
+    :param add_other_fs
+    :param reset_detailed_cost_params: to avoid confusion with marginal_cost parameter values fixed from
+    input/_env_params/elec-europe_params_fixed.json, reset detailed infos to None?
+    """
     filepath = get_json_fuel_sources_raw_params_file()
     fuel_sources_data = check_and_load_json_file(json_file=filepath, file_descr='JSON fuel sources params')
     fuel_sources = {}
@@ -87,6 +99,7 @@ def set_fuel_sources_from_raw_params_json(add_other_fs: bool = True) -> Dict[str
         fuel_sources[fuel_name] = FuelSource(**param_vals)
     if add_other_fs:
         fuel_sources = add_other_sources(fuel_sources=fuel_sources)
+    fuel_sources = reset_fuel_sources_cost_params(fuel_sources)
     return fuel_sources
 
 
@@ -100,18 +113,52 @@ def reset_fuel_sources_cost_params(fuel_sources: dict[str, list[FuelSource]]) ->
     return fuel_sources
 
 
-def update_fuel_sources(fuel_sources: dict[str, FuelSource],
-                        updated_params: dict[str, dict[str, float]]) -> dict[str, FuelSource]:
+def reset_fuel_sources_marginal_costs(fuel_sources: dict[str, list[FuelSource]]) -> dict[str, list[FuelSource]]:
+    for name, fuel_source in fuel_sources.items():
+        fuel_source.reset_marginal_cost()
+    return fuel_sources
+
+
+def update_fuel_sources(fuel_sources: dict[str, FuelSource], updated_params: dict[str, dict[str, float]],
+                        print_out_modif_marg_cost: bool = False) -> dict[str, FuelSource]:
     """
     Update some marginal cost, CO2 emission values based on JSON file in input folder
+    :param fuel_sources
+    :param updated_params
+    :param print_out_modif_marg_cost: can be confusing to print the changed values, given that initial ones are None
+    -> changed values will be printed out when updating generation units data hereafter
     """
+    modif_fuel_sources_params = {}
     for name, fuel_source in fuel_sources.items():
         if name in updated_params:
             values_tb_modif = updated_params[name]
             if "co2_emissions" in values_tb_modif:
-                fuel_source.set_co2_emissions(values_tb_modif["co2_emissions"])
+                new_value = values_tb_modif["co2_emissions"]
+                if fuel_source.co2_emissions is None or not new_value == fuel_source.co2_emissions:
+                    change_tuple = ("co2_emissions", fuel_source.co2_emissions, new_value)
+                    if name not in modif_fuel_sources_params:
+                        modif_fuel_sources_params[name] = []
+                    modif_fuel_sources_params[name].append(change_tuple)
+                    fuel_source.set_co2_emissions(new_value)
             if "marginal_cost" in values_tb_modif:
-                fuel_source.set_marginal_cost(values_tb_modif["marginal_cost"])
+                new_value = values_tb_modif["marginal_cost"]
+                if fuel_source.marginal_cost is None or not new_value == fuel_source.marginal_cost:
+                    change_tuple = ("marginal_cost", fuel_source.marginal_cost, new_value)
+                    if print_out_modif_marg_cost:
+                        if name not in modif_fuel_sources_params:
+                            modif_fuel_sources_params[name] = []
+                        modif_fuel_sources_params[name].append(change_tuple)
+                    fuel_source.set_marginal_cost(new_value)
+    if len(modif_fuel_sources_params) > 0:
+        json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
+        changed_content_msg = "CO2 emission and marginal_cost" if print_out_modif_marg_cost else "CO2 emission"
+        if not print_out_modif_marg_cost:  # remove "co2_emissions" from change tuple
+            modif_fuel_sources_params = {name: tuple(change_tuples[0][1:])
+                                         for name, change_tuples in modif_fuel_sources_params.items()}
+        tuple_def_msg = "(content, init. value, new one)" if print_out_modif_marg_cost else "(init. value, new one)"
+        logging.info(f"The following {changed_content_msg} values have been modified in fuel sources from "
+                     f"file {json_fuel_param_filepath} - each tuple of the form {tuple_def_msg}: "
+                     f"{modif_fuel_sources_params}")
     return fuel_sources
 
 
