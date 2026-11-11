@@ -1,4 +1,8 @@
 {
+  "target_years": [
+    2025,
+    2033
+  ],
   "climatic_years": [
     1982,
     1989,
@@ -254,10 +258,6 @@
       ]
     }
   },
-  "target_years": [
-    2025,
-    2033
-  ],
   "intercos": [
     "benelux2france",
     "benelux2germany",
