@@ -70,6 +70,9 @@ consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *
 
   N.B. The suffix of this file contain the trigrams of the considered countries if they are very few; otherwise their number 
 (7 if you are simulating the whole perimeter available for this class).
+
+<br>
+
 * ([figures](../../output/long_term_uc/figures) subfolder) A - very schematic - description of the "network" corresponding to the UC model simulated, in *network_7-bus.png*.
 
   N.B. Idem regarding the suffix.
@@ -139,7 +142,12 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
     - (optional) <span style="color:#32B032; font-weight:bold">add_run_idx_tag_to_output</span>: to **add a tag indicating the run index** to the obtained data (resp. figure) output folders. 
    
       Default: no such index, in this case a previous run results may be overwritten.
-    
+
+     Ex: if <span style="color:#32B032; font-weight:bold">output_tag</span>="preliminar" and this boolean is set to True, if a subfolder data_preliminar_1 (resp. figures_preliminar_1)
+     already exists in folder [long_term_uc](../../output/long_term_uc) (resp. idem), then the results will be obtained in subfolder data_preliminar_2 (resp. figures_preliminar_2).
+
+<br>
+
 - [countries/](../../input/long_term_uc/countries/){**country**}.json: 
     - <span style="color:#32B032; font-weight:bold">team</span>: **name of your team**, i.e. name of the country you are "responsible for" (<span style="color:#257cbd; font-weight:bold">string</span>, that must be in the set {"benelux", "germany", "iberian-peninsula", "italy", "poland", "scandinavia"} - use lower letters).
     - <span style="color:#32B032; font-weight:bold">selected_prod_types</span>: **per country production types to be selected - using aggregate classes** defined in [input/long_term_uc/elec-europe_eraa-available-values.json](../../input/long_term_uc/elec-europe_eraa-available-values.json) file/field "aggreg_prod_types" (<span style="color:#257cbd; font-weight:bold">dictionary</span> {country name: list of aggreg. production types to be selected for run}). 
@@ -178,11 +186,15 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
       ```
       In this 2nd example, the modification on French capacities is identical to the 1st one and, if in solo mode, oil capacity in Germany will be modified to (only!) 500MW.
 
+<br>
+
 - (if too slow UC resolution time...) [solver_params.json](../../input/_env_params/solver_params.json):
     - <span style="color:#32B032; font-weight:bold">name</span>: **name of the solver to be used** (<span style="color:#257cbd; font-weight:bold">string</span>, that must be in the set {"highs", "gurobi"} - use lower letters).
     - (optional) <span style="color:#32B032; font-weight:bold">license_file</span>: **name of the solver license file** (only for Gurobi; to be obtained from https://portal.gurobi.com/iam/register with your student email).
     
       N.B. This file has to be provided at the root of this project.
+
+<br>
 
 - **[NOT TO BE MODIFIED during this practical class]** [elec-europe_eraa-available-values.json](../../input/long_term_uc/elec-europe_eraa-available-values.json): containing values available in the ERAA extract provided in folder [data/](../../data/): 
     - <span style="color:#32B032; font-weight:bold">climatic_years</span>: **past historical years weather conditions** that are 'projected' on ERAA "target year" (<span style="color:#257cbd; font-weight:bold">list of int</span>).
@@ -195,10 +207,14 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
   
       N.B. Obtained by simple aggregation of ERAA data when multiple sub-zones are present in our (meta-)countries.
 
+<br>
+
 - **[NOT TO BE MODIFIED during this practical class]** [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json): containing some **"fixed" values for this course**. 
   In particular, per production type dictionaries associated to key <span style="color:#32B032; font-weight:bold">pypsa_unit_params_per_agg_pt</span> provides <span style="color:#32B032; font-weight:bold">marginal_cost</span> used in the UC simulation (<span style="color:#257cbd; font-weight:bold">float</span>, €/MWh).
 
   N.B. These values are fixed so that the comparison between different runs along the week, and the two Europe, be relevant.
+
+<br>
 
 - **[NOT TO BE MODIFIED during this practical class]** [raw_params.json](../../data/fuel_sources/raw_params.json): containing **"raw" parameters associated to the different fuel sources** - related to production types, as defined in [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json) 
 (see attribute <span style="color:#32B032; font-weight:bold">carrier</span>) in dictionaries associated to key <span style="color:#32B032; font-weight:bold">pypsa_unit_params_per_agg_pt</span>. 
