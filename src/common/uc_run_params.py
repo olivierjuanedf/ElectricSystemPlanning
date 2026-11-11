@@ -1,4 +1,3 @@
-from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
@@ -63,6 +62,7 @@ class UCRunParams:
     capacities_tb_overwritten: Dict[str, Optional[Dict[str, float]]] = field(default_factory=dict)
     updated_fuel_sources_params: Dict[str, Dict[str, Optional[float]]] = None
     target_years_for_capa_data: Dict[str, int] = None  # {country: TY to be used for capa data}
+    demand_adder_files: list[str] = None  # list of files from which "demand-adder" will be applied to ERAA raw data
     # to indicate that some parameters have been changed compared to the set of the ones used for CP decision-making
     is_stress_test: bool = None
     # some extra-parameters
@@ -339,6 +339,9 @@ class UCRunParams:
             common_year_for_capa = self.selected_target_year
         # assign common value to all considered countries
         self.target_years_for_capa_data = {country: common_year_for_capa for country in self.selected_countries}
+
+    def set_demand_adder_files(self, files: list[str]):
+        self.demand_adder_files = files
 
     def process_output_tag(self, date_tag: datetime = None, output_folder: str = None):
         if self.output_tag is None:

@@ -65,7 +65,7 @@ from src.common.error_msgs import infeas_debugging_hints_msg
 from src.common.fuel_sources import set_fuel_sources_from_raw_params_json, DUMMY_FUEL_SOURCES, FuelSource, \
     update_fuel_sources, get_fuel_sources_with_set_marg_cost, reset_fuel_sources_marginal_costs
 from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
-from src.common.long_term_uc_io import set_full_lt_uc_output_folder
+from src.common.long_term_uc_io import set_full_lt_uc_output_folder, get_demand_adder_files
 from src.common.plot_params import PlotParamsKeysInJson
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset import Dataset
@@ -108,6 +108,9 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                     aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
     eraa_dataset.complete_data()
+
+    # TODO: apply demand adder, if data provided
+
     logging.info(f'{TITLE_LOG_SEP} II)2) Check data coherence {TITLE_LOG_SEP}')
     logging.info('Get generation units data, from both ERAA data - read just before '
                  '- and complementary JSON parameter files')
@@ -426,6 +429,11 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     if uc_run_params.updated_fuel_sources_params is not None:
         fuel_sources = update_fuel_sources(fuel_sources=fuel_sources,
                                            updated_params=uc_run_params.updated_fuel_sources_params)
+
+    # obtain demand adder files
+    if usage_params.manually_adding_demand:
+        demand_adder_files = get_demand_adder_files()
+        uc_run_params.set_demand_adder_files(demand_adder_files)
 
     logging.info(f'{TITLE_LOG_SEP} II) Get data for UC model {TITLE_LOG_SEP}')
 

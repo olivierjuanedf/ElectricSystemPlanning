@@ -180,6 +180,10 @@ def get_input_lt_uc_optional_files(optional_subfolder: str, all_years: List[int]
         available_cases = product(hydro_datatypes, all_years, all_countries)
         return [f"{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv"
                 for (hydro_dt, year, country) in available_cases]
+    # demand-adder allowed files over all (country, year) cases
+    if optional_subfolder == DT_SUBFOLDERS.demand:
+        available_cases = product(all_years, all_countries)
+        return [f"demand-adder_{year}_{country}.csv" for (year, country) in available_cases]
 
 
 def check_uc_input_folder_content(all_countries: List[str], all_years: List[int] = None):
@@ -200,7 +204,7 @@ def check_uc_input_folder_content(all_countries: List[str], all_years: List[int]
                             f"{INPUT_LT_UC_OPTIONAL_SUBFOLDER} is present")
         optional_folder = os.path.join(uc_countries_folder, INPUT_LT_UC_OPTIONAL_SUBFOLDER)
         # check coherence of optional subfolder names
-        allowed_optional_subfolders = {DT_SUBFOLDERS.hydro}
+        allowed_optional_subfolders = {DT_SUBFOLDERS.hydro, DT_SUBFOLDERS.demand}
         optional_subfolders = get_folders_in_dir(my_dir=optional_folder)
         unknown_subfolders = list(set(optional_subfolders) - allowed_optional_subfolders)
         if len(unknown_subfolders) > 0:
@@ -267,6 +271,22 @@ def get_json_plot_params_file() -> str:
 
 def get_json_fuel_sources_raw_params_file() -> str:
     return uniformize_path_os(path_str=os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'raw_params.json'))
+
+
+def get_demand_adder_optional_folder() -> str:
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER,
+                                                    INPUT_LT_UC_OPTIONAL_SUBFOLDER, DT_SUBFOLDERS.demand)
+                              )
+
+
+def get_demand_adder_files() -> list[str]:
+    """
+    Get demand-adder files from input/optional/demand folder
+    """
+    demand_adder_optional_folder = get_demand_adder_optional_folder()
+    if not os.path.exists(demand_adder_optional_folder):
+        return []
+    return os.listdir(demand_adder_optional_folder)
 
 
 def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True,
