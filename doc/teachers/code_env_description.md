@@ -79,7 +79,7 @@ Following are **additional info versus the ones detailed in** [European-system_t
 
 ## C.2) On optional functionalities
 
-### C.2.1) To model more precisely hydro
+### C.2.1) To model more precisely hydraulic assets
 
 To add (i) min./max. generation or (ii) filling levels of the hydraulic assets, associated data (files described in 
 Appendix A2.1 of students doc) can be provided: 
@@ -93,28 +93,46 @@ XXX how to proceed for motivated students who would like to play with this data?
 Note that **for both additional inputs (i) and (ii), the presence of a file for considered year, and country, will imply that such constraints will be 
 added to the UC model** simulated (if file in proper format!).
 
-### C.2.2) On "Sumprod" constraints: a more complex usage than the one actually described to the students for max. CO2 emissions is possible 
+### C.2.2) On "Sumprod" constraints: a more complex usage than the one actually described to the students for max. CO2 emissions is possible
 
-**(TO BE FINALIZED)**
+Some **constraints expressed based on a weighted sum of production on a set of units and time-slots** can be very helpful 
+to enrich the description of UC problems; typical cases are: 
+1) An upper bound on CO2 emissions. 
+2) A minimal amount of production generated from a subset of units (based on some "taxonomy").
+3) A maximal UC cost.
 
-  - Some constraints expressed based on a weighted sum of production can be very helpful to enrich the description of UC 
-problems; 2 typical cases are (i) An upper bound on CO2 emissions; (ii) A maximal UC cost. N.B. In current version of 
-student environment only CO2 emissions bound available
-  - [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json): 
-   - in "extra_params" dict.
-   - with following fields
-     - **max_co2_emis_constraints** (resp. **xxx**) for an upper bound on CO2 emissions (resp. UC cost)
-       - **temporal_granularity**: "day", "week" or "whole_period". Default: "whole_period", the one used by students 
-       in current version of the environment. N.B. When weekly periods are considered they are starting on Mondays
-       - **upper_bound**: can be either a float, or list of values. If float either it corresponds to a case with 
-         temporal_granularity=whole_period, or in which the same bound will be applied to each period. N.B. (i) It can 
-         be replaced by **lower_bound** resp **xxx**) if a lower bound (resp. equality) constraint is to be applied. 
-         (ii) If a vector is provided its size must correspond to the number of (daily/weekly) periods in considered
-         optimization period. If not the case, or the number of time-slots in considered model does not correspond 
-         the code will raise an error/warning; (iii) When a weekly temporal granularity is used and some weeks are only 
+N.B. In current version of students doc only CO2 emissions upper bound functionality is described.
+
+**Functionally** - and enriching the description made in students doc:
+  - In [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json): 
+    - In <span style="color:#32B032; font-weight:bold">extra_params</span> dictionary
+      - With following fields
+        - <span style="color:#32B032; font-weight:bold">max_co2_emis_constraints</span> (resp. **xxx**) for an upper bound on CO2 emissions (resp. UC cost)
+        - When defining the <span style="color:#32B032; font-weight:bold">cases</span>, the additional key <span style="color:#32B032; font-weight:bold">temporal_granularity</span> can be used: "day", "week" or "whole_period". 
+        
+          Default: "whole_period", the one used by students in current version of the environment (without specifying this attribute value). 
+        
+          N.B. When weekly periods are considered they are starting on Mondays.
+       - In <span style="color:#32B032; font-weight:bold">cases</span> definition, <span style="color:#32B032; font-weight:bold">upper_bound</span> 
+       can be either a <span style="color:#257cbd; font-weight:bold">float</span>, or <span style="color:#257cbd; font-weight:bold">list of float</span>. 
+       If float either it corresponds to a case with 
+         <span style="color:#32B032; font-weight:bold">temporal_granularity</span>=whole_period, or in which the same bound will be applied to each period. 
+      
+        N.B.
+
+         (i) <span style="color:#32B032; font-weight:bold">upper_bound</span> can
+         be replaced by <span style="color:#32B032; font-weight:bold">lower_bound</span> resp **xxx**) if a lower bound (resp. equality) constraint is to be applied. 
+         
+         (ii) If a vector is provided, its size must correspond to the number of (daily/weekly) periods in considered
+         optimization period. If not the case, or the number of time-slots in considered model does not correspond, 
+         the code will raise an error/warning. 
+    
+         (iii) When a weekly temporal granularity is used and some weeks are only 
          partial (with strictly less than 7 days) a proportional factor is applied in the code to lower the value written
          in this JSON (which must be interpreted as corresponding to a whole week, to be comparable with other ones in
          provided vector)
+    
+Example (enriched versus student one):
 
 ```json
 {
@@ -142,19 +160,23 @@ student environment only CO2 emissions bound available
 
 **(TO BE FINALIZED)**
 
-Even if not to be modified by the students, [input](../../input) folder containes the following additional infos: 
+Even if not to be modified by the students, [input](../../input) folder contains the following additional infos: 
 - **[NOT TO BE MODIFIED]** [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json): 
-    - "<span style="color:#32B032; font-weight:bold">aggreg_prod_types_def</span>": **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise
-    - "<span style="color:#32B032; font-weight:bold">available_climatic_years</span>", "available countries", "available_target_years" (or simply years; "target year" is the used terminology in ERAA): **available values for the dimensions of provided extract of ERAA data**
-    - "<span style="color:#32B032; font-weight:bold">gps_coordinates</span>": the ones of the capitals excepting meta-countries with coordinates of Rotterdam for "benelux", Madrid for "iberian-peninsula", and Stockholm for "scandinavia". **N.B.** Only for plotting - very schematic - representation of the "network" associated to your UC model
-    - "<span style="color:#32B032; font-weight:bold">eraa_edition</span>": edition of ERAA data used - 2023.2 (one/two ERAA editions per year from 2021)
-
-- **[NOT TO BE MODIFIED]** [functional_available-values.json](../../input/long_term_uc/functional_available-values.json):  
-    - "<span style="color:#32B032; font-weight:bold">datatypes</span>": list of **type of data names**. Used only for the data crunch session; based on script [my_little_europe_data_analysis.py](../my_little_europe_data_analysis.py) - see associated doc
+    - <span style="color:#32B032; font-weight:bold">aggreg_prod_types_def</span>: **correspondence between "aggregate" production type (the ones that will be used in this class) and the ones - more detailed - in ERAA data**. It will be used in the data reading phase; to simplify (diminish size!) of the used data in this UC exercise.
+    - <span style="color:#32B032; font-weight:bold">gps_coordinates</span>: the ones of the capitals excepting meta-countries with coordinates of Rotterdam for "benelux", Madrid for "iberian-peninsula", and Stockholm for "scandinavia". **N.B.** Only for plotting - very schematic - representation of the "network" associated to your UC model
+    - <span style="color:#32B032; font-weight:bold">eraa_edition</span>: edition of ERAA data used - 2023.2 (one/two ERAA editions per year from 2021)
+    - <span style="color:#32B032; font-weight:bold">pypsa_unit_params_per_agg_pt</span>: definition of main PyPSA 
+    generator/storage_units attributes to be used in the environment; some of these values will be overwritten based on JSON files to be modified.
+    - <span style="color:#32B032; font-weight:bold">units_complem_params_per_agg_pt</span>: indicates from which data/input attributes will be overwritten.
   
-- **[NOT TO BE MODIFIED]** [pypsa_static_params.json](../../input/long_term_uc/pypsa_static_params.json):  
-    - "<span style="color:#32B032; font-weight:bold">min_unit_params_per_agg_pt</span>": list of minimal parameters to be provided when creating different types of generators in PyPSA
-    - "<span style="color:#32B032; font-weight:bold">generator_params_default_vals</span>": default values applied when creating PyPSA generators
+      N.B. Specific case of <span style="color:#32B032; font-weight:bold">power_capa</span> that can modified based on ERAA data, and the JSON files to be modified by the students (even_if from_eraa_data is uniquely mentioned here).
+
+- **[NOT TO BE MODIFIED]** [functional_available-values.json](../../input/_env_params/functional_available-values.json):  
+    - <span style="color:#32B032; font-weight:bold">datatypes</span>: list of **type of data names**. Used only for the data crunch session; based on script [my_little_europe_data_analysis.py](../my_little_europe_data_analysis.py).
+  
+- **[NOT TO BE MODIFIED]** [pypsa_static_params.json](../../input/_env_params/pypsa_static_params.json):  
+    - <span style="color:#32B032; font-weight:bold">min_unit_params_per_agg_pt</span>: list of minimal parameters to be provided when creating different types of generators in PyPSA; otherwise the execution will stop raising an error.
+    - <span style="color:#32B032; font-weight:bold">generator_params_default_vals</span>: default values applied when creating PyPSA generators.
 
 # D) On outputs
 
