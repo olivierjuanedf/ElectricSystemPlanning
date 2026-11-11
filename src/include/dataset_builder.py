@@ -284,7 +284,7 @@ class PypsaModel:
         logging.info('Add energy carriers')
         for carrier in list(fuel_sources.keys()):
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=carrier,
-                             co2_emissions=fuel_sources[carrier].co2_emissions / 1000)
+                             co2_emissions=fuel_sources[carrier].co2_emissions)
 
     def add_per_bus_energy_carriers(self, fuel_sources: Dict[str, FuelSource], carrier_name: str = None):
         if carrier_name is None:
@@ -293,7 +293,7 @@ class PypsaModel:
         logging.info(f'Add per-bus energy carriers for: {all_bus_names}')
         for bus_name in all_bus_names:
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=bus_name,
-                             co2_emissions=fuel_sources[carrier_name].co2_emissions / 1000)
+                             co2_emissions=fuel_sources[carrier_name].co2_emissions)
 
     def add_generators(self, generators_data: Dict[str, List[GenerationUnitData]],
                        agg_info_over_cases: bool = True):

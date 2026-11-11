@@ -6,13 +6,13 @@
     "cost_per_ton": 30
   },
   "coal": {
-    "co2_emissions": 760,
+    "co2_emissions": 0.760,
     "committable": "True",
     "energy_density_per_ton": 8,
     "cost_per_ton": 128
   },
   "gas": {
-    "co2_emissions": 370,
+    "co2_emissions": 0.370,
     "committable": "True",
     "energy_density_per_ton": 14.89,
     "cost_per_ton": 134.34
@@ -29,12 +29,12 @@
     "cost_per_ton": 0
   },
   "lignite": {
-    "co2_emissions": 408,
+    "co2_emissions": 0.408,
     "energy_density_per_ton": 8,
     "cost_per_ton": 111
   },
   "oil": {
-    "co2_emissions": 406,
+    "co2_emissions": 0.406,
     "committable": "True",
     "energy_density_per_ton": 11.63,
     "cost_per_ton": 555.78

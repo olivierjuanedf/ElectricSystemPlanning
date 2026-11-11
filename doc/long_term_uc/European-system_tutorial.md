@@ -195,6 +195,15 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
   
       N.B. Obtained by simple aggregation of ERAA data when multiple sub-zones are present in our (meta-)countries.
 
+- **[NOT TO BE MODIFIED during this practical class]** [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json): containing some **"fixed" values for this course**. 
+  In particular, per production type dictionaries associated to key <span style="color:#32B032; font-weight:bold">pypsa_unit_params_per_agg_pt</span> provides <span style="color:#32B032; font-weight:bold">marginal_cost</span> used in the UC simulation (<span style="color:#257cbd; font-weight:bold">float</span>, €/MWh).
+
+  N.B. These values are fixed so that the comparison between different runs along the week, and the two Europe, be relevant.
+
+- **[NOT TO BE MODIFIED during this practical class]** [raw_params.json](../../data/fuel_sources/raw_params.json): containing **"raw" parameters associated to the different fuel sources** - related to production types, as defined in [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json) 
+(see attribute <span style="color:#32B032; font-weight:bold">carrier</span>) in dictionaries associated to key <span style="color:#32B032; font-weight:bold">pypsa_unit_params_per_agg_pt</span>. 
+In particular, <span style="color:#32B032; font-weight:bold">co2_emissions</span> attributes provides the CO2 emission factors, in ton of tonnes of CO2eq. per MWh of primary (thermal) energy consumed (<span style="color:#257cbd; font-weight:bold">float</span>, tCO2eq./MWh_th).
+
 ## A2) Optional functionalities
 
 ### A2.1) Hydraulic assets: a more realistic modelling - already integrated in provided environement
