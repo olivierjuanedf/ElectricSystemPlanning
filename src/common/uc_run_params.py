@@ -1,9 +1,10 @@
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
 import logging
 
-from src.common.constants.environmental import DEFAULT_CO2_EMIS_PRICE
+from src.common.constants.environmental import DEFAULT_CO2_EMIS_PRICE, CO2_EMIS_FACTOR_UNIT
 from src.common.constants.extract_eraa_data import ERAADatasetDescr
 from src.common.constants.optimisation import ZoneAndTempProdSumConstraint, CustomConstraintNames, ConstMultCoeffNames, \
     CustomConstraintDirection
@@ -140,8 +141,16 @@ class UCRunParams:
             self.updated_fuel_sources_params = new_updated_fuel_source_params
             if len(self.updated_fuel_sources_params) > 0:
                 json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
-                logging.info(f"Following fuel sources param values {self.updated_fuel_sources_params} will be "
-                             f"updated based on file {json_fuel_param_filepath}")
+                # add unit of modified values in logs
+                metrics_for_unit_msg = []
+                per_metric_unit = {"marginal_cost": "€/MWh", "co2_emissions": CO2_EMIS_FACTOR_UNIT}
+                for metric, unit in per_metric_unit.items():
+                    if any([metric in per_metric_modif_vals for name, per_metric_modif_vals
+                            in self.updated_fuel_sources_params.items()]):
+                        metrics_for_unit_msg.append(f"{metric} in {unit}")
+                metrics_unit_msg = f"({', '.join(metrics_for_unit_msg)})"
+                logging.info(f"Following fuel sources param values {self.updated_fuel_sources_params} "
+                             f"{metrics_unit_msg} will be updated based on file {json_fuel_param_filepath}")
 
         # process custom sum-prod. constraints data, e.g. max CO2 emissions one
         self.sum_prod_constraints = []

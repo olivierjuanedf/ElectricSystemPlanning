@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict
 
+from src.common.constants.environmental import CO2_EMIS_FACTOR_UNIT
 from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import get_json_fuel_sources_raw_params_file, get_json_fuel_sources_tb_modif_file
 from src.utils.read import check_and_load_json_file
@@ -151,7 +152,8 @@ def update_fuel_sources(fuel_sources: dict[str, FuelSource], updated_params: dic
                     fuel_source.set_marginal_cost(new_value)
     if len(modif_fuel_sources_params) > 0:
         json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
-        changed_content_msg = "CO2 emission and marginal_cost" if print_out_modif_marg_cost else "CO2 emission"
+        changed_content_msg = f"CO2 emission (in {CO2_EMIS_FACTOR_UNIT}) and marginal_cost (in €/MWh)" \
+            if print_out_modif_marg_cost else f"CO2 emission (in {CO2_EMIS_FACTOR_UNIT})"
         if not print_out_modif_marg_cost:  # remove "co2_emissions" from change tuple
             modif_fuel_sources_params = {name: tuple(change_tuples[0][1:])
                                          for name, change_tuples in modif_fuel_sources_params.items()}
