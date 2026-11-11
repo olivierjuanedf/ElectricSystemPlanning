@@ -116,7 +116,7 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
       N.B. "1900" to clearly indicate that a "fictive calendar" (modelling one) be used in ERAA data, with 364 days (to get 52 full weeks... an important granularity for some unit optimization, as discussed in class).
     - (optional) <span style="color:#32B032; font-weight:bold">uc_period_end</span>: idem, **end of period; same format** (<span style="color:#257cbd; font-weight:bold">string</span>). 
   
-      Default: period of 9 days starting from <span style="color:#32B032; font-weight:bold">uc_period_start</span>.
+      Default: period of 9 days starting from <span style="color:#32B032; font-weight:bold">uc_period_start</span>, which consists in considering a week with 2 days of "ring guard" (to avoid "end-of-the-world" effects).
     - <span style="color:#32B032; font-weight:bold">failure_power_capa</span>: **capacity of the failure - fictive - asset** considered (<span style="color:#257cbd; font-weight:bold">non-negative float</span>). 
   
       N.B. Common to all countries.
