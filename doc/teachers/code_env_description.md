@@ -61,6 +61,11 @@ Containing parameters to be changed by students to play with the different scrip
 Following are **additional info versus the ones detailed in** [European-system_tutorial.md](../long_term_uc/European-system_tutorial.md) - in Sec. II.1):
 
 - [elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json):  
+    - (optional) "<span style="color:#32B032; font-weight:bold">co2_emis_price</span>": to add a cost associated to CO2 emissions
+    in UC objective function. Default: 0€/tCO2eq.
+  
+      N.B. In chosen approach, generator i marginal_cost attributes are increased with a term emission_factor_i * co2_emis_price / efficiency_i; 
+      this CO2 emission cost has no dedicated term in obtained formulation (that can be read in .lp file). 
     - (optional) "<span style="color:#32B032; font-weight:bold">add_date_tag_to_output</span>": to **add a tag indicating the run date** to the obtained data/figure output folders. Default: no such tag, in this case a previous run results may be overwritten.
     N.B. This tag is applied prioritarily versus the run index one (activated with parameter **add_run_idx_tag_to_output**)
     - (optional) "<span style="color:#32B032; font-weight:bold">save_explicit_corresp_for_lp_elts</span>": save two files with 
@@ -163,7 +168,7 @@ outputs will be separated
 
 Normally the content of this folder is sufficiently detailed in students doc - Sec. II.4).
 
-# E) More expert mode... parametrizing the behaviour of this environment 
+# E) More expert usage of this environment... its behaviour 
 
 **(TO BE FINALIZED)**
 

@@ -167,6 +167,8 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     fuel_sources |= DUMMY_FUEL_SOURCES
     pypsa_model.add_energy_carriers(fuel_sources=fuel_sources)
     pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
+    if not uc_run_params.co2_emis_price == 0:
+        pypsa_model.add_co2_cost_to_generators(co2_price=uc_run_params.co2_emis_price)
     pypsa_model.add_loads(demand=eraa_dataset.demand)
     pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
     # Set to True if any considered country with constraining SoC min/SoC max const.

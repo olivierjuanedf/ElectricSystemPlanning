@@ -341,6 +341,35 @@ class PypsaModel:
         logging.info(f'Considered storage units ({len(storage_unit_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=storage_unit_names)}')
 
+    def add_co2_cost_to_generators(self, co2_price: float):
+        """
+        Add a CO₂ cost to the marginal_cost of all generators.
+
+        The additional variable cost is computed as:
+
+            co2_cost = co2_price * carrier_co2_emissions / efficiency
+
+        where:
+            - co2_price is expressed in €/tCO2,
+            - carrier_co2_emissions in tCO2/MWh_primary,
+            - efficiency is the generator efficiency [-].
+
+        Parameters
+        ----------
+        co2_price : float
+            Carbon price in €/tCO2.
+        """
+        logging.info(f"Add CO2 emission price contribution to marginal cost attribute, "
+                     f"using a value of {co2_price}€/tCO2eq.")
+        generators = self.network.generators
+
+        emission_factor = generators["carrier"].map(self.network.carriers["co2_emissions"]).fillna(0.0)
+
+        additional_cost = (co2_price * emission_factor / generators["efficiency"].replace(0, np.nan)).fillna(0.0)
+
+        self.network.generators["marginal_cost"] = (
+                self.network.generators["marginal_cost"].fillna(0.0) + additional_cost)
+
     def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
         if carrier_name is None:
             carrier_name = self.DEFAULT_CARRIER

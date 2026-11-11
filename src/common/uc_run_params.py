@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
 import logging
 
+from src.common.constants.environmental import DEFAULT_CO2_EMIS_PRICE
 from src.common.constants.extract_eraa_data import ERAADatasetDescr
 from src.common.constants.optimisation import ZoneAndTempProdSumConstraint, CustomConstraintNames, ConstMultCoeffNames, \
     CustomConstraintDirection
@@ -124,6 +125,11 @@ class UCRunParams:
                                                    return_corresp=True)
             self.interco_capas_tb_overwritten = {interco_tuples[key]: val
                                                  for key, val in self.interco_capas_tb_overwritten.items()}
+        # default CO2 emission price
+        if self.co2_emis_price is None:
+            self.co2_emis_price = DEFAULT_CO2_EMIS_PRICE
+            logging.info(f"Default CO2 emission price of {DEFAULT_CO2_EMIS_PRICE}€/xCO2eq. will be used")
+
         # keep only updated source params values that are non None
         if self.updated_fuel_sources_params is not None:
             new_updated_fuel_source_params = {}
