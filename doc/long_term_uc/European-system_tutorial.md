@@ -15,7 +15,9 @@ With the provided code environment you will be able to **run a European Unit Com
 
 1) [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json) -> contain **some default values and global parameters** (e.g., temporal ones - with the UC period to be simulated). **See dedicated appendix below** for a detailed description of the different fields in this file
 
-2) [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite the ones of preceding file**. This is to make your own country choice. **N.B.** In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighboring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter.
+2) [input/long_term_uc/countries/](../../input/long_term_uc/countries/)*{**country**}.json* with "**country**" the name of your considered country -> the **values used in this file will overwrite the ones of preceding file**. This is to make your own country choice. 
+   
+   N.B. In this file not only your own country parameters can be defined, but also the ones of the other countries - typically neighboring ones. This may seem surprising, but is related to the "solo" mode of this code environment described justafter.
 
 ## II.2) Two modes : "Solo" and "Europe"
 
@@ -47,7 +49,8 @@ For all files obtained, **suffixes indicate** the (i) **Country** corresponding 
 In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
 * (*data* subfolder) **optimal production of all generators** considered in Europe, in *opt_power_europe_{TY and CY}_{start date}.csv* file. 
 * (*data*) **"prices" for all countries** considered in Europe, in *marginal-prices_europe_{TY and CY}_{start date}.csv* file. 
-**N.B.** Specifically, these prices are the optimal values of dual variables associated to supply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!). 
+
+  N.B. Specifically, these prices are the optimal values of dual variables associated to supply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!). 
 * (*data*) **optimal flows in the interconnections** in *link-flow_opt_decisions_europe_{TY and CY}_{start date}.csv*.
 * (*data*) **optimal decisions for the storages** - production (turbining, discharging; depending on the type of asset), 
 consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *storage_opt_decisions_europe_{TY and CY}_{start date}.csv*.
@@ -58,10 +61,12 @@ consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *
   - **total_operational_cost** (resp. **per_country_total_operational_cost**): previous value over Europe (resp. for a given country), from which failure cost (penalty) has been subtracted (M€).
   - **total_co2_emissions** (resp. **per_country_co2_emissions**): CO2 emissions over Europe (resp. for a given country) (XXX).
 * (*data*) An LP file containing the description of UC optimization problem solved, in *model_7-countries_{start date}.lp*.
-N.B. The suffix of this file contain the trigrams of the considered countries if they are very few; otherwise their number 
+
+  N.B. The suffix of this file contain the trigrams of the considered countries if they are very few; otherwise their number 
 (7 if you are simulating the whole perimeter available for this class).
 * (*figures* subfolder) A - very schematic - description of the "network" corresponding to the UC model simulated, in *network_7-bus.png*.
-N.B. Idem regarding the suffix.
+
+  N.B. Idem regarding the suffix.
 * (*figures*) A **"cumulated (stacked) vision" of the production**, in *prod_{country}_{TY and CY}_{start date}.png* files.
 * (*figures*) **Price curves**, for the different countries in *prices_europe_{TY and CY}_{start date}.png* file.
 
@@ -71,8 +76,12 @@ N.B. Idem regarding the suffix.
 * **seasons** -> by changing **uc_period_start** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json). **Question**: how would you select a few typical, or extreme, weeks to be considered to size your system? Is it possible to do it *ex-ante*, i.e. only looking at input data (e.g., demand, RES CF, installed generation capacities, etc.) or do you need some iterative process with UC runs to do that?
 * **(target) years** -> using 2025 or 2033. **Question**: would your capacity design be similarly "efficient" at both horizons?
 * **climatic years** -> how sensitive are your results to the choice of this parameter? in combination with the ones of the season (associated period)? **Question** how would you choose one/a few scenarios used for your investment planning decision-making?
-* **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? **N.B.** Playing with parameter **interco_capas_tb_overwritten** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), you can get some preliminar insights on this.
-* (in solo mode) **What if... my neighbouring countries..." -> how are your individual country results sensitive to the decisions made by your neighbours? **N.B.** In solo mode you can exactly simulate the desired cases to try answering this question, by testing different configurations for your neighbours - imposing their decisions in your own *{country}.json* file
+* **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? 
+
+  N.B. Playing with parameter **interco_capas_tb_overwritten** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), you can get some preliminar insights on this.
+* (in solo mode) **What if... my neighbouring countries..." -> how are your individual country results sensitive to the decisions made by your neighbours? 
+
+  N.B. In solo mode you can exactly simulate the desired cases to try answering this question, by testing different configurations for your neighbours - imposing their decisions in your own *{country}.json* file.
 
 # Appendices
 
