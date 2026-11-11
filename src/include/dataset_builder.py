@@ -483,10 +483,12 @@ class PypsaModel:
             return
 
         if prod_sum_const.type == CustomConstraintNames.max_co2_emissions:
+            # attention the quantity of CO2 emissions depends on the respective efficiencies of the generators
             factor = (
-                self.network.generators.carrier
-                .map(self.network.carriers.co2_emissions)
-                .fillna(0.0)
+                    self.network.generators.carrier
+                    .map(self.network.carriers.co2_emissions)
+                    .fillna(0.0)
+                    / self.network.generators.efficiency
             )
         elif prod_sum_const.type == CustomConstraintNames.max_prod_cost:
             factor = self.network.generators.marginal_cost
