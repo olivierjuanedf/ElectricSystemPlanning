@@ -31,8 +31,8 @@ contained in this folder, i.e. the one in the two following files.
 - [raw_params.json](../../data/fuel_sources/raw_params.json): detailed cost data, and CO2 emissions, 
 per production type. 
   - **From this file, ONLY CO2 emissions are directly used in this environment**; 
-  - Regarding detailed cost values ("<span style="color:#32B032; font-weight:bold">energy_density_per_ton</span>", etc.), they are provided for information.
-  - Finally, the - very key for UC modelling! - "<span style="color:#32B032; font-weight:bold">marginal_cost</span>" values they
+  - Regarding detailed cost values (<span style="color:#32B032; font-weight:bold">energy_density_per_ton</span>, etc.), they are provided for information.
+  - Finally, the - very key for UC modelling! - <span style="color:#32B032; font-weight:bold">marginal_cost</span> values they
   are obtained from [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json) (and can be overwritten 
 by the ones of [fuel_sources_to-be_modif.json](../../input/long_term_uc/fuel_sources_to-be_modif.json), if 
 present in the environment)
@@ -41,8 +41,8 @@ present in the environment)
   - It is used in the "data crunch" session based on [data_crunch.ipynb](../../data_crunch.ipynb) - see Section XXX.
 
     N.B. [technology.json](../../data/fuel_sources/technology.json) (for data crunch) and [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json)
-(for UC simulation) values are coherent; in particular the formula used to obtain "<span style="color:#32B032; font-weight:bold">marginal_cost</span>"
-values from detailed parameters is XXX
+(for UC simulation) values are coherent; in particular the formula used to obtain <span style="color:#32B032; font-weight:bold">marginal_cost</span>
+values from detailed parameters is XXX.
 
 # B) On doc about this environment
 
@@ -62,7 +62,7 @@ Following are **additional info versus the ones detailed in** [European-system_t
 
 - [elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json):  
     - (optional) "<span style="color:#32B032; font-weight:bold">co2_emis_price</span>": to add a cost associated to CO2 emissions
-    in UC objective function. Default: 0€/tCO2eq.
+    in UC objective function (<span style="color:#257cbd; font-weight:bold">non-negative float</span>, €/tCO2eq.). Default: 0€/tCO2eq.
   
       N.B. In chosen approach, generator i marginal_cost attributes are increased with a term emission_factor_i * co2_emis_price / efficiency_i; 
       this CO2 emission cost has no dedicated term in obtained formulation (that can be read in .lp file). 

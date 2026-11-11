@@ -53,28 +53,28 @@ For all files obtained, **suffixes indicate** the (i) **Country** corresponding 
 (ii) **TY and CY**; (iii) **Start date of the UC period** simulated. Typically, it is *_{country}_{TY and CY}_{start date}*.
 
 In detail, and **except if the resolution of PyPSA optimization model was not successful**, it will give you: 
-* (*data* subfolder) **optimal production of all generators** considered in Europe, in *opt_power_europe_{TY and CY}_{start date}.csv* file. 
-* (*data*) **"prices" for all countries** considered in Europe, in *marginal-prices_europe_{TY and CY}_{start date}.csv* file. 
+* ([data](../../output/long_term_uc/data) subfolder) **optimal production of all generators** considered in Europe, in *opt_power_europe_{TY and CY}_{start date}.csv* file. 
+* ([data](../../output/long_term_uc/data)) **"prices" for all countries** considered in Europe, in *marginal-prices_europe_{TY and CY}_{start date}.csv* file. 
 
   N.B. Specifically, these prices are the optimal values of dual variables associated to supply-demand equilibrium (for those who are familiar with optimization; otherwise it will be explained!). 
-* (*data*) **optimal flows in the interconnections** in *link-flow_opt_decisions_europe_{TY and CY}_{start date}.csv*.
-* (*data*) **optimal decisions for the storages** - production (turbining, discharging; depending on the type of asset), 
+* ([data](../../output/long_term_uc/data)) **optimal flows in the interconnections** in *link-flow_opt_decisions_europe_{TY and CY}_{start date}.csv*.
+* ([data](../../output/long_term_uc/data)) **optimal decisions for the storages** - production (turbining, discharging; depending on the type of asset), 
 consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *storage_opt_decisions_europe_{TY and CY}_{start date}.csv*.
-* (*data*) summary of (per-country) main results in *uc-summary_europe_{TY and CY}_{start date}.json*. In detail, all metrics being calculated over the whole UC period:
+* ([data](../../output/long_term_uc/data)) summary of (per-country) main results in *uc-summary_europe_{TY and CY}_{start date}.json*. In detail, all metrics being calculated over the whole UC period:
   - **per_country_ens**: Energy Not Served, i.e. the yearly volume of production of (fictive) failure asset (MWh).
   - **per_country_n_failure_hours**: number of failure hours, i.e. with a strictly positive level of failure production (no unit).
   - **total_cost** (resp. **per_country_total_cost**): of the UC problem simulated over Europe (resp. for a given country), i.e. "value" of the optimization problem (M€).
   - **total_operational_cost** (resp. **per_country_total_operational_cost**): previous value over Europe (resp. for a given country), from which failure cost (penalty) has been subtracted (M€).
   - **total_co2_emissions** (resp. **per_country_co2_emissions**): CO2 emissions over Europe (resp. for a given country) (tCO2eq.).
-* (*data*) An LP file containing the description of UC optimization problem solved, in *model_7-countries_{start date}.lp*.
+* ([data](../../output/long_term_uc/data)) An LP file containing the description of UC optimization problem solved, in *model_7-countries_{start date}.lp*.
 
   N.B. The suffix of this file contain the trigrams of the considered countries if they are very few; otherwise their number 
 (7 if you are simulating the whole perimeter available for this class).
-* (*figures* subfolder) A - very schematic - description of the "network" corresponding to the UC model simulated, in *network_7-bus.png*.
+* ([figures](../../output/long_term_uc/figures) subfolder) A - very schematic - description of the "network" corresponding to the UC model simulated, in *network_7-bus.png*.
 
   N.B. Idem regarding the suffix.
-* (*figures*) A **"cumulated (stacked) vision" of the production**, in *prod_{country}_{TY and CY}_{start date}.png* files.
-* (*figures*) **Price curves**, for the different countries in *prices_europe_{TY and CY}_{start date}.png* file.
+* ([figures](../../output/long_term_uc/figures)) A **"cumulated (stacked) vision" of the production**, in *prod_{country}_{TY and CY}_{start date}.png* files.
+* ([figures](../../output/long_term_uc/figures)) **Price curves**, for the different countries in *prices_europe_{TY and CY}_{start date}.png* file.
 
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
