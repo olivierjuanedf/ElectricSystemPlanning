@@ -65,7 +65,7 @@ consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *
   - **per_country_n_failure_hours**: number of failure hours, i.e. with a strictly positive level of failure production (no unit).
   - **total_cost** (resp. **per_country_total_cost**): of the UC problem simulated over Europe (resp. for a given country), i.e. "value" of the optimization problem (M€).
   - **total_operational_cost** (resp. **per_country_total_operational_cost**): previous value over Europe (resp. for a given country), from which failure cost (penalty) has been subtracted (M€).
-  - **total_co2_emissions** (resp. **per_country_co2_emissions**): CO2 emissions over Europe (resp. for a given country) (XXX).
+  - **total_co2_emissions** (resp. **per_country_co2_emissions**): CO2 emissions over Europe (resp. for a given country) (tCO2eq.).
 * (*data*) An LP file containing the description of UC optimization problem solved, in *model_7-countries_{start date}.lp*.
 
   N.B. The suffix of this file contain the trigrams of the considered countries if they are very few; otherwise their number 
@@ -239,7 +239,7 @@ These constraints can be added in the proposed environment, adding a dictionary 
     - <span style="color:#32B032; font-weight:bold">countries</span>: list of countries on which the sum must be calculated - in addition to the temporal sum 
     done on whole temporal period (<span style="color:#257cbd; font-weight:bold">list of string</span>). "europe" can also be used to apply this constraint on whole continent - i.e.
     on all selected countries for the UC simulated.
-    - <span style="color:#32B032; font-weight:bold">upper_bound</span>: the maximal amount of CO2 emissions (XXX unit XXX) (<span style="color:#257cbd; font-weight:bold">float</span>).
+    - <span style="color:#32B032; font-weight:bold">upper_bound</span>: the maximal amount of CO2 emissions (<span style="color:#257cbd; font-weight:bold">float</span>, tCO2eq.).
 
 Ex: to add a (unique) constraint of this type on France-Germany
 ```json
