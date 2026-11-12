@@ -229,7 +229,7 @@ class DataAnalysis:
                                     f'ERAA data {per_country_and_yr_agg_pt_with_cf}')
                 first_country = self.countries[0]
                 first_year = self.years[0]
-                self.aggreg_prod_types = per_country_and_yr_agg_pt_with_cf[first_country][first_year]
+                self.aggreg_prod_types = list(per_country_and_yr_agg_pt_with_cf[first_country][first_year])
             else:
                 self.aggreg_prod_types = [None]
 
