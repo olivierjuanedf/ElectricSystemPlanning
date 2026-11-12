@@ -446,6 +446,7 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     logging.info(f'{TITLE_LOG_SEP} THE END of ERAA-PyPSA long-term UC simulation! '
                  f'(after {run_end - run_start:.2f}s) {TITLE_LOG_SEP}:\n{str(uc_summary_metrics)}')
     stop_logger()
+    return uc_summary_metrics
 
 
 if __name__ == '__main__':
