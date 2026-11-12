@@ -167,14 +167,14 @@ Finally, edit [`input/long_term_uc/solver_params.json`](input/long_term_uc/solve
 * `output/` : Simulation outputs (generated CSV data tables, network LP formulation, summary JSON, and plotted figures).
 * `doc/` : Detailed documentation and tutorials:
   * `doc/long_term_uc/` : European UC tutorial (`European-system_tutorial.md`).
-  * `doc/data-analysis/` : Data analysis tutorials and guide.
+  * `doc/data-analysis/` : Data crunch and data analysis tutorials and guide.
   * `doc/toy_model/` : Toy model tutorial and task descriptions.
   * `doc/teachers/` : Pedagogical plans, developer notes, and TODOs.
 * `tests/` : Automated test suite (`pytest`).
 * **Main entry point scripts** (at the root of the repository):
   * `my_little_europe_lt_uc.py` : Main script for the European Unit Commitment simulation.
+  * `data_crunch.ipynb` : Interactive data exploration notebook.
   * `my_little_europe_data_analysis.py` : Data extraction and plotting script (`main-full`).
-  * `data_crunch.ipynb` : Interactive data exploration notebook (`main-full`).
   * `my_toy_ex_italy.py` / `my_toy_ex_country.py` : Simplified pedagogical single-country examples (`main-full`).
 
 
@@ -200,7 +200,7 @@ Finally, edit [`input/long_term_uc/solver_params.json`](input/long_term_uc/solve
 
 
 * **Interactive notebook**: `data_crunch.ipynb`
-
+* **Detailed tutorial**: see [`doc/data-analysis/datacrunch_notebook.md`](doc/data-analysis/datacrunch_notebook.md).
 
 ---
 

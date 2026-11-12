@@ -83,11 +83,9 @@ consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *
 
 **Based on the numeric results obtained for each of the simulated configurations you can start "designing" (i.e. sizing the production capacities) your own country** (if in "solo" mode)/the European system ("Europe" mode). Consider different:
 * **seasons** -> by changing **uc_period_start** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json). **Question**: how would you select a few typical, or extreme, weeks to be considered to size your system? Is it possible to do it *ex-ante*, i.e. only looking at input data (e.g., demand, RES CF, installed generation capacities, etc.) or do you need some iterative process with UC runs to do that?
-* **(target) years** -> using 2025 or 2033. **Question**: would your capacity design be similarly "efficient" at both horizons?
-* **climatic years** -> how sensitive are your results to the choice of this parameter? in combination with the ones of the season (associated period)? **Question** how would you choose one/a few scenarios used for your investment planning decision-making?
 * **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? 
-
   N.B. Playing with parameter **interco_capas_tb_overwritten** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), you can get some preliminar insights on this.
+* **climatic years** -> how sensitive are your results to the choice of this parameter? in combination with the ones of the season (associated period)? **Question** how would you choose one/a few scenarios used for your investment planning decision-making?
 * (in solo mode) **What if... my neighbouring countries..." -> how are your individual country results sensitive to the decisions made by your neighbours? 
 
   N.B. In solo mode you can exactly simulate the desired cases to try answering this question, by testing different configurations for your neighbours - imposing their decisions in your own *{country}.json* file.
@@ -113,7 +111,7 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
     - <span style="color:#32B032; font-weight:bold">selected_countries</span>: to **choose countries** that you would like to be part of your European - copper-plate - long-term UC model (<span style="color:#257cbd; font-weight:bold">list of string</span>; that must be in the set of considered countries for this class, see same file). 
     
       N.B. Except if values are overwritten based on *{country}.json* files described hereafter, all production types available in ERAA data will be considered built for the countries in this list.
-    - <span style="color:#32B032; font-weight:bold">selected_target_year</span>: to choose the ERAA (target) **year** to be simulated (<span style="color:#257cbd; font-weight:bold">int</span>, either 2025 or 2033).
+    - <span style="color:#32B032; font-weight:bold">selected_target_year</span>: to choose the ERAA (target) **year** to be simulated (<span style="color:#257cbd; font-weight:bold">int</span>, 2033 in our European Serious Game).
     - <span style="color:#32B032; font-weight:bold">uc_period_start</span>: **date from which UC optimization period starts; under format "1900/%M/%d"** (<span style="color:#257cbd; font-weight:bold">string</span>). Ex.: "1900/1/1" to start from beginning of the year. 
   
       N.B. "1900" to clearly indicate that a "fictive calendar" (modelling one) be used in ERAA data, with 364 days (to get 52 full weeks... an important granularity for some unit optimization, as discussed in class).
