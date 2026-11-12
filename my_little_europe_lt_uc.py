@@ -156,9 +156,12 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     logging.info(f'{TITLE_LOG_SEP} III) Create PyPSA UC model {TITLE_LOG_SEP}')
     pypsa_model = PypsaModel(name=name)
     date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
+    end_year = uc_run_params.selected_target_year + (
+        uc_run_params.uc_period_end.year - uc_run_params.uc_period_start.year
+    )
     horizon = pd.date_range(
         start=uc_run_params.uc_period_start.replace(year=uc_run_params.selected_target_year),
-        end=uc_run_params.uc_period_end.replace(year=uc_run_params.selected_target_year),
+        end=uc_run_params.uc_period_end.replace(year=end_year),
         freq='h'
     )
     pypsa_model.init_pypsa_network(date_idx=date_idx, date_range=horizon)

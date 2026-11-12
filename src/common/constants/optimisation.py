@@ -187,8 +187,9 @@ class ZoneAndTempProdSumConstraint:
         if self.temporal_granularity in [Timescale.day, Timescale.week, Timescale.month]:
             # using dates in target year, to be coherent with the treatment of dates made in PyPSA hereafter
             if target_year is not None:
+                optim_end_year = target_year + (optim_end.year - optim_start.year)
                 optim_start = optim_start.replace(year=target_year)
-                optim_end = optim_end.replace(year=target_year)
+                optim_end = optim_end.replace(year=optim_end_year)
             period_start_dates = set_period_starts(start_date=optim_start, end_date=optim_end,
                                                    granularity=self.temporal_granularity)
             n_periods = len(period_start_dates)

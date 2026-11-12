@@ -58,8 +58,9 @@ class Timeseries:
             logging.warning(f'Timeseries dates will be overwritten based on period start/end '
                             f'and timescale {self.timescale}')
         if new_year is not None:
+            period_end_year = new_year + (period_end.year - period_start.year)
             period_start = period_start.replace(year=new_year)
-            period_end = period_end.replace(year=new_year)
+            period_end = period_end.replace(year=period_end_year)
 
         if self.timescale in [Timescale.day, Timescale.week, Timescale.whole_period]:
             period_start_day = datetime(year=period_start.year, month=period_start.month, day=period_start.day)
@@ -115,8 +116,9 @@ class Timeseries:
             return
 
         if new_year is not None:
+            period_end_year = new_year + (period_end.year - period_start.year)
             period_start = period_start.replace(year=new_year)
-            period_end = period_end.replace(year=new_year)
+            period_end = period_end.replace(year=period_end_year)
 
         if self.timescale == Timescale.day:
             start_hour = period_start.hour

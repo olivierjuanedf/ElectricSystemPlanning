@@ -73,7 +73,7 @@ def apply_per_country_json_file_params(countries_data: dict, available_countries
                 countries_data[k][country] = json_country[k][country]
                 for c, _ in json_country[k].items():
                     if c != country:
-                        logging.warning(f'Ignoring {k} for {country} from '
+                        logging.warning(f'Ignoring {k} for {c} from '
                                         f'file {format_relative_path_for_log(path=file)}')
     return countries_data, data_overwr_from_other_count
 
@@ -179,6 +179,7 @@ def set_countries_data(usage_params: UsageParameters, phase_name: str, available
         selected_pt_param_name: {}
     }
     # apply data selection - based on the different JSON files to be modified, and the chosen mode (solo/team)
+    data_overwr_from_other_count = {}
     apply_per_country_params = usage_params.apply_per_country_json_file_params[phase_name]
     if apply_per_country_params:
         countries_data, data_overwr_from_other_count = (
@@ -193,7 +194,7 @@ def set_countries_data(usage_params: UsageParameters, phase_name: str, available
     countries_data, json_params_tb_modif = (
         update_country_json_params(countries_data=countries_data, json_params_tb_modif=json_params_tb_modif,
                                    countr_overwr_from_other_countr=
-                                   data_overwr_from_other_count[CountryJsonParamNames.selected_prod_types])
+                                   data_overwr_from_other_count.get(CountryJsonParamNames.selected_prod_types, {}))
     )
 
     return countries_data, json_params_tb_modif
