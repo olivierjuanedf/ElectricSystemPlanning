@@ -432,7 +432,8 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
 
     # obtain demand adder files
     if usage_params.manually_adding_demand:
-        demand_adder_files = get_demand_adder_files()
+        demand_adder_files = get_demand_adder_files(target_year=uc_run_params.selected_target_year,
+                                                    countries=uc_run_params.selected_countries)
         uc_run_params.set_demand_adder_files(demand_adder_files)
 
     logging.info(f'{TITLE_LOG_SEP} II) Get data for UC model {TITLE_LOG_SEP}')

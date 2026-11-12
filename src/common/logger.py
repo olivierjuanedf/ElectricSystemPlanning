@@ -7,7 +7,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Union
 
-from src.common.long_term_uc_io import PROJECT_ROOT_FOLDER
+from src.common.constants.env_dirs import PROJECT_ROOT_FOLDER
 from src.utils.dir_utils import get_relative_path, add_relative_path_prefix
 
 LOG_LEVEL_STR_TO_INT = {name: value for name, value in vars(logging).items() if

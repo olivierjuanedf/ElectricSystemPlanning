@@ -5,7 +5,8 @@ from pathlib import Path
 import pytest
 
 from my_little_europe_lt_uc import run
-from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
+from src.common.constants.env_dirs import OutputFolderNames
+from src.common.long_term_uc_io import set_full_lt_uc_output_folder
 from src.utils.dir_utils import get_files_from_prefix, remove_folder
 
 EUR_COUNTRY = "europe"

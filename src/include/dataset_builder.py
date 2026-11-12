@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import re
 
 from src.common.constants.countries import set_country_trigram, is_country_trigram
+from src.common.constants.env_dirs import OutputFolderNames
 from src.common.constants.links import set_link_name, get_bus_from_link_name, set_per_origin_bus_links_msg
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
@@ -28,7 +29,8 @@ from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
 from src.common.logger import format_relative_path_for_log
-from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
+from src.common.long_term_uc_io import (get_network_figure, FigNamesPrefix, get_output_figure,
+                                        set_full_lt_uc_output_folder)
 from src.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
 from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
                                    format_with_spaces, get_default_values)
@@ -1060,8 +1062,6 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False,
                   output_tag: str = None) -> str:
-    from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
-
     # In PyPSA 1.0+, opt.create_model is removed. Instead we use the built-in linopy model.
     if hasattr(network, "model") and network.model is not None:
         m = network.model
