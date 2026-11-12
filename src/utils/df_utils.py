@@ -214,11 +214,20 @@ def is_column_constant(df: pd.DataFrame, col_name: str, value: float, atol: floa
     return np.isclose(df[col_name], value, atol=atol, rtol=0.0).all()
 
 
-def create_df_from_dict(data: dict, key_col_name: str = "key", value_col_name: str = "value") -> pd.DataFrame:
-    """
-    Convert a dict {key: value} into a DataFrame with custom column names.
-    """
-    return pd.DataFrame(data.items(), columns=[key_col_name, value_col_name])
+def build_timeseries_df(data: dict[str, np.ndarray], dates, key_col_name: str = "key",
+                        value_col_name: str = "value", date_col: str = "date") -> pd.DataFrame:
+    dfs = []
+    n_dates = len(dates)
+    for key, values in data.items():
+        if len(values) != len(dates):
+            raise ValueError(f"Length mismatch for '{key}': {len(values)} values vs {len(dates)} dates")
+
+        dfs.append(pd.DataFrame({key_col_name: n_dates * [key], date_col: dates, value_col_name: values}))
+
+    df = pd.concat(dfs, ignore_index=True)
+    cols_order = [date_col, key_col_name, value_col_name]
+
+    return df[cols_order]
 
 
 if __name__ == '__main__':
