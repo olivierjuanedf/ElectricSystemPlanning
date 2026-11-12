@@ -5,7 +5,8 @@ import pandas as pd
 from datetime import datetime
 
 from src.common.constants.aggreg_operations import AggregOpeNames
-from src.common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT, FILES_FORMAT, HYDRO_VALUE_COLUMNS, HYDRO_FILES, \
+from src.common.constants.env_dirs import FILES_FORMAT
+from src.common.long_term_uc_io import COLUMN_NAMES, DATE_FORMAT, HYDRO_VALUE_COLUMNS, HYDRO_FILES, \
     HYDRO_KEY_COLUMNS, HYDRO_DEFAULT_VALUES, HYDRO_FILES_PREFIX_IN_INPUT_FOLDER
 from src.utils.basic_utils import str_sanitizer, robust_cast_str_to_float
 from src.utils.dates import set_date_from_year_and_iso_idx, set_date_from_year_and_day_idx

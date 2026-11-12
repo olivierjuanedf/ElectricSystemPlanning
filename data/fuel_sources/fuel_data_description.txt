@@ -16,7 +16,7 @@ CORRECTION LOG (this version)
   previous version (826 kgCO2/MWh(elec) instead of the correct 927).
 
 
-fuels.json — FUEL DATA
+raw_params.json — FUEL DATA
 ==================
 Structure: one entry per fuel, with three parameters each.
 

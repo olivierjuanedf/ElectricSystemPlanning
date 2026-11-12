@@ -17,23 +17,31 @@ import matplotlib.pyplot as plt
 import re
 
 from src.common.constants.countries import set_country_trigram, is_country_trigram
-from src.common.constants.links import set_link_name, get_bus_from_link_name
+from src.common.constants.env_dirs import OutputFolderNames
+from src.common.constants.links import set_link_name, get_bus_from_link_name, set_per_origin_bus_links_msg
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
 from src.common.constants.prod_types import get_country_from_unit_name, ProdTypeNames, PROD_TYPE_IN_LP, \
-    get_prod_type_from_unit_name
+    get_prod_type_from_unit_name, set_per_bus_asset_msg
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, PypsaOptimVarNames, PYPSA_TO_EXPLICIT_VAR_NAMES, \
-    PYPSA_TO_EXPLICIT_CONST_NAMES
+    PYPSA_TO_EXPLICIT_CONST_NAMES, PypsaOptimConstNames, GenUnitsPypsaParams
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
-from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
+from src.common.logger import format_relative_path_for_log
+from src.common.long_term_uc_io import (get_network_figure, FigNamesPrefix, get_output_figure,
+                                        set_full_lt_uc_output_folder)
 from src.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
 from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
                                    format_with_spaces, get_default_values)
 from src.utils.dir_utils import make_dir
-from src.utils.pypsa_utils import get_network_obj_value
+from src.utils.pypsa_utils import get_network_obj_value, from_xarray_to_dict
 from src.utils.serializer import array_serializer
+from src.include.hydro_bounds_preprocessor import preprocess_all_hydro_soc_bounds
+
+
+def is_gen_unit_storage_data(gen_unit_data: dict) -> bool:
+    return gen_unit_data.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None
 
 
 @dataclass
@@ -89,48 +97,6 @@ def check_gen_unit_params(params: dict, n_ts: int) -> bool:
                 if not len(param_value) == n_ts:
                     return False
     return True
-
-
-def set_per_bus_asset_msg(asset_names: List[str]):
-    """
-    List of {bus name}_{asset name} to be converted to more elegant msg
-    """
-    name_sep = '_'
-    # get dict. gathering asset names per bus
-    per_bus_assets = {}
-    for full_name in asset_names:
-        name_split = full_name.split(name_sep)
-        bus_name = name_split[0]
-        asset_name = name_sep.join(name_split[1:])
-        if bus_name not in per_bus_assets:
-            per_bus_assets[bus_name] = []
-        per_bus_assets[bus_name].append(asset_name)
-    # get log message with one line per bus
-    per_bus_msg = ''
-    for bus, assets in per_bus_assets.items():
-        per_bus_msg += f'\n- {bus}: {assets}'
-    return per_bus_msg
-
-
-def set_per_origin_bus_links_msg(link_names: List[str]) -> str:
-    link_sep = '-'
-    links_msg = ''
-    n_links = len(link_names)
-    i_link = 0
-    while i_link < n_links:
-        common_origin_links = [link_names[i_link]]
-        origin = link_names[i_link].split(link_sep)[0]
-        j = 1
-        while i_link + j < n_links:
-            current_origin = link_names[i_link + j].split(link_sep)[0]
-            if current_origin == origin:
-                common_origin_links.append(link_names[i_link + j])
-                j += 1
-            else:
-                break
-        links_msg += f'\n- from {origin}: {[tuple(elt_link.split(link_sep)) for elt_link in common_origin_links]}'
-        i_link += j
-    return links_msg
 
 
 def set_optim_pb_type(model: linopy.model.Model) -> Optional[str]:
@@ -320,7 +286,7 @@ class PypsaModel:
         logging.info('Add energy carriers')
         for carrier in list(fuel_sources.keys()):
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=carrier,
-                             co2_emissions=fuel_sources[carrier].co2_emissions / 1000)
+                             co2_emissions=fuel_sources[carrier].co2_emissions)
 
     def add_per_bus_energy_carriers(self, fuel_sources: Dict[str, FuelSource], carrier_name: str = None):
         if carrier_name is None:
@@ -329,7 +295,7 @@ class PypsaModel:
         logging.info(f'Add per-bus energy carriers for: {all_bus_names}')
         for bus_name in all_bus_names:
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=bus_name,
-                             co2_emissions=fuel_sources[carrier_name].co2_emissions / 1000)
+                             co2_emissions=fuel_sources[carrier_name].co2_emissions)
 
     def add_generators(self, generators_data: Dict[str, List[GenerationUnitData]],
                        agg_info_over_cases: bool = True):
@@ -350,7 +316,7 @@ class PypsaModel:
                     continue
 
                 # case of storage units, identified via the presence of max_hours param
-                if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.max_hours, None) is not None:
+                if is_gen_unit_storage_data(gen_unit_data=pypsa_gen_unit_dict):
                     if pypsa_gen_unit_dict.get(GEN_UNITS_PYPSA_PARAMS.soc_init, None) is None:
                         # initial SoC fixed to 80% statically here
                         if agg_info_over_cases:
@@ -376,6 +342,35 @@ class PypsaModel:
         storage_unit_names = self.get_storage_unit_names()
         logging.info(f'Considered storage units ({len(storage_unit_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=storage_unit_names)}')
+
+    def add_co2_cost_to_generators(self, co2_price: float):
+        """
+        Add a CO₂ cost to the marginal_cost of all generators.
+
+        The additional variable cost is computed as:
+
+            co2_cost = co2_price * carrier_co2_emissions / efficiency
+
+        where:
+            - co2_price is expressed in €/tCO2,
+            - carrier_co2_emissions in tCO2/MWh_primary,
+            - efficiency is the generator efficiency [-].
+
+        Parameters
+        ----------
+        co2_price : float
+            Carbon price in €/tCO2.
+        """
+        logging.info(f"Add CO2 emission price contribution to marginal cost attribute, "
+                     f"using a value of {co2_price}€/tCO2eq.")
+        generators = self.network.generators
+
+        emission_factor = generators["carrier"].map(self.network.carriers["co2_emissions"]).fillna(0.0)
+
+        additional_cost = (co2_price * emission_factor / generators["efficiency"].replace(0, np.nan)).fillna(0.0)
+
+        self.network.generators["marginal_cost"] = (
+                self.network.generators["marginal_cost"].fillna(0.0) + additional_cost)
 
     def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
         if carrier_name is None:
@@ -448,11 +443,11 @@ class PypsaModel:
 
     def build_model_before_adding_custom_const(self):
         logging.info('Build PyPSA network model before adding custom constraints')
-        # In PyPSA 1.0+, build_only=True works natively without solving.
-        # We attempt with quiet/logfile options first, then fallback to standard build_only.
-        try:
-            self.network.optimize(build_only=True, solver_options={'logfile': '/dev/null'})
-        except Exception:
+        # In PyPSA (with Linopy engine), create_model() builds the optimization formulation
+        # without invoking the solver, avoiding a redundant solve.
+        if hasattr(self.network.optimize, "create_model"):
+            self.network.optimize.create_model()
+        else:
             self.network.optimize(build_only=True)
 
     def add_sum_of_prod_custom_const(self, prod_sum_const: ZoneAndTempProdSumConstraint):
@@ -490,10 +485,12 @@ class PypsaModel:
             return
 
         if prod_sum_const.type == CustomConstraintNames.max_co2_emissions:
+            # attention the quantity of CO2 emissions depends on the respective efficiencies of the generators
             factor = (
-                self.network.generators.carrier
-                .map(self.network.carriers.co2_emissions)
-                .fillna(0.0)
+                    self.network.generators.carrier
+                    .map(self.network.carriers.co2_emissions)
+                    .fillna(0.0)
+                    / self.network.generators.efficiency
             )
         elif prod_sum_const.type == CustomConstraintNames.max_prod_cost:
             factor = self.network.generators.marginal_cost
@@ -559,18 +556,28 @@ class PypsaModel:
 
     def add_hydro_extreme_levels_constraint(self, soc_min_pu: Dict[str, Union[float, np.ndarray]],
                                             soc_max_pu: Dict[str, Union[float, np.ndarray]],
-                                            energy_capa: Dict[str, float]):
+                                            energy_capa: Dict[str, float],
+                                            auto_relax_bounds: bool = True):
         """
         Add constraint on hydro extreme SOC levels
-        :param soc_min_pu: dict {unit name: soc min vector} - with SoC min an absolute value,
-        NOT AS A PERCENTAGE of capacity
+        :param soc_min_pu: dict {unit name: soc min vector} - with SoC min in per unit [0, 1]
         :param soc_max_pu: idem, max
         :param energy_capa: dict {unit name: energy capa value}
+        :param auto_relax_bounds: run minimal LP slack preprocessor to guarantee feasibility
         """
         logging.info("Add hydro extreme SoC levels constraints")
-        # preprocess min/max params data -> (i) project values on [0, capa.], to induce real constraints (not <0,
-        # or bigger than energy capacity), and (ii) unify as vectors
         n_ts = self.get_n_time_slots()
+
+        # Preprocess and minimally relax bounds using LP reachability to guarantee mathematical feasibility
+        if auto_relax_bounds:
+            soc_min_pu, soc_max_pu = preprocess_all_hydro_soc_bounds(
+                network=self.network,
+                soc_min_pu=soc_min_pu,
+                soc_max_pu=soc_max_pu,
+                energy_capa=energy_capa,
+                n_ts=n_ts
+            )
+
         # from PU to ABSOLUTE values of min/max SoC (ABSOLUTE values have to be used in PyPSA)
         soc_min = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_min_pu.items()}
         soc_max = {asset_name: energy_capa[asset_name] * bound_pu for asset_name, bound_pu in soc_max_pu.items()}
@@ -713,6 +720,38 @@ class PypsaModel:
             link_names = sort_lexicographically(strings=link_names)
         return link_names
 
+    def get_link_capacities(self) -> dict[str, float]:
+        return self.network.links[GenUnitsPypsaParams.power_capa].to_dict()
+
+    def get_storage_constant_soc_max(self, snapshot_idx_to_get_val: int = 0) -> dict[str, float]:
+        """
+        Get SoC max - supposedly CONSTANT - value of storages
+        :param snapshot_idx_to_get_val: snapshot index from which constant value will be obtained
+        """
+
+        storage_soc_max_const = self.network.model.constraints[PypsaOptimConstNames.storage_soc_ub]
+
+        rhs = storage_soc_max_const.rhs
+
+        snapshot = rhs.snapshot.values[snapshot_idx_to_get_val]
+
+        rhs_at_snapshot = rhs.sel(snapshot=snapshot)
+
+        storage_dims = [d for d in rhs.dims if d != 'snapshot']
+        if len(storage_dims) == 0:
+            return {}
+
+        storage_dim = storage_dims[0]
+        storage_names = rhs_at_snapshot.coords[storage_dim].values
+        storage_values = rhs_at_snapshot.values
+
+        storage_soc_max = {
+            str(storage_name): float(value)
+            for storage_name, value in zip(storage_names, storage_values)
+        }
+
+        return storage_soc_max
+
     def get_per_bus_total_installed_capa(self):
         bus_names = self.get_bus_names()
         df_generators = self.network.generators
@@ -808,12 +847,12 @@ class PypsaModel:
             lp_filepath = save_lp_model(self.network, year=year, n_countries=n_countries, period_start=period_start,
                                         toy_model_output=toy_model_output, countries=countries, output_tag=output_tag)
             if save_explicit_vars_corresp:
-                logging.info(f"Save correspondence between PyPSA abstract variable names and explicit ones")
+                logging.info(f"Save correspondence between PyPSA abstract VARIABLE names and explicit ones")
                 lp_var_mapping = self.get_lp_variable_mapping()
                 df_var_mapping = pd.DataFrame(lp_var_mapping.items(), columns=["pypsa", "explicit"])
                 df_var_mapping.to_csv(lp_filepath.replace(".lp", f"_var-mapping.csv"), index=False)
             if save_explicit_consts_corresp:
-                logging.info(f"Save correspondence between PyPSA abstract constraint names and explicit ones")
+                logging.info(f"Save correspondence between PyPSA abstract CONSTRAINT names and explicit ones")
                 lp_const_mapping = self.get_lp_constraint_mapping()
                 df_const_mapping = pd.DataFrame(lp_const_mapping.items(), columns=["pypsa", "explicit"])
                 df_const_mapping.to_csv(lp_filepath.replace(".lp", f"_const-mapping.csv"), index=False)
@@ -846,9 +885,12 @@ class PypsaModel:
             f'{objective_value_refmted} (M€) -> output data (resp. figures) can be generated')
         return objective_value
 
-    def get_constraint_bound_value(self, constraint_name: str) -> Optional[xarray.DataArray]:
+    def get_constraint_bound_value(self, constraint_name: str, return_as_dict: bool = True) -> Optional[xarray.DataArray]:
         if constraint_name in self.network.model.constraints:
-            return self.network.model.constraints[constraint_name].rhs
+            rhs_data_array = self.network.model.constraints[constraint_name].rhs
+            if return_as_dict:
+                return from_xarray_to_dict(data_array=rhs_data_array)
+            return rhs_data_array
         else:
             logging.warning(f"Bound cannot be obtained for constraint {constraint_name}, "
                             f"not present in current PyPSA model")
@@ -962,20 +1004,21 @@ class PypsaModel:
 
         return mapping
 
-# def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
-#     str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
-#     for _, units_data in generation_units_data.items():
-#         # loop over all units in current country
-#         for indiv_unit_data in units_data:
-#             current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
-#             if current_prod_type in updated_fuel_sources_params:
-#                 # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
-#                 if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
-#                     indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
-#                         GEN_UNITS_PYPSA_PARAMS.marginal_cost]
-#
-#         # TODO: from units data info on fuel source extract and apply updated params values
-#         updated_fuel_sources_params = None
+
+def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
+    str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
+    for _, units_data in generation_units_data.items():
+        # loop over all units in current country
+        for indiv_unit_data in units_data:
+            current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
+            if current_prod_type in updated_fuel_sources_params:
+                # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
+                if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
+                    indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
+                        GEN_UNITS_PYPSA_PARAMS.marginal_cost]
+
+        # TODO: from units data info on fuel source extract and apply updated params values
+        updated_fuel_sources_params = None
 
 
 def get_country_bus_name(country: str) -> str:
@@ -1019,8 +1062,6 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False,
                   output_tag: str = None) -> str:
-    from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
-
     # In PyPSA 1.0+, opt.create_model is removed. Instead we use the built-in linopy model.
     if hasattr(network, "model") and network.model is not None:
         m = network.model
@@ -1030,7 +1071,10 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
             m = opt.create_model(network)
         except (ImportError, AttributeError):
             # Fallback for PyPSA 1.0+ if model is not built yet
-            network.optimize(build_only=True)
+            if hasattr(network.optimize, "create_model"):
+                network.optimize.create_model()
+            else:
+                network.optimize(build_only=True)
             m = network.model
 
     # set prefix
@@ -1059,7 +1103,7 @@ def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, cou
                                                       toy_model_output=toy_model_output, output_tag=output_tag)
     make_dir(full_path=output_folder_data)
     lp_filepath = f'{output_folder_data}/model_{file_suffix}.lp'
-    logging.info(f'Save model in .lp file: {lp_filepath}')
+    logging.info(f'Save model in .lp file: {format_relative_path_for_log(path=lp_filepath)}')
     m.to_file(Path(lp_filepath))
     return lp_filepath
 

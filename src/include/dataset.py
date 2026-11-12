@@ -11,19 +11,26 @@ from datetime import datetime, timedelta
 from src.common.constants.aggreg_operations import AggregOpeNames
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
+from src.common.constants.env_dirs import DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, INPUT_ERAA_FOLDER, \
+    INPUT_LT_UC_SUBFOLDER, INPUT_LT_UC_OPTIONAL_SUBFOLDER
 from src.common.constants.eraa_data import ERAAParamNames
+from src.common.constants.logs import GW_IN_LOG, POWER_UNIT_IN_LOG
 from src.common.constants.optimisation import CustomConstraintNames
-from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name
+from src.common.constants.prod_types import ProdTypeNames, set_gen_unit_name, get_prod_type_from_unit_name, \
+    set_per_bus_asset_msg
 from src.common.constants.pypsa_params import GEN_UNITS_PYPSA_PARAMS, GenUnitsCustomParams
 from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
-from src.common.long_term_uc_io import COLUMN_NAMES, DT_FILE_PREFIX, DT_SUBFOLDERS, FILES_FORMAT, \
-    GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER, INPUT_ERAA_FOLDER, HYDRO_KEY_COLUMNS, \
-    HYDRO_VALUE_COLUMNS, HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS, \
-    INPUT_LT_UC_OPTIONAL_SUBFOLDER, INPUT_LT_UC_SUBFOLDER, HYDRO_FILES, HYDRO_DTS_OPT_FROM_INPUT_FOLDER
+from src.common.fuel_sources import FuelSource
+from src.common.logger import format_relative_path_for_log
+from src.common.long_term_uc_io import (COLUMN_NAMES,  GEN_CAPA_SUBDT_COLS, INPUT_CY_STRESS_TEST_SUBFOLDER,
+                                        HYDRO_KEY_COLUMNS, HYDRO_VALUE_COLUMNS,
+                                        HYDRO_TS_GRANULARITY, HYDRO_DATA_RESAMPLE_METHODS, HYDRO_LEVELS_RESAMPLE_FILLNA_VALS, \
+                                        HYDRO_FILES,
+                                        HYDRO_DTS_OPT_FROM_INPUT_FOLDER, get_json_fuel_sources_tb_modif_file)
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset_builder import GenerationUnitData, select_gen_units_data
-from src.utils.basic_utils import get_intersection_of_lists
+from src.utils.basic_utils import get_intersection_of_lists, dict_to_str, format_with_spaces
 from src.utils.df_utils import create_dict_from_cols_in_df, selec_in_df_based_on_list, set_aggreg_col_based_on_corresp, \
     create_dict_from_df_row, resample_and_distribute
 from src.utils.dir_utils import uniformize_path_os
@@ -330,7 +337,12 @@ def separate_hydro_extr_levels_data(hydro_extr_levels_data: Dict[str, pd.DataFra
 def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[str, Dict[str, float]],
                              country: str) -> pd.DataFrame:
     if df_gen_capa is not None and country in new_power_capas:
-        logging.info(f'OVERWRITTEN ERAA prod. capacity values, in MW: {new_power_capas[country]}')
+        current_new_power_capas = deepcopy(new_power_capas[country])
+        if GW_IN_LOG:
+            current_new_power_capas = {prod_type: int(capa / 1e3)
+                                       for prod_type, capa in current_new_power_capas.items()}
+        logging.info(f'OVERWRITTEN ERAA prod. capacity values, in {POWER_UNIT_IN_LOG}: '
+                     f'{dict_to_str(d=current_new_power_capas, nbers_with_spaces=True, key_val_sep="=")}')
         for agg_prod_type, new_capa_val in new_power_capas[country].items():
             df_gen_capa.loc[
                 df_gen_capa[PROD_TYPE_AGG_COL] == agg_prod_type, 'power_capacity'] = new_capa_val
@@ -353,7 +365,10 @@ def add_failure_asset_to_capas_data(df_gen_capa: pd.DataFrame, failure_power_cap
 def capa_info_log(df_gen_capa: pd.DataFrame):
     # get dict. with only power capacity values to get less verbose logs
     power_capa_dict = create_dict_from_cols_in_df(df=df_gen_capa, key_col=PROD_TYPE_AGG_COL, val_col='power_capacity')
-    logging.info(f'-> power capacity values, in MW: {power_capa_dict}')
+    if GW_IN_LOG:
+        power_capa_dict = {prod_type: int(capa / 1e3) for prod_type, capa in power_capa_dict.items()}
+    logging.info(f'-> power capacity values, in {POWER_UNIT_IN_LOG}: '
+                 f'{dict_to_str(d=power_capa_dict, nbers_with_spaces=True, key_val_sep="=")}')
 
 
 def calc_cf_capa_prod(df_gen_capa: pd.DataFrame, df_agg_cf: pd.DataFrame, cf_agg_prod_types_tb_read: List[str],
@@ -520,10 +535,21 @@ def print_out_agg_warning_gen_units_data(aggreg_warning: Dict[str, List[Tuple[st
             raise Exception(f"Data names with multiple (different) default values: {data_names_with_mult_def_vals}")
     # Set warning msg
     warning_msg = "Issue to access following data:"
+    soc_unit = 'p.u. (of capacity)'
+    power_unit = 'MW'
+    unit_per_data = {'gen. level min': power_unit, 'gen. level max': power_unit,
+                     'SOC level min': soc_unit, 'SOC level max': soc_unit, 'inflows': 'MWh'}
     for name, cases in aggreg_warning.items():
         cases_join = ", ".join([f"({country}, {agg_pt})" for (country, agg_pt, _) in cases])
         common_default_value = cases[0][2]
-        warning_msg += f"\n- {name} for {cases_join}\n-> set to {common_default_value}"
+        unit = unit_per_data[name]
+        if unit in ["MW", "MWh"] and GW_IN_LOG:
+            common_default_value /= 1e3
+            unit = "GW" if unit == "MW" else "GWh"
+        # format number for nice log
+        if unit in ["MW", "GW", "MWh", "GWh"]:
+            common_default_value = format_with_spaces(number=int(common_default_value))
+        warning_msg += f"\n- {name} for {cases_join}\n-> set to {common_default_value} {unit}"
     logging.warning(warning_msg)
 
 
@@ -1068,6 +1094,12 @@ class Dataset:
                     # overwrite specific turbine/pumping (injection/offtake) max values by power capa. if provided
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
+                    # no committable attribute for these assets (cast as storage_units in PyPSA)
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = None
+                # TODO: make cleaner fix (cleaner treatment of DSR units in this env.)
+                elif agg_pt == "dsr" and current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.max_hours] > 0:
+                    # no committable attribute for these assets (cast as storage_units in PyPSA)
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = None
                 # DSR with reinjection??
                 elif power_capacity_turbine > 0:
                     p_nom = abs(power_capacity_turbine)
@@ -1077,11 +1109,41 @@ class Dataset:
                     # idem overwrite by power capa. value if provided
                     if power_capacity > 0:
                         current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.power_capa] = power_capacity
+                    # no committable attribute for these assets (cast as storage_units in PyPSA)
+                    current_assets_data[agg_pt][GEN_UNITS_PYPSA_PARAMS.committable] = None
 
                 self.generation_units_data[country].append(GenerationUnitData(**current_assets_data[agg_pt]))
 
         if agg_warn_over_cases and len(aggreg_warning) > 0:
             print_out_agg_warning_gen_units_data(aggreg_warning=aggreg_warning)
+
+    def update_gen_units_marginal_costs(self, fuel_sources: list[FuelSource]):
+        """
+        Update generation units data marginal cost/CO2 emissions factor based on fuel sources data
+        :param fuel_sources: {name: FuelSource}
+        """
+        modif_params = {}
+        gen_units_data_new = {}
+        for country, units_data in self.generation_units_data.items():
+            gen_units_data_new[country] = []
+            for unit_data in units_data:
+                if unit_data.carrier in fuel_sources:
+                    fuel_source = fuel_sources[unit_data.carrier]
+                    if (fuel_source.marginal_cost is not None
+                            and not fuel_source.marginal_cost == unit_data.marginal_cost):
+                        modif_tuple = (unit_data.carrier, unit_data.marginal_cost, fuel_source.marginal_cost)
+                        unit_data.marginal_cost = fuel_source.marginal_cost
+                        if country not in modif_params:
+                            modif_params[country] = []
+                        modif_params[country].append(modif_tuple)
+                gen_units_data_new[country].append(unit_data)
+        if len(modif_params) > 0:
+            # TODO: improve msg
+            json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
+            logging.info(f"The following marginal cost values (in €/MWh) have been modified from file "
+                         f"{json_fuel_param_filepath} - each tuple of the form (source name, init. value, "
+                         f"new one): {modif_params}")
+            self.set_generation_units_data(gen_units_data_new)
 
     def set_generation_units_data(self, gen_units_data: Dict[str, List[GenerationUnitData]]):
         self.generation_units_data = gen_units_data
@@ -1092,7 +1154,7 @@ class Dataset:
                      for country, gen_units_data in self.generation_units_data.items()}
         json_dump(data=data_dict, filepath=filepath)
 
-    def set_committable_param_to_false(self):
+    def set_committable_param_to_false(self, info_as_per_country_item: bool = True):
         per_country_modif_values = {}
         for country, units_data in self.generation_units_data.items():
             for unit_data in units_data:
@@ -1100,9 +1162,17 @@ class Dataset:
                     if country not in per_country_modif_values:
                         per_country_modif_values[country] = []
                     per_country_modif_values[country].append(unit_data.name)
-                unit_data.committable = False
+                    unit_data.committable = False
+        if info_as_per_country_item:
+            all_prod_types = [prod_type for _, prod_types in per_country_modif_values.items()
+                              for prod_type in prod_types]
+            modif_vals_msg = set_per_bus_asset_msg(asset_names=all_prod_types)
+        # simplify country names as trigrams, and remove country trigram from prod unit names to have more concise logs
+        else:
+            modif_vals_msg = {set_country_trigram(country): [get_prod_type_from_unit_name(unit) for unit in prod_units]
+                              for country, prod_units in per_country_modif_values.items()}
         logging.info(f'Set committable PyPSA parameter to False, i.e. run without dynamic constraints; '
-                     f'modified values (True -> False) for units: {per_country_modif_values}')
+                     f'modified values (True -> False) for units: {modif_vals_msg}')
 
     def control_min_pypsa_params_per_gen_units(self, pypsa_min_unit_params_per_agg_pt: Dict[str, List[str]]):
         """

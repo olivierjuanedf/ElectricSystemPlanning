@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Union
 import logging
 
+from src.common.constants.environmental import DEFAULT_CO2_EMIS_PRICE, CO2_EMIS_FACTOR_UNIT
 from src.common.constants.extract_eraa_data import ERAADatasetDescr
 from src.common.constants.optimisation import ZoneAndTempProdSumConstraint, CustomConstraintNames, ConstMultCoeffNames, \
     CustomConstraintDirection
@@ -11,7 +12,8 @@ from src.common.constants.temporal import DATE_FORMAT_IN_JSON, MIN_DATE_IN_DATA,
     MAX_DATE_IN_DATA, N_DAYS_UC_DEFAULT, Timescale
 from src.common.constants.uc_json_inputs import ALL_KEYWORD
 from src.common.error_msgs import uncoherent_param_stop
-from src.common.long_term_uc_io import get_current_run_idx_in_output_folder
+from src.common.logger import format_relative_path_for_log
+from src.common.long_term_uc_io import get_current_run_idx_in_output_folder, get_json_fuel_sources_tb_modif_file
 from src.include.timeseries import Timeseries
 from src.utils.basic_utils import are_lists_eq
 from src.utils.dates import get_period_str
@@ -60,6 +62,7 @@ class UCRunParams:
     capacities_tb_overwritten: Dict[str, Optional[Dict[str, float]]] = field(default_factory=dict)
     updated_fuel_sources_params: Dict[str, Dict[str, Optional[float]]] = None
     target_years_for_capa_data: Dict[str, int] = None  # {country: TY to be used for capa data}
+    demand_adder_files: list[str] = None  # list of files from which "demand-adder" will be applied to ERAA raw data
     # to indicate that some parameters have been changed compared to the set of the ones used for CP decision-making
     is_stress_test: bool = None
     # some extra-parameters
@@ -74,6 +77,11 @@ class UCRunParams:
     output_tag: str = None
     # save files with correspondence between PyPSA "abstract" variable/constraint names and explicit ones
     save_explicit_corresp_for_lp_elts: bool = False
+    # save link capa constraint dual variables
+    save_link_capa_dual_vars: bool = False
+    # plot stock SoC in per-unit (of energy capacity
+    plot_stock_soc_in_pu: bool = True
+    plot_link_capa_saturation: bool = False
 
     def __repr__(self):
         repr_sep = '\n- '
@@ -88,7 +96,7 @@ class UCRunParams:
             constraints_msg_elts = [f'{const_nber} {const_type}'
                                     for const_type, const_nber in n_constraints_per_type.items()]
             constraints_msg = '; '.join(constraints_msg_elts)
-            repr_str += f'{repr_sep}custom constraints: {constraints_msg}'
+            repr_str += f'{repr_sep}custom constraints (number per type): {constraints_msg}'
         return repr_str
 
     def process(self, available_countries: List[str], fullfill_selected_pt: bool = True):
@@ -118,6 +126,11 @@ class UCRunParams:
                                                    return_corresp=True)
             self.interco_capas_tb_overwritten = {interco_tuples[key]: val
                                                  for key, val in self.interco_capas_tb_overwritten.items()}
+        # default CO2 emission price
+        if self.co2_emis_price is None:
+            self.co2_emis_price = DEFAULT_CO2_EMIS_PRICE
+            logging.info(f"Default CO2 emission price of {DEFAULT_CO2_EMIS_PRICE}€/xCO2eq. will be used")
+
         # keep only updated source params values that are non None
         if self.updated_fuel_sources_params is not None:
             new_updated_fuel_source_params = {}
@@ -126,6 +139,18 @@ class UCRunParams:
                 if len(new_params) > 0:
                     new_updated_fuel_source_params[source] = new_params
             self.updated_fuel_sources_params = new_updated_fuel_source_params
+            if len(self.updated_fuel_sources_params) > 0:
+                json_fuel_param_filepath = format_relative_path_for_log(path=get_json_fuel_sources_tb_modif_file())
+                # add unit of modified values in logs
+                metrics_for_unit_msg = []
+                per_metric_unit = {"marginal_cost": "€/MWh", "co2_emissions": CO2_EMIS_FACTOR_UNIT}
+                for metric, unit in per_metric_unit.items():
+                    if any([metric in per_metric_modif_vals for name, per_metric_modif_vals
+                            in self.updated_fuel_sources_params.items()]):
+                        metrics_for_unit_msg.append(f"{metric} in {unit}")
+                metrics_unit_msg = f"({', '.join(metrics_for_unit_msg)})"
+                logging.info(f"Following fuel sources param values {self.updated_fuel_sources_params} "
+                             f"{metrics_unit_msg} will be updated based on file {json_fuel_param_filepath}")
 
         # process custom sum-prod. constraints data, e.g. max CO2 emissions one
         self.sum_prod_constraints = []
@@ -157,7 +182,8 @@ class UCRunParams:
                 )
             # and process + check that they are coherently defined
             for constraint in self.sum_prod_constraints:
-                constraint.process(optim_start=self.uc_period_start, optim_end=self.uc_period_end)
+                constraint.process(optim_start=self.uc_period_start, optim_end=self.uc_period_end,
+                                   selected_countries=self.selected_countries)
                 constraint.check(available_countries=available_countries, optim_start=self.uc_period_start,
                                  optim_end=self.uc_period_end, target_year=self.selected_target_year)
         if self.add_date_tag_to_output and self.add_run_idx_tag_to_output:
@@ -313,6 +339,9 @@ class UCRunParams:
             common_year_for_capa = self.selected_target_year
         # assign common value to all considered countries
         self.target_years_for_capa_data = {country: common_year_for_capa for country in self.selected_countries}
+
+    def set_demand_adder_files(self, files: list[str]):
+        self.demand_adder_files = files
 
     def process_output_tag(self, date_tag: datetime = None, output_folder: str = None):
         if self.output_tag is None:

@@ -1,3 +1,4 @@
+import xarray
 from pypsa import Network
 import numpy as np
 from typing import Dict
@@ -24,3 +25,9 @@ def get_network_obj_value(network: Network) -> float:
         except (AttributeError, TypeError, ValueError):
             pass
     return 0.0
+
+
+def from_xarray_to_dict(data_array: xarray.DataArray) -> dict:
+    df = data_array.to_pandas()
+
+    return {col: df[col].to_numpy() for col in df.columns}

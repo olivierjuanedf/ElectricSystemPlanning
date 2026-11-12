@@ -9,10 +9,10 @@ import pandas as pd
 
 from src.common.constants.data_analysis_types import ANALYSIS_TYPES, ANALYSIS_TYPES_PLOT, AVAILABLE_ANALYSIS_TYPES
 from src.common.constants.datatypes import DatatypesNames, UNITS_PER_DT, DATATYPE_NAMES
+from src.common.constants.env_dirs import OUTPUT_DATA_ANALYSIS_FOLDER
 from src.common.constants.extract_eraa_data import ERAADatasetDescr, FICTIVE_CALENDAR_YEAR
 from src.common.constants.temporal import DATE_FORMAT_IN_JSON, MAX_DATE_IN_DATA, N_DAYS_DATA_ANALYSIS_DEFAULT
 from src.common.error_msgs import uncoherent_param_stop
-from src.common.long_term_uc_io import OUTPUT_DATA_ANALYSIS_FOLDER
 from src.common.plot_params import PlotParams
 from src.include.uc_timeseries import set_uc_ts_name, UCTimeseries
 from src.utils.basic_utils import random_draw_in_list, check_all_values_equal

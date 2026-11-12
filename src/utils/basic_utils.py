@@ -218,6 +218,13 @@ def sort_lexicographically(strings: list[str]) -> list[str]:
     return sorted(strings)
 
 
+def sort_dict_and_values(d: dict) -> dict:
+    return {
+        key: sorted(values)
+        for key, values in sorted(d.items())
+    }
+
+
 def check_all_values_equal(d: dict) -> bool:
     """
     Check that all values in a nested dict. are equal
@@ -239,13 +246,18 @@ def format_with_spaces(number) -> str:
     return f"{number:,}".replace(",", " ")
 
 
-def dict_to_str(d: Dict[str, float], nbers_with_spaces: bool = False) -> str:
+def fmt_nber_with_spaces_in_dict(d: dict) -> dict:
+    return {key: format_with_spaces(number=val) for key, val in d.items()}
+
+
+def dict_to_str(d: Dict[str, float], nbers_with_spaces: bool = False, key_val_sep: str = ": ") -> str:
     """
     Nice printing of dictionary into logs
     """
     str_sep = ', '
+
     if nbers_with_spaces:
-        key_val_lst = [f'{key}: {format_with_spaces(number=val)}' for key, val in d.items()]
-    else:
-        key_val_lst = [f'{key}: {val}' for key, val in d.items()]
+        d = fmt_nber_with_spaces_in_dict(d)
+
+    key_val_lst = [f'{key}{key_val_sep}{val}' for key, val in d.items()]
     return str_sep.join(key_val_lst)

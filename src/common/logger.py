@@ -4,7 +4,11 @@ import traceback
 import logging
 import warnings
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from typing import Union
 
+from src.common.constants.env_dirs import PROJECT_ROOT_FOLDER
+from src.utils.dir_utils import get_relative_path, add_relative_path_prefix
 
 LOG_LEVEL_STR_TO_INT = {name: value for name, value in vars(logging).items() if
                         isinstance(value, int) and name.isupper()}
@@ -92,3 +96,8 @@ def stop_logger():
     for handler in handlers:
         handler.close()
         logger.removeHandler(handler)
+
+
+def format_relative_path_for_log(path: Union[str, Path]) -> str:
+    relative_path = get_relative_path(path=path, parent_dir=PROJECT_ROOT_FOLDER)
+    return add_relative_path_prefix(str(relative_path))

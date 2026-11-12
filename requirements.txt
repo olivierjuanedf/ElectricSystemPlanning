@@ -1,12 +1,13 @@
 ipykernel
 linopy>=0.5.5
 highspy
-numpy
+numpy==2.4.6
 pandas
 matplotlib
 matplotlib-inline
-pypsa>=1.0.0
+pypsa==1.4.0
 cartopy
 Requests
 gurobipy
 jupyter
+plotly

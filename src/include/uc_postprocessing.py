@@ -6,22 +6,28 @@ from itertools import product
 import pandas as pd
 import numpy as np
 from dataclasses import dataclass, asdict
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Literal, Union, Optional
 import json
 import pypsa
 import xarray
 from matplotlib import pyplot as plt
+import plotly.express as px
 
 from src.common.constants.countries import set_country_trigram
-from src.common.constants.links import set_link_name, REVERSE_SIGN
+from src.common.constants.links import set_link_name, REVERSE_SIGN, get_bus_from_link_name
 from src.common.constants.prod_types import STOCK_LIKE_PROD_TYPES, ProdTypeNames, add_suffix_to_storage_unit_col, \
     get_prod_type_from_unit_name, set_gen_unit_name, get_country_from_unit_name, PT_ORDER_IN_DATA_OUTPUT, \
-    STORAGE_COL_SUFFIX
+    STORAGE_COL_SUFFIX, rm_country_from_prod_unit_name
+from src.common.constants.pypsa_params import PypsaOptimConstNames
+from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_figure_file_named, get_opt_power_file, \
-    get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file
+    get_storage_opt_dec_file, get_marginal_prices_file, get_link_flow_opt_dec_file, get_uc_summary_file, \
+    get_link_capa_dual_vars_file
 from src.common.plot_params import PlotParams
 from src.utils.basic_utils import format_with_spaces, get_default_values, dict_to_str
-from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values
+from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values, is_column_constant, \
+    create_df_from_dict
+from src.utils.plot import get_similar_color
 
 OUTPUT_DATE_COL = 'date'
 
@@ -101,11 +107,22 @@ def set_full_cols_for_storage_df(df: pd.DataFrame, col_type: str) -> pd.DataFram
     return df
 
 
+def set_stock_color(prod_type: str, per_pt_colors: dict[str, str], used_colors: list[str] = None) -> str:
+    if used_colors is None:
+        used_colors = []
+
+    color = per_pt_colors[prod_type]
+    while color in used_colors:
+        color = get_similar_color(color=color, hue_shift=0.1)
+    used_colors.append(color)
+    return color, used_colors
+
+
 @dataclass
 class UCSummaryMetrics:
     ENERGY_UNIT = 'GWh'
     COST_UNIT = 'M€'
-    CO2_EMIS_UNIT = '??'
+    CO2_EMIS_UNIT = 'ktCO2eq.'
     # Energy Not Served (ENS), as the sum of failure volumes over horizon simulated
     # (attention, in GWh)
     per_country_ens: Dict[str, float]
@@ -125,9 +142,11 @@ class UCSummaryMetrics:
         if europe_name is not None:
             uc_summary_metrics_str += f'for {europe_name}'
         uc_summary_metrics_str += \
-            f'{metric_sep}Energy Not Served ({self.ENERGY_UNIT}): {dict_to_str(d=self.per_country_ens)}'
+            (f'{metric_sep}Energy Not Served ({self.ENERGY_UNIT}): '
+             f'{dict_to_str(d=self.per_country_ens, nbers_with_spaces=True)}')
         uc_summary_metrics_str += \
-            f'{metric_sep}Number of failure hours: {dict_to_str(d=self.per_country_n_failure_hours)}'
+            (f'{metric_sep}Number of failure hours: '
+             f'{dict_to_str(d=self.per_country_n_failure_hours, nbers_with_spaces=True)}')
         uc_summary_metrics_str += \
             f'{metric_sep}Total cost (over Europe, {self.COST_UNIT}): {format_with_spaces(number=self.total_cost)}'
         uc_summary_metrics_str += \
@@ -158,6 +177,7 @@ class UCSummaryMetrics:
         file = get_uc_summary_file(country=country, year=year, climatic_year=climatic_year,
                                    start_horizon=start_horizon, toy_model_output=toy_model_output,
                                    output_tag=output_tag)
+        logging.info(f"Save UC summary metrics to file {format_relative_path_for_log(path=file)}")
         with open(file, "w", encoding="utf-8") as f:
             json.dump(summary_dict, f)
 
@@ -281,6 +301,18 @@ def process_data_to_csv(data_type: str, df: pd.DataFrame, rename_snapshot_col: b
     return df
 
 
+def duals_to_link_dual_dict(duals: xarray.DataArray) -> dict[str, np.ndarray]:
+    link_dim = next((dim for dim in duals.dims if dim.startswith("Link") or dim == "name"), None)
+    if link_dim is None:
+        link_dim = next((dim for dim in duals.dims if dim != "snapshot"), None)
+    if link_dim is None:
+        raise ValueError(f"Could not identify link dimension in duals with dims: {duals.dims}")
+
+    duals = duals.transpose(link_dim, "snapshot")
+
+    return dict(zip(duals.coords[link_dim].values, duals.values, strict=True))
+
+
 # TODO: check typing
 class UCOptimalSolution:
     def __init__(self, network_name: str):
@@ -293,7 +325,7 @@ class UCOptimalSolution:
         self.link_flow_reverse: pd.DataFrame = None  # to the second bus (destination)
         # dual variables associated to supply-demand equilibrium const. - interpreted as marginal prices
         self.sde_dual: pd.DataFrame = None
-        self.link_capa_dual: pd.DataFrame = None
+        self.link_capa_dual: dict[str, np.array] = None  # {link name: vector with all values, one per snapshot}
 
     def get_prod_var_opt(self, network: pypsa.Network):
         self.prod = network.generators_t.p
@@ -310,19 +342,19 @@ class UCOptimalSolution:
     def get_sde_dual_var_opt(self, network: pypsa.Network):
         self.sde_dual = network.buses_t.marginal_price
 
-    def get_link_capa_dual_var_opt(self, network: pypsa.Network):
-        logging.warning('Link capa. dual variable code to be fixed (needs to "enter" into Linopy framework '
-                        '- not directly available in PyPSA)')
-        linopy_model = network.model
-        # TODO: fix it, going into linopy framework... apparently not possible to directly access this info from PyPSA
-        # see linopy_model.constraints to get a list of considered constraints (Link-fix-p-lower, but cannot be accessed
-        # with link_fix_p_lower)
-        # Issue self.network.model.dual.keys() empty...
-        # loop over links... and build df
-        # con_obj = linopy_model.link_fix_p_upper[link_name]
-        # Retrieve the dual value (shadow price)
-        # dual_value = linopy_model.dual[con_obj]
-        self.link_capa_dual = None
+    def get_link_capa_dual_var_opt(self, network: pypsa.Network) -> dict[str, float]:
+
+        model = network.model
+
+        if not hasattr(model, "dual") or len(model.dual) == 0:
+            raise RuntimeError(
+                "No dual values available. "
+                "Make sure the optimization was run with assign_all_duals=True."
+            )
+
+        link_ub_constraint = model.constraints[PypsaOptimConstNames.link_ub]
+        duals = link_ub_constraint.dual
+        self.link_capa_dual = duals_to_link_dual_dict(duals)
 
     def plot_prod(self, plot_params_agg_pt: PlotParams, country: str, year: int, climatic_year: int,
                   start_horizon: datetime, toy_model_output: bool = False, rm_all_zero_curves: bool = True,
@@ -430,9 +462,177 @@ class UCOptimalSolution:
         #                 )
         #     plt.close()
 
-    def plot_stock_soc(self, hydro_soc_min: xarray.DataArray = None, hydro_soc_max: xarray.DataArray = None):
-        df_soc_opt = self.storage_soc
-        bob = 1
+    def plot_stock_soc(self, plot_params_agg_pt: PlotParams, country: str, year: int, climatic_year: int,
+                       start_horizon: datetime, storage_const_soc_max: dict[str, float],
+                       hydro_soc_min: xarray.DataArray = None, hydro_soc_max: xarray.DataArray = None,
+                       plot_in_pu: bool = True, toy_model_output: bool = False,
+                       output_tag: str = None):
+        """
+        Plot storage state of charge.
+
+            Top subplot:
+                Hydro reservoirs with optional min/max SOC bounds.
+
+            Bottom subplot:
+                All other storage units.
+
+        """
+        # TODO: txt with assets with SOC=0 for all t, to avoid saturating graph...
+        df_soc_opt = self.storage_soc.copy()
+        if country != "europe":
+            country_prefix = f"{set_country_trigram(country=country)}_"
+            current_country_assets = [col for col in df_soc_opt.columns if col.startswith(country_prefix)]
+            df_soc_opt = df_soc_opt[current_country_assets]
+
+        # select two different classes of stocks for two different subplots
+        hydro_reservoirs = [col for col in df_soc_opt.columns
+                            if get_prod_type_from_unit_name(prod_unit_name=col) == ProdTypeNames.hydro_reservoir]
+
+        other_stocks = [col for col in df_soc_opt.columns if col not in hydro_reservoirs]
+
+        hydro_soc_min_plot = None
+        hydro_soc_max_plot = None
+
+        # convert all values in per unit (of storage CONSTANT capacity)
+        if plot_in_pu:
+
+            for col in df_soc_opt.columns:
+                if col not in storage_const_soc_max:
+                    continue
+
+                capacity = storage_const_soc_max[col]
+
+                df_soc_opt[col] /= capacity
+
+            if hydro_soc_min is not None:
+                hydro_soc_min_plot = hydro_soc_min.copy()
+
+                for asset in hydro_soc_min_plot:
+                    hydro_soc_min_plot[asset] /= storage_const_soc_max[asset]
+
+            if hydro_soc_max is not None:
+                hydro_soc_max_plot = hydro_soc_max.copy()
+
+                for asset in hydro_soc_max_plot:
+                    hydro_soc_max_plot[asset] /= storage_const_soc_max[asset]
+
+        else:
+            hydro_soc_min_plot = hydro_soc_min
+            hydro_soc_max_plot = hydro_soc_max
+
+        # conditional def. of the axes and subplots
+        hydro_res_with_nonconst_zero_soc = \
+            [asset for asset in hydro_reservoirs if not is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+        other_stocks_with_nonconst_zero_soc = \
+            [asset for asset in other_stocks if not is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+        has_hydro_res_to_plot = len(hydro_res_with_nonconst_zero_soc) > 0
+        has_other_stocks_to_plot = len(other_stocks_with_nonconst_zero_soc) > 0
+
+        if not has_hydro_res_to_plot and not has_other_stocks_to_plot:
+            msg_suffix = f" for country {country}" if country != "europe" else ""
+            logging.warning(f"No storage units available to plot stock SoC{msg_suffix}")
+            return
+
+        if has_hydro_res_to_plot and has_other_stocks_to_plot:
+
+            fig, (ax_hydro_res, ax_other) = plt.subplots(2, 1, figsize=(16, 10),
+                                                         sharex=True, constrained_layout=True)
+
+        elif has_hydro_res_to_plot:
+
+            fig, ax_hydro_res = plt.subplots(1, 1, figsize=(16, 5), constrained_layout=True)
+            ax_other = None
+
+        else:  # has_other
+
+            fig, ax_other = plt.subplots(1, 1, figsize=(16, 5), constrained_layout=True)
+            ax_hydro_res = None
+
+        # common plot elements
+        snapshots = df_soc_opt.index
+        y_label = "SOC (p.u.)" if plot_in_pu else "SOC (MWh)"
+
+        # Hydro reservoirs
+        if ax_hydro_res is not None:
+            used_colors = []
+            for asset in hydro_res_with_nonconst_zero_soc:
+
+                line = ax_hydro_res.plot(snapshots, df_soc_opt[asset],
+                                         label=rm_country_from_prod_unit_name(asset))[0]
+                color, used_colors = set_stock_color(prod_type=ProdTypeNames.hydro_reservoir,
+                                                     per_pt_colors=plot_params_agg_pt.per_case_color,
+                                                     used_colors=used_colors)
+
+                if hydro_soc_min_plot is not None and asset in hydro_soc_min_plot:
+                    ax_hydro_res.plot(snapshots, hydro_soc_min_plot[asset],
+                                      linestyle="--", color=color, alpha=0.8)
+
+                if hydro_soc_max_plot is not None and asset in hydro_soc_max_plot:
+                    ax_hydro_res.plot(snapshots, hydro_soc_max_plot[asset],
+                                      linestyle="--", color=color, alpha=0.8)
+
+            ax_hydro_res.set_title("Hydro reservoir SOC")
+            ax_hydro_res.set_ylabel(y_label)
+            ax_hydro_res.grid(True, alpha=0.3)
+
+            if hydro_reservoirs:
+                ax_hydro_res.legend(fontsize=8, ncol=2)
+
+        # Other storage units
+        if ax_other is not None:
+            used_colors = []
+
+            for asset in other_stocks_with_nonconst_zero_soc:
+                prod_type = get_prod_type_from_unit_name(asset)
+                color, used_colors = set_stock_color(prod_type=prod_type,
+                                                     per_pt_colors=plot_params_agg_pt.per_case_color,
+                                                     used_colors=used_colors)
+
+                line = ax_other.plot(snapshots, df_soc_opt[asset],
+                                     label=rm_country_from_prod_unit_name(asset), color=color)[0]
+
+                if not plot_in_pu:
+                    ax_other.axhline(y=storage_const_soc_max[asset], color=color, linestyle="--", alpha=0.8)
+
+            ax_other.set_title("Other storage SOC")
+            ax_other.set_ylabel(y_label)
+            ax_other.set_xlabel("Time")
+            ax_other.grid(True, alpha=0.3)
+
+            if other_stocks:
+                ax_other.legend(fontsize=8, ncol=2)
+
+        fig.suptitle(f"Storage state of charge - {country}", fontsize=14)
+
+        # text to indicate stocks with always SoC = 0
+        const_zero_soc_assets = (
+                [asset for asset in hydro_reservoirs if is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+                + [asset for asset in other_stocks if is_column_constant(df=df_soc_opt, col_name=asset, value=0.0)]
+        )
+        if const_zero_soc_assets:
+            # remove country trigrams to simplify block of text
+            const_zero_soc_assets = [rm_country_from_prod_unit_name(asset) for asset in const_zero_soc_assets]
+            txt = (
+                    "Assets not shown (SOC = 0 for all snapshots):\n"
+                    + "\n".join(sorted(const_zero_soc_assets))
+            )
+
+            fig.text(0.99, 0.01, txt, ha="right", va="bottom", fontsize=8,
+                     bbox={"facecolor": "white", "alpha": 0.8, "edgecolor": "black"},
+                     )
+
+        output_file = get_output_figure(
+            fig_name=FigNamesPrefix.stock_soc,
+            country=country,
+            year=year,
+            climatic_year=climatic_year,
+            start_horizon=start_horizon,
+            toy_model_output=toy_model_output,
+            output_tag=output_tag,
+        )
+
+        plt.savefig(output_file, bbox_inches="tight")
+        plt.close(fig)
 
     def plot_cum_export_flows(self):
         # TODO: aggreg. plot with sum of exported flow per country (as a function of time)
@@ -461,6 +661,8 @@ class UCOptimalSolution:
         # catch DeprecationWarnings TODO: fix/more robust way to catch them?
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            country_suffix = f" for country {country}" if not country == "europe" else ""
+            logging.info(f"Plot marginal price{country_suffix}")
             sde_dual_var_opt_plot = set_col_order_for_plot(df=self.sde_dual, cols_ordered=plot_params_zone.order)
             sde_dual_var_opt_plot.plot.line(figsize=(8, 3), ylabel='Euro per MWh',
                                             color=plot_params_zone.per_case_color)
@@ -470,6 +672,145 @@ class UCOptimalSolution:
                                           toy_model_output=toy_model_output, output_tag=output_tag)
                         )
             plt.close()
+
+    def plot_link_capa_saturation(self, link_capacities: dict[str, float], year: int, climatic_year: int,
+                                  start_horizon: datetime, output_tag: str = None, n_time_blocks: int = 4,
+                                  saturation_threshold: float = 0.999,
+                                  time_label_mode: Literal["blocks", "dates"] = "blocks"):
+        """
+        Plot a 3-level sunburst showing transmission link capacity saturation.
+
+        Levels:
+            1. Link
+            2. Saturation direction
+            3. Time block
+
+        Parameters
+        ----------
+        link_capacities :
+            Mapping {link_name: capacity}.
+        year :
+            Of UC simulated
+        climatic_year :
+            Idem
+        start_horizon :
+            Of UC period simulated
+        output_tag :
+            On output folder, to be more explicit
+        n_time_blocks :
+            Number of temporal aggregation blocks. Ex: if 4, then number saturation occurrences will be considered for
+            blocks [0AM, 6AM], [6AM, 0PM], [0PM, 6PM], [6PM, 0AM next day]
+        saturation_threshold :
+            Saturation threshold as a fraction of nominal capacity.
+        time_label_mode :
+            "blocks" -> Block 1, ..., Block N
+            "dates"  -> Explicit time interval labels
+        """
+        logging.info('Plot link capacity saturation (stat. aggregated view)')
+        df_link_flow_opt_direct = self.link_flow_direct
+
+        if len(df_link_flow_opt_direct) == 0:
+            raise ValueError("Link flow df is empty (after UC optim.) -> plot not possible")
+
+        records = []
+
+        n_snapshots = len(df_link_flow_opt_direct)
+        block_edges = np.linspace(
+            0,
+            n_snapshots,
+            n_time_blocks + 1,
+            dtype=int,
+        )
+
+        for link_name, capacity in link_capacities.items():
+
+            if link_name not in df_link_flow_opt_direct.columns:
+                continue
+
+            flow = df_link_flow_opt_direct[link_name]
+
+            origin_bus, destination_bus = get_bus_from_link_name(link_name=link_name)
+
+            sat_pos = flow >= saturation_threshold * capacity
+            sat_neg = flow <= -saturation_threshold * capacity
+
+            directions = {
+                f"{origin_bus} → {destination_bus}": sat_pos,
+                f"{destination_bus} → {origin_bus}": sat_neg,
+            }
+
+            for direction, sat_mask in directions.items():
+
+                for block_id in range(n_time_blocks):
+
+                    start = block_edges[block_id]
+                    end = block_edges[block_id + 1]
+
+                    block_mask = sat_mask.iloc[start:end]
+
+                    proportion_total_time = block_mask.sum() / n_snapshots
+
+                    if proportion_total_time == 0:
+                        continue
+
+                    if time_label_mode == "blocks":
+                        time_label = f"Block {block_id + 1}"
+
+                    elif time_label_mode == "dates":
+
+                        start_ts = df_link_flow_opt_direct.index[start]
+                        end_ts = df_link_flow_opt_direct.index[end - 1]
+
+                        time_label = (
+                            f"{start_ts:%Y-%m-%d}"
+                            f" → "
+                            f"{end_ts:%Y-%m-%d}"
+                        )
+
+                    else:
+                        raise ValueError(
+                            "time_label_mode must be 'blocks' or 'dates'."
+                        )
+
+                    records.append(
+                        {
+                            "link": link_name,
+                            "direction": direction,
+                            "time_block": time_label,
+                            "proportion": proportion_total_time,
+                        }
+                    )
+
+        sunburst_df = pd.DataFrame(records)
+
+        if sunburst_df.empty:
+            raise ValueError("No saturation detected.")
+
+        fig = px.sunburst(
+            sunburst_df,
+            path=["link", "direction", "time_block"],
+            values="proportion",
+        )
+
+        fig.update_traces(
+            textinfo="label+percent parent",
+            branchvalues="total",
+        )
+
+        fig.update_layout(
+            title="Transmission Link Saturation Breakdown",
+        )
+
+        fig.write_image(
+            get_output_figure(
+                fig_name=FigNamesPrefix.link_capa_saturation,
+                country="europe",
+                year=year,
+                climatic_year=climatic_year,
+                start_horizon=start_horizon,
+                output_tag=output_tag,
+            )
+        )
 
     def save_decisions_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                               rename_snapshot_col: bool = True, toy_model_output: bool = False,
@@ -481,7 +822,8 @@ class UCOptimalSolution:
         opt_p_csv_file = get_opt_power_file(country=country, year=year, climatic_year=climatic_year,
                                             start_horizon=start_horizon, toy_model_output=toy_model_output,
                                             output_tag=output_tag)
-        logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv file {opt_p_csv_file}')
+        logging.info(f'Save - all but Storage assets - optimal dispatch decisions to csv '
+                     f'file {format_relative_path_for_log(path=opt_p_csv_file)}')
         df_prod_opt = self.prod
         df_prod_opt = process_data_to_csv(data_type="prod", df=df_prod_opt, rename_snapshot_col=rename_snapshot_col,
                                           order_cols=lexico_order_prod_cols)
@@ -491,7 +833,8 @@ class UCOptimalSolution:
             get_storage_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
                                      start_horizon=start_horizon, toy_model_output=toy_model_output,
                                      output_tag=output_tag)
-        logging.info(f'Save Storage optimal decisions to csv file {storage_opt_dec_csv_file}')
+        logging.info(f'Save Storage optimal decisions to csv '
+                     f'file {format_relative_path_for_log(path=storage_opt_dec_csv_file)}')
         # join the 3 Storage result dfs
         df_prod_opt = self.storage_prod
         df_cons_opt = self.storage_cons
@@ -514,7 +857,8 @@ class UCOptimalSolution:
             get_link_flow_opt_dec_file(country=country, year=year, climatic_year=climatic_year,
                                        start_horizon=start_horizon, toy_model_output=toy_model_output,
                                        output_tag=output_tag)
-        logging.info(f'Save link flow optimal decisions to csv file {link_flow_opt_dec_csv_file}')
+        logging.info(f'Save link flow optimal decisions to csv '
+                     f'file {format_relative_path_for_log(path=link_flow_opt_dec_csv_file)}')
         df_link_flow_opt_direct = self.link_flow_direct
         df_link_flow_opt_reverse = self.link_flow_reverse
         # add reverse suffix to reverse flows
@@ -530,18 +874,31 @@ class UCOptimalSolution:
     def save_marginal_prices_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
                                     rename_snapshot_col: bool = True, toy_model_output: bool = False,
                                     country: str = 'europe', output_tag: str = None):
-        logging.info('Save marginal prices decisions to .csv file')
         marginal_prices_csv_file = get_marginal_prices_file(country=country, year=year,
                                                             climatic_year=climatic_year,
                                                             start_horizon=start_horizon,
                                                             toy_model_output=toy_model_output,
                                                             output_tag=output_tag)
+        logging.info(f'Save marginal prices decisions to .csv file '
+                     f'{format_relative_path_for_log(path=marginal_prices_csv_file)}')
+
         df_sde_dual_var_opt = self.sde_dual
         if rename_snapshot_col:
             df_sde_dual_var_opt.index.name = OUTPUT_DATE_COL
         # do NOT cast this df, given that price values can be accurate at some decimals
         # -> may be useful to observe the correspondence with (input) marginal cost values
         df_sde_dual_var_opt.to_csv(marginal_prices_csv_file)
+
+    def save_link_capa_dual_vars_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
+                                        output_tag: str = None):
+        link_capa_duals_csv_file = get_link_capa_dual_vars_file(year=year, climatic_year=climatic_year,
+                                                                start_horizon=start_horizon, output_tag=output_tag)
+        logging.info(f'Save link capacity dual variables to .csv file '
+                     f'{format_relative_path_for_log(path=link_capa_duals_csv_file)}')
+
+        df_link_capa_duals = create_df_from_dict(data=self.link_capa_dual, key_col_name="link",
+                                                 value_col_name="dual_variable")
+        df_link_capa_duals.to_csv(link_capa_duals_csv_file, index=False)
 
     def get_prod_given_bus(self, bus_name: str) -> Optional[pd.DataFrame]:
         if self.prod is None:

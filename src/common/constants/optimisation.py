@@ -98,7 +98,7 @@ class ZoneAndTempProdSumConstraint:
     # (idem = bound)
     direction: str
     mult_coeff_name: str  # name of the multiplicative coeffs to be used
-    countries: List[str]  # over which constraints is to be imposed
+    countries: list[str]  # over which constraints is to be imposed
     bound: np.ndarray
     temporal_granularity: str = Timescale.whole_period  # temporal granularity associated to this constraint
     name: str = None
@@ -122,7 +122,7 @@ class ZoneAndTempProdSumConstraint:
         else:
             self.name = f'{n_countries}-countries'
 
-    def process(self, optim_start: datetime = None, optim_end: datetime = None):
+    def process(self, optim_start: datetime = None, optim_end: datetime = None, selected_countries: list[str] = None):
         # add name if not provided
         if self.name is None:
             self.set_name()
@@ -134,6 +134,9 @@ class ZoneAndTempProdSumConstraint:
             period_start_dates = set_period_starts(start_date=optim_start, end_date=optim_end,
                                                    granularity=self.temporal_granularity)
             self.bound = len(period_start_dates) * [self.bound]
+        # in this case, the constraint will be applied to whole Europe (countries considered in current run)
+        if self.countries == "europe" or self.countries == ["europe"]:
+            self.countries = selected_countries
 
     def check(self, available_countries: List[str], optim_start: datetime = None, optim_end: datetime = None,
               target_year: int = None):

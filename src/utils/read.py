@@ -1,14 +1,17 @@
 import json
+import os.path
 from typing import List, Dict, Optional, Union
 import logging
 
+from src.common.constants.logs import SOLO_MODE_MSG_SUFFIX
 from src.common.constants.optimisation import SolverParams
 from src.common.constants.plots import PlotNames
+from src.common.logger import format_relative_path_for_log
 from src.common.long_term_uc_io import get_json_usage_params_file, get_json_fixed_params_file, \
     get_json_eraa_avail_values_file, get_json_params_tb_modif_file, get_json_pypsa_static_params_file, \
     get_json_params_modif_country_files, get_json_fuel_sources_tb_modif_file, \
     get_json_data_analysis_params_file, get_json_plot_params_file, get_json_solver_params_file, \
-    check_uc_input_folder_content
+    check_uc_input_folder_content, get_country_name_from_json
 from src.common.constants.extract_eraa_data import ERAADatasetDescr, \
     PypsaStaticParams, UsageParameters
 from src.common.constants.uc_json_inputs import CountryJsonParamNames, EuropeJsonParamNames, ALL_KEYWORD, \
@@ -33,8 +36,12 @@ def check_and_load_json_file(json_file: str, file_descr: str = None) -> dict:
     return json_data
 
 
-def apply_per_country_json_file_params(countries_data: dict, available_countries: List[str],
-                                       mode_name: str, team_name: str) -> dict:
+def apply_per_country_json_file_params(countries_data: dict, available_countries: List[str], mode_name: str,
+                                       team_name: str, solo_mode_msg_suffix: str = None) -> (dict, dict):
+    if solo_mode_msg_suffix is None:
+        solo_mode_msg_suffix = SOLO_MODE_MSG_SUFFIX
+
+    data_overwr_from_other_count = {}
     for file in get_json_params_modif_country_files():
         json_country = check_and_load_json_file(
             json_file=file,
@@ -51,27 +58,47 @@ def apply_per_country_json_file_params(countries_data: dict, available_countries
             # TODO[CR]: solo check from global constant/Mode defined in extract_eraa_data.py
             if mode_name == 'solo':
                 for c, _ in json_country[k].items():
-                    logging.info(f'Updating {k} for {c} from file {file}')
+                    file_country = get_country_name_from_json(file)
+                    if not c == file_country:
+                        suffix = solo_mode_msg_suffix
+                        if k not in data_overwr_from_other_count:
+                            data_overwr_from_other_count[k] = {}
+                        data_overwr_from_other_count[k][c] = file_country
+                    else:
+                        suffix = ""
+                    logging.info(f'Updating {k} for {c} from file {format_relative_path_for_log(path=file)}{suffix}')
                     countries_data[k][c] = json_country[k][c]
             else:
-                logging.info(f'Updating {k} for {country} from file {file}')
+                logging.info(f'Updating {k} for {country} from file {format_relative_path_for_log(path=file)}')
                 countries_data[k][country] = json_country[k][country]
                 for c, _ in json_country[k].items():
                     if c != country:
-                        logging.warning(f'Ignoring {k} for {country} from file {file}')
-    return countries_data
+                        logging.warning(f'Ignoring {k} for {country} from '
+                                        f'file {format_relative_path_for_log(path=file)}')
+    return countries_data, data_overwr_from_other_count
 
 
-def update_country_json_params(countries_data: dict, json_params_tb_modif: dict) -> (dict, dict):
+def update_country_json_params(countries_data: dict, json_params_tb_modif: dict,
+                               countr_overwr_from_other_countr: dict[str, str],
+                               solo_mode_msg_suffix: str = None) -> (dict, dict):
     """
     Update parameter values obtained from collective file input/long_term_uc/elec-europe_params_to-be-modif.json
     based on the ones of files input/long_term_uc/countries/{country.json}
+    :param countries_data: original data
+    :param json_params_tb_modif: values to apply to modify original one
+    :param countr_overwr_from_other_countr: {country: name of country.json file used to overwrite data}
+    :param solo_mode_msg_suffix
     """
+    if solo_mode_msg_suffix is None:
+        solo_mode_msg_suffix = SOLO_MODE_MSG_SUFFIX
+
     selected_pt_param_name = CountryJsonParamNames.selected_prod_types
     if len(countries_data[selected_pt_param_name]) > 0:
         for elt_country, new_prod_types in countries_data[selected_pt_param_name].items():
+            file_country = countr_overwr_from_other_countr.get(elt_country, elt_country)
+            suffix = solo_mode_msg_suffix if not file_country == elt_country else ""
             logging.info(f'Selected production type(s) overwritten for {elt_country} - based on countries'
-                         f'/{elt_country}.json: {new_prod_types} (and not all the ones from ERAA)')
+                         f'\\{file_country}.json{suffix}: {new_prod_types} (and not all the ones from ERAA)')
             json_params_tb_modif[selected_pt_param_name][elt_country] = new_prod_types
     # suppress pt selection key in countries data dict, not to have multiple values for same attr.
     # when creating UCRunParams object hereafter
@@ -113,9 +140,11 @@ def set_json_params_tb_modif() -> dict:
     return check_and_load_json_file(json_file=get_json_params_tb_modif_file(), file_descr='JSON params to be modif.')
 
 
-def set_json_fuel_sources_tb_modif() -> dict:
-    return check_and_load_json_file(json_file=get_json_fuel_sources_tb_modif_file(),
-                                    file_descr='JSON fuel sources params to be modif.')
+def set_json_fuel_sources_tb_modif() -> Optional[dict]:
+    json_tb_modif_file = get_json_fuel_sources_tb_modif_file()
+    if not os.path.exists(json_tb_modif_file):
+        return None
+    return check_and_load_json_file(json_file=json_tb_modif_file, file_descr='JSON fuel sources params to be modif.')
 
 
 def set_usage_params(json_usage_params_data: dict) -> UsageParameters:
@@ -132,8 +161,8 @@ def set_eraa_data_descr(json_params_fixed: dict) -> ERAADatasetDescr:
     return eraa_data_descr
 
 
-def set_uc_run_params(json_params_tb_modif: dict, countries_data: dict, json_fuel_sources_tb_modif: dict,
-                      eraa_data_descr: ERAADatasetDescr) -> UCRunParams:
+def set_uc_run_params(json_params_tb_modif: dict, countries_data: dict, eraa_data_descr: ERAADatasetDescr,
+                      json_fuel_sources_tb_modif: dict = None) -> UCRunParams:
     uc_run_params = UCRunParams(**json_params_tb_modif, **countries_data,
                                 updated_fuel_sources_params=json_fuel_sources_tb_modif)
     uc_run_params.process(available_countries=eraa_data_descr.available_countries)
@@ -152,7 +181,7 @@ def set_countries_data(usage_params: UsageParameters, phase_name: str, available
     # apply data selection - based on the different JSON files to be modified, and the chosen mode (solo/team)
     apply_per_country_params = usage_params.apply_per_country_json_file_params[phase_name]
     if apply_per_country_params:
-        countries_data = (
+        countries_data, data_overwr_from_other_count = (
             apply_per_country_json_file_params(countries_data=countries_data, available_countries=available_countries,
                                                mode_name=json_params_tb_modif[EuropeJsonParamNames.mode],
                                                team_name=json_params_tb_modif[EuropeJsonParamNames.team])
@@ -162,7 +191,9 @@ def set_countries_data(usage_params: UsageParameters, phase_name: str, available
     json_params_tb_modif[selected_pt_param_name] = \
         {c: [ALL_KEYWORD] for c in json_params_tb_modif[EuropeJsonParamNames.selected_countries]}
     countries_data, json_params_tb_modif = (
-        update_country_json_params(countries_data=countries_data, json_params_tb_modif=json_params_tb_modif)
+        update_country_json_params(countries_data=countries_data, json_params_tb_modif=json_params_tb_modif,
+                                   countr_overwr_from_other_countr=
+                                   data_overwr_from_other_count[CountryJsonParamNames.selected_prod_types])
     )
 
     return countries_data, json_params_tb_modif
@@ -223,7 +254,8 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
         info_msg = 'Get ERAA data description parameters'
     else:
         json_params_tb_modif_file = get_json_params_tb_modif_file()
-        info_msg = f'Read and check long-term UC parameters; the ones modified in file {json_params_tb_modif_file}'
+        info_msg = (f'Read and check long-term UC parameters; the ones modified '
+                    f'in file {format_relative_path_for_log(path=json_params_tb_modif_file)}')
     logging.info(info_msg)
 
     # get JSON fixed parameters -> ERAA data description object - including in particular the set of
@@ -240,6 +272,10 @@ def read_and_check_uc_run_params(phase_name: str, usage_params: UsageParameters,
         json_params_tb_modif = set_json_params_tb_modif()
         # check values in JSON params to be modif
         json_params_tb_modif = check_and_process_eur_json_tb_modified(json_data=json_params_tb_modif)
+        chosen_mode = json_params_tb_modif[EuropeJsonParamNames.mode]
+        mode_suffix = (" -> selection of production types and capacities of a country can be modified "
+                       "from another {country_bis}.json file") if chosen_mode == "solo" else ""
+        logging.info(f"Chosen mode is: {chosen_mode}{mode_suffix}")
         countries_data, json_params_tb_modif = (
             set_countries_data(usage_params=usage_params, phase_name=phase_name,
                                available_countries=eraa_data_descr.available_countries,
