@@ -1,33 +1,24 @@
+import logging
 import os
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import product
 from pathlib import Path
 from typing import Iterator, List, Optional
+import re
 
 from src.common.constants.countries import set_country_trigram
 from src.common.constants.datatypes import DATATYPE_NAMES
+from src.common.constants.env_dirs import DT_SUBFOLDERS, DEMAND_ADDER_FILE_PREFIX, \
+    OutputFolderNames, INPUT_FUNC_PARAMS_SUBFOLDER, INPUT_DATA_ANALYSIS_SUBFOLDER, INPUT_ENV_PARAMS_SUBFOLDER, \
+    INPUT_LT_UC_COUNTRY_SUBFOLDER, INPUT_FUEL_SOURCES_FOLDER, INPUT_LT_UC_SUBFOLDER, INPUT_LT_UC_OPTIONAL_SUBFOLDER, \
+    OUTPUT_FOLDER_TOY_MODEL, OUTPUT_FOLDER_LT
 from src.common.constants.temporal import Timescale
-from src.utils.dir_utils import make_dir, uniformize_path_os, find_project_root, get_files_in_dir, get_folders_in_dir
+from src.common.logger import format_relative_path_for_log
+from src.utils.dir_utils import make_dir, uniformize_path_os, get_files_in_dir, get_folders_in_dir
 
 
-@dataclass
-class DtSubfolders:
-    demand: str = 'demand'
-    res_capa_factors: str = 'res_capa-factors'
-    generation_capas: str = 'generation_capas'
-    interco_capas: str = 'interco_capas'
-    hydro: str = 'hydro'
-
-
-@dataclass
-class DtFilePrefix:
-    demand: str = 'demand'
-    res_capa_factors: str = 'capa_factor'
-    generation_capas: str = 'generation-capa'
-    interco_capas: str = 'interco-capas'
-
-
+# TODO: move part of the following constants in src/common/constants/env_dirs
 @dataclass
 class ColumnNames:
     date: str = 'date'
@@ -45,28 +36,16 @@ class ColumnNames:
 
 
 @dataclass
-class FilesFormat:
-    column_sep: str = ';'
-    decimal_sep: str = '.'
-
-
-@dataclass
 class ComplemDataSources:
     from_json_tb_modif: str = 'from_json_tb_modif'
     from_eraa_data: str = 'from_eraa_data'
 
 
-PROJECT_ROOT_FOLDER = find_project_root(start_path=Path(__file__).resolve())
-LT_UC_COMMON_FOLDER = 'long_term_uc/common'
 COLUMN_NAMES = ColumnNames()
 COMPLEM_DATA_SOURCES = ComplemDataSources()
-DATA_FOLDER = 'data'
 DATE_FORMAT_FILE = '%Y-%m-%d'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 DATE_FORMAT_PRINT = '%Y/%m/%d'
-DT_FILE_PREFIX = DtFilePrefix()
-DT_SUBFOLDERS = DtSubfolders()
-FILES_FORMAT = FilesFormat()
 GEN_CAPA_SUBDT_COLS = ['power_capacity', 'power_capacity_turbine', 'power_capacity_pumping',
                        'power_capacity_injection', 'power_capacity_offtake', 'energy_capacity']
 # N.B. min/max hydro (gen.) levels in a unique file -> share same constants below
@@ -138,33 +117,8 @@ HYDRO_DATA_RESAMPLE_METHODS = {DATATYPE_NAMES.hydro_ror: ResampleMethods.uniform
 # in input data min/max levels are in p.u., relative to stock capacity
 # (ATTENTION in PyPSA, absolute values will have to be used)
 HYDRO_LEVELS_RESAMPLE_FILLNA_VALS = {COLUMN_NAMES.min_value: 0, COLUMN_NAMES.max_value: 1}
-# TODO: more robust way to complete path from root folder
-INPUT_ERAA_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "ERAA_2023-2"))
-INPUT_FOLDER = 'input'
-CODE_FOLDER = 'src'
-INPUT_FUEL_SOURCES_FOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, DATA_FOLDER, "fuel_sources"))
-INPUT_ENV_PARAMS_SUBFOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, INPUT_FOLDER, "_env_params"))
-INPUT_LT_UC_SUBFOLDER = uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, INPUT_FOLDER, "long_term_uc"))
-INPUT_LT_UC_COUNTRY_SUBFOLDER = uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER, "countries"))
-INPUT_LT_UC_OPTIONAL_SUBFOLDER = "optional"
-INPUT_FUNC_PARAMS_SUBFOLDER = (
-    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, CODE_FOLDER, "functional_params"))
-)
-INPUT_DATA_ANALYSIS_SUBFOLDER = f'{INPUT_FOLDER}/data_analysis'
 INTERCO_STR_SEP = '2'
 INPUT_CY_STRESS_TEST_SUBFOLDER = 'cy_stress-test'
-# long-term UC output
-OUTPUT_FOLDER = 'output'
-OUTPUT_FOLDER_LT = (
-    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "long_term_uc"))
-)
-OUTPUT_FOLDER_TOY_MODEL = (
-    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "toy_model"))
-)
-OUTPUT_SUBFOLDER_DATA = 'data'
-OUTPUT_SUBFOLDER_FIG = 'figures'
-OUTPUT_DATA_ANALYSIS_FOLDER = (
-    uniformize_path_os(path_str=os.path.join(PROJECT_ROOT_FOLDER, OUTPUT_FOLDER, "data_analysis")))
 
 
 def get_input_lt_uc_optional_files(optional_subfolder: str, all_years: List[int],
@@ -180,6 +134,10 @@ def get_input_lt_uc_optional_files(optional_subfolder: str, all_years: List[int]
         available_cases = product(hydro_datatypes, all_years, all_countries)
         return [f"{HYDRO_FILES_PREFIX_IN_INPUT_FOLDER[hydro_dt]}_{year}_{country}.csv"
                 for (hydro_dt, year, country) in available_cases]
+    # demand-adder allowed files over all (country, year) cases
+    if optional_subfolder == DT_SUBFOLDERS.demand:
+        available_cases = product(all_years, all_countries)
+        return [f"{DEMAND_ADDER_FILE_PREFIX}_{year}_{country}.csv" for (year, country) in available_cases]
 
 
 def check_uc_input_folder_content(all_countries: List[str], all_years: List[int] = None):
@@ -200,7 +158,7 @@ def check_uc_input_folder_content(all_countries: List[str], all_years: List[int]
                             f"{INPUT_LT_UC_OPTIONAL_SUBFOLDER} is present")
         optional_folder = os.path.join(uc_countries_folder, INPUT_LT_UC_OPTIONAL_SUBFOLDER)
         # check coherence of optional subfolder names
-        allowed_optional_subfolders = {DT_SUBFOLDERS.hydro}
+        allowed_optional_subfolders = {DT_SUBFOLDERS.hydro, DT_SUBFOLDERS.demand}
         optional_subfolders = get_folders_in_dir(my_dir=optional_folder)
         unknown_subfolders = list(set(optional_subfolders) - allowed_optional_subfolders)
         if len(unknown_subfolders) > 0:
@@ -265,8 +223,44 @@ def get_json_plot_params_file() -> str:
     return uniformize_path_os(path_str=os.path.join(INPUT_FUNC_PARAMS_SUBFOLDER, 'plot_params.json'))
 
 
-def get_json_fuel_sources_file() -> str:
-    return uniformize_path_os(path_str=os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'params.json'))
+def get_json_fuel_sources_raw_params_file() -> str:
+    return uniformize_path_os(path_str=os.path.join(INPUT_FUEL_SOURCES_FOLDER, 'raw_params.json'))
+
+
+def get_demand_adder_optional_folder() -> str:
+    return uniformize_path_os(path_str=os.path.join(INPUT_LT_UC_SUBFOLDER,
+                                                    INPUT_LT_UC_OPTIONAL_SUBFOLDER, DT_SUBFOLDERS.demand)
+                              )
+
+
+def get_demand_adder_files(target_year: int, countries: list[str]) -> list[str]:
+    """
+    Get demand-adder files from input/optional/demand folder
+    """
+    demand_adder_optional_folder = get_demand_adder_optional_folder()
+    if not os.path.exists(demand_adder_optional_folder):
+        return []
+    all_demand_adder_files = os.listdir(demand_adder_optional_folder)
+    # keep only the ones corresponding to target year, and selected countries
+    selec_demand_adder_files = []
+    countries_with_demand_adder = []
+    for file in all_demand_adder_files:
+        year, country = get_year_and_country_from_data_file(filename=file, prefix=DEMAND_ADDER_FILE_PREFIX)
+        if year is not None and year == target_year and country in countries:
+            selec_demand_adder_files.append(file)
+            countries_with_demand_adder.append(country)
+    # info about countries with demand-adder file, that will be used to modify demand data
+    demand_adder_folder_relpath = format_relative_path_for_log(get_demand_adder_optional_folder())
+    if len(countries_with_demand_adder) > 0:
+        logging.info(f"The following countries have demand-adder files in folder {demand_adder_folder_relpath}: "
+                     f"{countries_with_demand_adder}\n -> their demand will be modified using these data")
+    # warning about non-used demand-adder files
+    useless_files = list(set(all_demand_adder_files) - set(selec_demand_adder_files))
+    if len(useless_files) > 0:
+        logging.warning(f"There are demand-adder files which will not be used in folder {demand_adder_folder_relpath}: "
+                        f"{useless_files} \n(do not correspond to selected target year {target_year} "
+                        f"and/or countries {countries})")
+    return selec_demand_adder_files
 
 
 def get_network_figure(toy_model_output: bool = False, country: str = None, create_subdir: bool = True,
@@ -305,12 +299,6 @@ def get_figure_file_named(name: str, country: str, year: int, climatic_year: int
 
 
 @dataclass
-class OutputFolderNames:
-    data: str = 'data'
-    figures: str = 'figures'
-
-
-@dataclass
 class FigNamesPrefix:
     capacity: str = 'capa'
     link_capa_saturation: str = 'link_capa_sat'
@@ -341,9 +329,8 @@ def set_full_lt_uc_output_folder(folder_type: str = None, country: str = None, t
 
     if folder_type is not None:
         # data/fig subfolder, possibly with output tag to distinguish it from previous runs
-        per_type_subfolder = OUTPUT_SUBFOLDER_DATA if folder_type == OutputFolderNames.data else OUTPUT_SUBFOLDER_FIG
         if output_tag is not None:
-            per_type_subfolder = add_tag_to_output_folder(output_folder=per_type_subfolder, tag=output_tag)
+            per_type_subfolder = add_tag_to_output_folder(output_folder=folder_type, tag=output_tag)
         folders_tb_join.append(per_type_subfolder)
     return str(Path(*folders_tb_join))
 
@@ -425,3 +412,17 @@ def get_uc_summary_file(country: str, year: int, climatic_year: int, start_horiz
 
 def get_country_name_from_json(json_path: str | Path) -> str:
     return Path(json_path).stem
+
+
+def get_year_and_country_from_data_file(filename: str, prefix: str) -> Optional[tuple[int, str]]:
+    pattern = rf"^{re.escape(prefix)}_(\d{{4}})_([^\.]+)\.csv$"
+
+    match = re.match(pattern, Path(filename).name)
+    if not match:
+        logging.warning(f"Filename '{filename}' does not match '{prefix}_<year>_<country>.csv' -> None returned")
+        return None, None
+
+    year = int(match.group(1))
+    country = match.group(2)
+
+    return year, country

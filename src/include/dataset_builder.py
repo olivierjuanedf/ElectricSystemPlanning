@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import re
 
 from src.common.constants.countries import set_country_trigram, is_country_trigram
+from src.common.constants.env_dirs import OutputFolderNames
 from src.common.constants.links import set_link_name, get_bus_from_link_name, set_per_origin_bus_links_msg
 from src.common.constants.optimisation import OptimSolvers, DEFAULT_OPTIM_SOLVER_PARAMS, SolverParams, \
     OptimPbCharacteristics, OptimPbTypes, CustomConstraintDirection, ZoneAndTempProdSumConstraint, CustomConstraintNames
@@ -28,7 +29,8 @@ from src.common.constants.temporal import Timescale
 from src.common.error_msgs import print_errors_list
 from src.common.fuel_sources import FuelSource
 from src.common.logger import format_relative_path_for_log
-from src.common.long_term_uc_io import get_network_figure, FigNamesPrefix, get_output_figure
+from src.common.long_term_uc_io import (get_network_figure, FigNamesPrefix, get_output_figure,
+                                        set_full_lt_uc_output_folder)
 from src.include.uc_postprocessing import UCSummaryMetrics, UCOptimalSolution
 from src.utils.basic_utils import (lexico_compar_str, rm_elts_with_none_val, rm_elts_in_str, sort_lexicographically,
                                    format_with_spaces, get_default_values)
@@ -284,7 +286,7 @@ class PypsaModel:
         logging.info('Add energy carriers')
         for carrier in list(fuel_sources.keys()):
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=carrier,
-                             co2_emissions=fuel_sources[carrier].co2_emissions / 1000)
+                             co2_emissions=fuel_sources[carrier].co2_emissions)
 
     def add_per_bus_energy_carriers(self, fuel_sources: Dict[str, FuelSource], carrier_name: str = None):
         if carrier_name is None:
@@ -293,7 +295,7 @@ class PypsaModel:
         logging.info(f'Add per-bus energy carriers for: {all_bus_names}')
         for bus_name in all_bus_names:
             self.network.add(GEN_UNITS_PYPSA_PARAMS.carrier.capitalize(), name=bus_name,
-                             co2_emissions=fuel_sources[carrier_name].co2_emissions / 1000)
+                             co2_emissions=fuel_sources[carrier_name].co2_emissions)
 
     def add_generators(self, generators_data: Dict[str, List[GenerationUnitData]],
                        agg_info_over_cases: bool = True):
@@ -340,6 +342,35 @@ class PypsaModel:
         storage_unit_names = self.get_storage_unit_names()
         logging.info(f'Considered storage units ({len(storage_unit_names)}): '
                      f'{set_per_bus_asset_msg(asset_names=storage_unit_names)}')
+
+    def add_co2_cost_to_generators(self, co2_price: float):
+        """
+        Add a CO₂ cost to the marginal_cost of all generators.
+
+        The additional variable cost is computed as:
+
+            co2_cost = co2_price * carrier_co2_emissions / efficiency
+
+        where:
+            - co2_price is expressed in €/tCO2,
+            - carrier_co2_emissions in tCO2/MWh_primary,
+            - efficiency is the generator efficiency [-].
+
+        Parameters
+        ----------
+        co2_price : float
+            Carbon price in €/tCO2.
+        """
+        logging.info(f"Add CO2 emission price contribution to marginal cost attribute, "
+                     f"using a value of {co2_price}€/tCO2eq.")
+        generators = self.network.generators
+
+        emission_factor = generators["carrier"].map(self.network.carriers["co2_emissions"]).fillna(0.0)
+
+        additional_cost = (co2_price * emission_factor / generators["efficiency"].replace(0, np.nan)).fillna(0.0)
+
+        self.network.generators["marginal_cost"] = (
+                self.network.generators["marginal_cost"].fillna(0.0) + additional_cost)
 
     def add_loads(self, demand: Dict[str, pd.DataFrame], carrier_name: str = None):
         if carrier_name is None:
@@ -415,9 +446,6 @@ class PypsaModel:
         # In PyPSA (with Linopy engine), create_model() builds the optimization formulation
         # without invoking the solver, avoiding a redundant solve.
         if hasattr(self.network.optimize, "create_model"):
-            # TODO: suppr. this temporary fix
-            for comp in self.network.iterate_components():
-                comp.static.index = comp.static.index.astype(object)
             self.network.optimize.create_model()
         else:
             self.network.optimize(build_only=True)
@@ -457,10 +485,12 @@ class PypsaModel:
             return
 
         if prod_sum_const.type == CustomConstraintNames.max_co2_emissions:
+            # attention the quantity of CO2 emissions depends on the respective efficiencies of the generators
             factor = (
-                self.network.generators.carrier
-                .map(self.network.carriers.co2_emissions)
-                .fillna(0.0)
+                    self.network.generators.carrier
+                    .map(self.network.carriers.co2_emissions)
+                    .fillna(0.0)
+                    / self.network.generators.efficiency
             )
         elif prod_sum_const.type == CustomConstraintNames.max_prod_cost:
             factor = self.network.generators.marginal_cost
@@ -974,20 +1004,21 @@ class PypsaModel:
 
         return mapping
 
-# def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
-#     str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
-#     for _, units_data in generation_units_data.items():
-#         # loop over all units in current country
-#         for indiv_unit_data in units_data:
-#             current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
-#             if current_prod_type in updated_fuel_sources_params:
-#                 # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
-#                 if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
-#                     indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
-#                         GEN_UNITS_PYPSA_PARAMS.marginal_cost]
-#
-#         # TODO: from units data info on fuel source extract and apply updated params values
-#         updated_fuel_sources_params = None
+
+def overwrite_gen_units_fuel_src_params(generation_units_data: GEN_UNITS_DATA_TYPE, updated_fuel_sources_params: Dict[
+    str, Dict[str, float]]) -> GEN_UNITS_DATA_TYPE:
+    for _, units_data in generation_units_data.items():
+        # loop over all units in current country
+        for indiv_unit_data in units_data:
+            current_prod_type = get_prod_type_from_unit_name(prod_unit_name=indiv_unit_data.name)
+            if current_prod_type in updated_fuel_sources_params:
+                # TODO: add CO2 emissions, and merge both case? Q2OJ: how-to properly?
+                if GEN_UNITS_PYPSA_PARAMS.marginal_cost in updated_fuel_sources_params[current_prod_type]:
+                    indiv_unit_data.marginal_cost = updated_fuel_sources_params[current_prod_type][
+                        GEN_UNITS_PYPSA_PARAMS.marginal_cost]
+
+        # TODO: from units data info on fuel source extract and apply updated params values
+        updated_fuel_sources_params = None
 
 
 def get_country_bus_name(country: str) -> str:
@@ -1031,8 +1062,6 @@ def set_period_start_file(year: int, period_start: datetime) -> str:
 def save_lp_model(network: pypsa.Network, year: int, period_start: datetime, countries: List[str] = None,
                   n_countries: int = None, add_random_suffix: bool = False, toy_model_output: bool = False,
                   output_tag: str = None) -> str:
-    from src.common.long_term_uc_io import set_full_lt_uc_output_folder, OutputFolderNames
-
     # In PyPSA 1.0+, opt.create_model is removed. Instead we use the built-in linopy model.
     if hasattr(network, "model") and network.model is not None:
         m = network.model

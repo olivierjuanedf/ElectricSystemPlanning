@@ -62,9 +62,10 @@ from src.common.constants.optimisation import OPTIM_RESOL_STATUS, DEFAULT_OPTIM_
 from src.common.constants.plots import PlotNames, PER_COUNTRY_PLOT
 from src.common.constants.usage_params_json import EnvPhaseNames
 from src.common.error_msgs import infeas_debugging_hints_msg
-from src.common.fuel_sources import set_fuel_sources_from_json, DUMMY_FUEL_SOURCES, FuelSource
+from src.common.fuel_sources import set_fuel_sources_from_raw_params_json, DUMMY_FUEL_SOURCES, FuelSource, \
+    update_fuel_sources, get_fuel_sources_with_set_marg_cost, reset_fuel_sources_marginal_costs
 from src.common.logger import init_logger, stop_logger, deactivate_verbose_warnings, TITLE_LOG_SEP
-from src.common.long_term_uc_io import set_full_lt_uc_output_folder
+from src.common.long_term_uc_io import set_full_lt_uc_output_folder, get_demand_adder_files
 from src.common.plot_params import PlotParamsKeysInJson
 from src.common.uc_run_params import UCRunParams
 from src.include.dataset import Dataset
@@ -78,13 +79,15 @@ from src.utils.read import (read_and_check_uc_run_params, read_and_check_pypsa_s
                             read_plot_params, read_usage_params, read_solver_params)
 
 
-def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr, debug_mode: bool = False,
-                         debug_output_folder: str = None, get_optional_const_from_data_folder: Dict[str, bool] = None) \
+def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatasetDescr, fuel_sources: list[FuelSource],
+                         debug_mode: bool = False, debug_output_folder: str = None,
+                         get_optional_const_from_data_folder: Dict[str, bool] = None) \
         -> Dataset:
     """
     Get ERAA data which is needed for current UC simulation; extracted from the data folder of this project
     :param uc_run_params
     :param eraa_data_descr
+    :param fuel_sources: to update marginal cost values; if None no update
     :param debug_mode: to save some intermediate data in (JSON) files to more easily debug
     :param debug_output_folder: in which intermediate data must be saved
     :param get_optional_const_from_data_folder: get optional constraint parameters from ERAA data folder? Alternatively
@@ -105,6 +108,9 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
     eraa_dataset.get_countries_data(uc_run_params=uc_run_params,
                                     aggreg_prod_types_def=eraa_data_descr.aggreg_prod_types_def)
     eraa_dataset.complete_data()
+
+    # TODO: apply demand adder, if data provided
+
     logging.info(f'{TITLE_LOG_SEP} II)2) Check data coherence {TITLE_LOG_SEP}')
     logging.info('Get generation units data, from both ERAA data - read just before '
                  '- and complementary JSON parameter files')
@@ -113,6 +119,10 @@ def get_needed_eraa_data(uc_run_params: UCRunParams, eraa_data_descr: ERAADatase
                                 pypsa_unit_params_per_agg_pt=eraa_data_descr.pypsa_unit_params_per_agg_pt,
                                 units_complem_params_per_agg_pt=eraa_data_descr.units_complem_params_per_agg_pt)
      )
+
+    fuel_sources_with_modif_marg_cost = get_fuel_sources_with_set_marg_cost(fuel_sources)
+    if len(fuel_sources_with_modif_marg_cost) > 0:
+        eraa_dataset.update_gen_units_marginal_costs(fuel_sources=fuel_sources_with_modif_marg_cost)
 
     # set 'committable' attribute to False, i.e. no 'dynamic constraints' modeled in the considered modeled
     eraa_dataset.set_committable_param_to_false()
@@ -160,6 +170,8 @@ def create_pypsa_network_model(name: str, uc_run_params: UCRunParams, eraa_datas
     fuel_sources |= DUMMY_FUEL_SOURCES
     pypsa_model.add_energy_carriers(fuel_sources=fuel_sources)
     pypsa_model.add_generators(generators_data=eraa_dataset.generation_units_data)
+    if not uc_run_params.co2_emis_price == 0:
+        pypsa_model.add_co2_cost_to_generators(co2_price=uc_run_params.co2_emis_price)
     pypsa_model.add_loads(demand=eraa_dataset.demand)
     pypsa_model.add_interco_links(countries=uc_run_params.selected_countries, interco_capas=eraa_dataset.interco_capas)
     # Set to True if any considered country with constraining SoC min/SoC max const.
@@ -389,7 +401,7 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
                  f'files {TITLE_LOG_SEP}')
 
     # set fuel sources objects from JSON
-    fuel_sources = set_fuel_sources_from_json()
+    fuel_sources = set_fuel_sources_from_raw_params_json()
 
     eraa_data_descr, uc_run_params = (
         read_and_check_uc_run_params(phase_name=EnvPhaseNames.multizones_uc_model, usage_params=usage_params)
@@ -412,12 +424,31 @@ def run(network_name: str = 'my little europe', solver_params: SolverParams = No
     else:
         debug_mode = False
 
+    # update fuel sources marginal cost and CO2 emission values from values read in
+    # input/long_term_uc/fuel_sources_to-be_modif.json
+    if uc_run_params.updated_fuel_sources_params is not None:
+        fuel_sources = update_fuel_sources(fuel_sources=fuel_sources,
+                                           updated_params=uc_run_params.updated_fuel_sources_params)
+
+    # obtain demand adder files
+    if usage_params.manually_adding_demand:
+        demand_adder_files = get_demand_adder_files(target_year=uc_run_params.selected_target_year,
+                                                    countries=uc_run_params.selected_countries)
+        uc_run_params.set_demand_adder_files(demand_adder_files)
+
     logging.info(f'{TITLE_LOG_SEP} II) Get data for UC model {TITLE_LOG_SEP}')
 
     eraa_dataset = get_needed_eraa_data(uc_run_params=uc_run_params, eraa_data_descr=eraa_data_descr,
-                                        debug_mode=debug_mode, debug_output_folder=output_folder,
+                                        fuel_sources=fuel_sources, debug_mode=debug_mode,
+                                        debug_output_folder=output_folder,
                                         get_optional_const_from_data_folder=
                                         usage_params.get_optional_const_from_data_folder)
+
+    # updated marginal costs values have been modified in generation units data, and will be associated to generators
+    # in PyPSA modelling; for clarity reset this attribute to None in fuel sources - from which only CO2 emissions
+    # values will be set (to carriers)
+    fuel_sources = reset_fuel_sources_marginal_costs(fuel_sources)
+
     # and check that minimal parameters needed for model creation have been provided
     # -> to avoid 'obscure crash' hereafter
     check_min_pypsa_params_provided(eraa_dataset=eraa_dataset)
