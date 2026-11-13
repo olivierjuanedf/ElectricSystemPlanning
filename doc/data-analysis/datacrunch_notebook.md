@@ -8,7 +8,8 @@ This notebook is the entry point of a hands-on power system sizing exercise. It 
 - Understand the key indicators that shape a power system (load duration curves, controllable/fatal generation, base/peak load, gross/net demand, the Boiteux stacking method);
 - Characterize the main power generation technologies (technical, environmental and economic parameters);
 - Understand how to choose the power generation capacities to be installed to satisfy the demand using the Boiteux's stacking method;
-- Arrive at a well-argued power mix choice for the studied country.
+- Compare the energy mix obtained for 2025 using Boiteux’s stacking method with the actual one, and discuss the differences;
+- Arrive at a well-argued first power mix choice for 2033 to start the European Serious Game.
 
 ## Overall approach and methodology
 
@@ -19,7 +20,7 @@ The notebook follows a step-by-step pedagogical progression:
 3. **Understand how to size a 100% thermal system** using the Boiteux graphical stacking method (stacking technologies on the load duration curve based on their fixed/variable costs)
 4. **Introduce variable renewable energy sources (vRES)** one at a time (solar, onshore/offshore wind, run-of-river hydro), observing their effect on the net demand curve.
 5. **Understand how to size a system with both thermal and renewable energy sources** using the Boiteux graphical stacking method
-6. **Size the country's power mix and compare with the country's actual power mix** (ERAA data). After discussing the differences, settle on a target mix for 2033, which serves as input for the detailed PyPSA modeling later in the week.
+6. **Preparing a serious game – decision-making criteria and first mix decisions** Taking into account your country’s energy mix by 2025, what you have learned during the day, and your general preferences, settle on a target to achieve as Europe in 2033, and on a first power mix for your country. These which will serve as input for the detailed PyPSA modeling later in the week.
 
 The data used comes from the **ERAA 2023.2** dataset (ENTSO-E): hourly demand by climatic year, renewable capacity factors, existing generation capacities.
 
@@ -56,7 +57,8 @@ Selection of the studied country/meta-country (among: benelux, france, germany, 
 ### 5 - Boiteux stacking method (2/2) - with controllable and renewable generation technologies
 - Application of the Boiteux graphical stacking method to stack technologies on the load duration curve when considering both renewable and controllable technologie, followed by a critical assessment of this mix.
 
-### 6 — Exploring optimal power mix design
-- Use of the Boiteux stacking method to obtain a power generation mix for the selected country or meta-country
-- Comparison with the ERAA power mix: confronting the optimized mix with the actual installed capacities in the country per ERAA, guided by a set of questions to analyze the gaps.
-- Choice of power mix to start the serious game: final synthesis of the retained 2033 mix (capacities by technology), to be documented and justified, to be used as input data for the PyPSA modeling in the rest of the practical work.
+### 6 — Exploring power mix design
+- Use of the Boiteux stacking method to obtain a power generation mix for the selected country or meta-country in 2025
+- Comparison with the ERAA 2025 power mix: confronting the optimized mix with the actual installed capacities in the country per ERAA, guided by a set of questions to analyze the gaps.
+- Group discussion to choose a first objective to achieve in 2033 as "Europe" in the serious Game
+- Based on these elements, choice of a first power mix in 2033 for the country or meta-country, to be used as input data to start the European Serious Game in PyPsa.

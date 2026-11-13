@@ -340,6 +340,7 @@ def save_data_and_fig_results(pypsa_model: PypsaModel, uc_run_params: UCRunParam
             uc_optimal_solution.save_link_capa_dual_vars_to_csv(year=uc_run_params.selected_target_year,
                                                                 climatic_year=uc_run_params.selected_climatic_year,
                                                                 start_horizon=uc_run_params.uc_period_start,
+                                                                snapshots=pypsa_model.network.snapshots,
                                                                 output_tag=uc_run_params.output_tag)
 
         # set UC summary metrics (Energy Not Served, number of failure hours, costs)

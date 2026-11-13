@@ -26,7 +26,7 @@ from src.common.long_term_uc_io import FigNamesPrefix, get_output_figure, get_fi
 from src.common.plot_params import PlotParams
 from src.utils.basic_utils import format_with_spaces, get_default_values, dict_to_str
 from src.utils.df_utils import rename_df_columns, sort_out_cols_with_zero_values, is_column_constant, \
-    create_df_from_dict
+    build_timeseries_df
 from src.utils.plot import get_similar_color
 
 OUTPUT_DATE_COL = 'date'
@@ -892,14 +892,13 @@ class UCOptimalSolution:
         df_sde_dual_var_opt.to_csv(marginal_prices_csv_file)
 
     def save_link_capa_dual_vars_to_csv(self, year: int, climatic_year: int, start_horizon: datetime,
-                                        output_tag: str = None):
+                                        snapshots: pd.DatetimeIndex, output_tag: str = None):
         link_capa_duals_csv_file = get_link_capa_dual_vars_file(year=year, climatic_year=climatic_year,
                                                                 start_horizon=start_horizon, output_tag=output_tag)
         logging.info(f'Save link capacity dual variables to .csv file '
                      f'{format_relative_path_for_log(path=link_capa_duals_csv_file)}')
-
-        df_link_capa_duals = create_df_from_dict(data=self.link_capa_dual, key_col_name="link",
-                                                 value_col_name="dual_variable")
+        df_link_capa_duals = build_timeseries_df(data=self.link_capa_dual, dates=snapshots, key_col_name="link",
+                                                 value_col_name="dual_variable", date_col=OUTPUT_DATE_COL)
         df_link_capa_duals.to_csv(link_capa_duals_csv_file, index=False)
 
     def get_prod_given_bus(self, bus_name: str) -> Optional[pd.DataFrame]:

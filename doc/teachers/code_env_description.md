@@ -201,32 +201,34 @@ definition - possibly using a standard one (e.g., the one of Eco2mix), linestyle
 It can be done on different dimensions (production types, zones, years, etc.)
 - [usage_params.json](../../src/functional_params/usage_params.json): idem, to allow (or not)/parametrize some 
 operations for the students. Per parameter:
-  - **allow_adding_interco_capas**: possible to add some interconnection (pair of zones) w.r.t. the list in ERAA data?
-  - **allow_overwriting_eraa_interco_capa_vals**: possible to overwrite interco. capa values of ERAA? 
+  - <span style="color:#32B032; font-weight:bold">allow_adding_interco_capas</span>: possible to add some interconnection (pair of zones) w.r.t. the list in ERAA data?
+  - <span style="color:#32B032; font-weight:bold">allow_overwriting_eraa_interco_capa_vals</span>: possible to overwrite interco. capa values of ERAA? 
   (specifying values in [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json))
-  - **allow_manually_adding_demand**: possible to add supplementary demand in addition to ERAA one? 
+  - <span style="color:#32B032; font-weight:bold">allow_manually_adding_demand</span>: possible to add supplementary demand in addition to ERAA one? 
   
     N.B. Not functional currently; could be used to integrate "exogeneous" Demand-Side-Response 
   (e.g. based on Time-of-Use tariff, set independently of the UC solution)
-  - **allow_manually_adding_generators**: ??
+  - <span style="color:#32B032; font-weight:bold">allow_manually_adding_generators</span>: ??
     
     N.B. Idem
-  - **apply_cf_techno_breakthrough**: apply some "breakthrough" on a technology associated to CF data. In this case, 
+  - <span style="color:#32B032; font-weight:bold">apply_cf_techno_breakthrough</span>: apply some "breakthrough" on a technology associated to CF data. In this case, 
   CF values will be applied an increasing transformation to represent this improvement
-  - **apply_per_country_json_file_params**: dictionary with following values, indicating for each of the scripts if run
+  - <span style="color:#32B032; font-weight:bold">apply_per_country_json_file_params</span>: dictionary with following values, indicating for each of the scripts if run
   parameters for a given country must be obtained rom individual country/global european json input file 
-    - **data_analysis**: false 
-    - **monozone_toy_uc_model**: true
-    - **multizones_uc_model**: true
+    - <span style="color:#32B032; font-weight:bold">data_analysis</span>: false 
+    - <span style="color:#32B032; font-weight:bold">monozone_toy_uc_model</span>: true
+    - <span style="color:#32B032; font-weight:bold">multizones_uc_model</span>: true
   Q: still useful? (in multizones_uc_model case, behaviour dependently on the chosen mode solo/europe)
-  - **get_optional_const_from_data_folder**: get data for optional constraints from data folder (available only to the 
+  - <span style="color:#32B032; font-weight:bold">get_optional_const_from_data_folder</span>: get data for optional constraints from data folder (available only to the 
   teachers) or input one (in which students can do some modifications)? Can be either a boolean, or a dictionary to 
   specifiy this property per type of constraint; in this latter case available keys are "hydro", "max_co2_emissions", 
   and "max_prod_cost"
-  - **res_cf_stress_test_folder**: folder in which RES CF of the "stress test" will be found (different 
+  - <span style="color:#32B032; font-weight:bold">res_cf_stress_test_folder</span>: folder in which RES CF of the "stress test" will be found (different 
   folder from the one in which original CF ERAA data are found)
-  - **res_cf_stress_test_cy**: CY to be used for RES CF stress test; for which associated data must be found in 
-  the files provided in **res_cf_stress_test_folder** 
-  - **use_first_year_capas_as_default**: use first year available (in ERAA data) to set generation capas by default, 
+  - <span style="color:#32B032; font-weight:bold">res_cf_stress_test_cy</span>: CY to be used for RES CF stress test; for which associated data must be found in 
+  the files provided in <span style="color:#32B032; font-weight:bold">res_cf_stress_test_folder</span> 
+  - <span style="color:#32B032; font-weight:bold">use_first_year_capas_as_default</span>: use first year available (in ERAA data) to set generation capas by default, 
   i.e. before applying values set in input JSON per-country files
-  - **log_level**
+  - <span style="color:#32B032; font-weight:bold">log_level</span>
+
+    Default: XXX
