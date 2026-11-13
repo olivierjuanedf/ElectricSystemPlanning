@@ -1,0 +1,13 @@
+# Investment choices for Iberian Peninsula (capacities in MW)
+country: iberian-peninsula
+
+solar_pv: 60000
+wind_onshore: 40000
+wind_offshore: 5000
+nuclear: 7000
+hydro_reservoir: 12000
+hydro_run_of_river: 3000
+hydro_pump_storage_closed_loop: 6000
+gas: 15000
+batteries: 8000
+dsr: 2000

@@ -1,0 +1,12 @@
+# Investment choices for Italy (capacities in MW)
+country: italy
+
+solar_pv: 55000
+wind_onshore: 25000
+wind_offshore: 5000
+gas: 30000
+hydro_reservoir: 5000
+hydro_run_of_river: 4000
+hydro_pump_storage_closed_loop: 7000
+batteries: 6000
+dsr: 2000

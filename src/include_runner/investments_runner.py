@@ -265,22 +265,82 @@ def parse_investment_file(filepath: str, country: Optional[str] = None) -> Tuple
     return resolved_country, capacities
 
 
-def collect_investment_files(target: Union[str, List[str]]) -> List[str]:
-    """Find all .txt investment files in a given directory or from a list of paths."""
+def parse_country_json_file(filepath: str, country: Optional[str] = None) -> Tuple[str, Dict[str, float]]:
+    """
+    Parse an existing country JSON file (e.g. input/long_term_uc/countries/{country}.json).
+    Extracts the country name and capacity dictionary.
+    """
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"Country JSON file not found: '{filepath}'")
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON file '{filepath}': {exc}")
+
+    file_country: Optional[str] = data.get("team")
+    if not file_country:
+        basename = os.path.basename(filepath)
+        stem = os.path.splitext(basename)[0].lower()
+        for c in AVAILABLE_COUNTRIES:
+            if c in stem:
+                file_country = c
+                break
+
+    resolved_country = country or file_country
+    if not resolved_country:
+        raise ValueError(
+            f"Country not specified in JSON file '{filepath}' (missing 'team' key)."
+        )
+
+    resolved_country = normalize_country_name(resolved_country)
+
+    raw_capas: dict = {}
+    if "capacities_tb_overwritten" in data and isinstance(data["capacities_tb_overwritten"], dict):
+        raw_capas = data["capacities_tb_overwritten"].get(resolved_country, {})
+        if not raw_capas and len(data["capacities_tb_overwritten"]) == 1:
+            raw_capas = next(iter(data["capacities_tb_overwritten"].values()))
+    elif "capacities" in data and isinstance(data["capacities"], dict):
+        raw_capas = data["capacities"]
+
+    capacities: Dict[str, float] = {}
+    for k, v in raw_capas.items():
+        try:
+            asset = normalize_asset_name(k)
+            capacities[asset] = float(v)
+        except Exception:
+            pass
+
+    return resolved_country, capacities
+
+
+def load_country_capacities(filepath: str, country: Optional[str] = None) -> Tuple[str, Dict[str, float]]:
+    """Load country name and capacities from either a .txt or a .json file."""
+    if filepath.endswith(".json"):
+        return parse_country_json_file(filepath=filepath, country=country)
+    return parse_investment_file(filepath=filepath, country=country)
+
+
+def collect_investment_files(target: Union[str, List[str]], extension: str = ".txt") -> List[str]:
+    """Find all investment files (.txt or .json) in a given directory or from a list of paths."""
+    ext = extension if extension.startswith(".") else f".{extension}"
+    pattern = f"*{ext}"
+
     if isinstance(target, list):
         files = []
         for item in target:
             if os.path.isdir(item):
-                files.extend(glob.glob(os.path.join(item, "*.txt")))
-            elif os.path.isfile(item) and item.endswith(".txt"):
+                files.extend(glob.glob(os.path.join(item, pattern)))
+            elif os.path.isfile(item) and item.endswith(ext):
                 files.append(item)
         return sorted(list(set(files)))
 
     if os.path.isdir(target):
-        files = glob.glob(os.path.join(target, "*.txt"))
+        files = glob.glob(os.path.join(target, pattern))
         return sorted(files)
     elif os.path.isfile(target):
-        return [target]
+        return [target] if target.endswith(ext) else []
     return []
 
 
@@ -526,6 +586,27 @@ def compute_country_annualized_capex(
     return total_overnight, total_annualized
 
 
+def get_production_from_opt_power_csv(summary_file_path: Optional[str]) -> Dict[str, float]:
+    """Compute per-country total generated energy in GWh from opt_power_*.csv if available."""
+    if not summary_file_path or not os.path.isfile(summary_file_path):
+        return {}
+    dir_path = os.path.dirname(summary_file_path)
+    csv_files = glob.glob(os.path.join(dir_path, "opt_power_*.csv"))
+    if not csv_files:
+        return {}
+    try:
+        import pandas as pd
+        df = pd.read_csv(csv_files[0])
+        prod_cols = [c for c in df.columns if c != "date" and not c.endswith("_failure")]
+        per_country_prod_gwh: Dict[str, float] = {}
+        for col in prod_cols:
+            tri = col.split("_")[0]
+            per_country_prod_gwh[tri] = per_country_prod_gwh.get(tri, 0.0) + float(df[col].sum()) / 1e3
+        return per_country_prod_gwh
+    except Exception:
+        return {}
+
+
 def display_summary(summary_data: dict, country: str) -> None:
     """
     Display summary for a country within the European simulation.
@@ -537,10 +618,11 @@ def display_summary(summary_data: dict, country: str) -> None:
 def display_multi_country_summary(summary_data: dict,
                                   countries: Optional[List[str]] = None,
                                   updated_countries: Optional[List[str]] = None,
-                                  per_country_capacities: Optional[Dict[str, Dict[str, float]]] = None) -> None:
+                                  per_country_capacities: Optional[Dict[str, Dict[str, float]]] = None,
+                                  summary_file_path: Optional[str] = None) -> None:
     """
     Print a clean comparative multi-country summary table for European mode.
-    Displays ENS, Loss of Load hours, OPEX, annualized CAPEX, TOTAL cost, and CO2 emissions.
+    Displays ENS, Loss of Load hours, OPEX, annualized CAPEX, TOTAL cost, cost per MWh produced, and CO2 emissions.
     Supports both full country names and 3-letter trigrams in summary_data keys.
     """
     total_cost = summary_data.get("total_cost", 0.0)
@@ -553,22 +635,28 @@ def display_multi_country_summary(summary_data: dict,
     per_country_op_cost = summary_data.get("per_country_total_operational_cost", {}) or {}
     per_country_co2 = summary_data.get("per_country_co2_emissions", {}) or {}
 
+    # Production data (in GWh)
+    per_country_prod = summary_data.get("per_country_production", {}) or {}
+    if not per_country_prod and summary_file_path:
+        per_country_prod = get_production_from_opt_power_csv(summary_file_path=summary_file_path)
+
     total_ens = sum(per_country_ens.values()) if per_country_ens else 0.0
     max_fail_h = max(per_country_fail_h.values()) if per_country_fail_h else 0.0
 
     display_countries = countries if countries is not None else AVAILABLE_COUNTRIES
     updated_set = set(updated_countries or [])
 
-    print("\n" + "=" * 106)
-    print("                            RESULTS OF THE EUROPEAN INTERCONNECTED SIMULATION")
-    print("=" * 106)
-    header = f"{'COUNTRY':<22} | {'ENS (MWh)':>10} | {'FAIL.(h)':>8} | {'OPEX(M€/yr)':>11} | {'CAPEX(M€/yr)':>12} | {'TOTAL(M€/yr)':>12} | {'CO2 (Mt)':>8}"
+    print("\n" + "=" * 110)
+    print("                              RESULTS OF THE EUROPEAN INTERCONNECTED SIMULATION")
+    print("=" * 110)
+    header = f"{'COUNTRY':<20} | {'ENS (MWh)':>10} | {'FAIL.(h)':>8} | {'OPEX(M€/yr)':>11} | {'CAPEX(M€/yr)':>12} | {'TOTAL(M€/yr)':>12} | {'COST(€/MWh)':>11} | {'CO2 (Mt)':>8}"
     print(header)
-    print("-" * 106)
+    print("-" * 110)
 
     total_europe_capex_m_yr = 0.0
     total_europe_overnight_b = 0.0
     total_europe_opex = 0.0
+    total_europe_prod_gwh = 0.0
 
     for country in sorted(display_countries):
         tri = set_country_trigram(country)
@@ -596,6 +684,15 @@ def display_multi_country_summary(summary_data: dict,
         total_m_yr = opex + capex_m_yr
         co2 = per_country_co2.get(tri, per_country_co2.get(country, 0.0))
 
+        # Cost per MWh produced (€/MWh = (M€ * 1e6) / (GWh * 1e3) = M€ * 1000 / GWh)
+        prod_gwh = per_country_prod.get(tri, per_country_prod.get(country, 0.0))
+        total_europe_prod_gwh += prod_gwh
+        if prod_gwh > 0:
+            cost_per_mwh = (total_m_yr * 1000.0) / prod_gwh
+            cost_mwh_str = f"{cost_per_mwh:>11,.1f}"
+        else:
+            cost_mwh_str = f"{'-':>11}"
+
         opex_str = f"{opex:>11,.1f}" if opex > 0 else f"{'-':>11}"
         capex_str = f"{capex_m_yr:>12,.1f}" if capex_m_yr > 0 else f"{'-':>12}"
         total_str = f"{total_m_yr:>12,.1f}" if total_m_yr > 0 else f"{'-':>12}"
@@ -603,18 +700,32 @@ def display_multi_country_summary(summary_data: dict,
 
         tag = " *" if country in updated_set else ""
         c_display = f"{country}{tag}"
-        print(f"{c_display:<22} | {ens:>10,.1f} | {fail_h:>8.1f} | {opex_str} | {capex_str} | {total_str} | {co2_str}")
+        print(f"{c_display:<20} | {ens:>10,.1f} | {fail_h:>8.1f} | {opex_str} | {capex_str} | {total_str} | {cost_mwh_str} | {co2_str}")
 
     # European total OPEX: prefer global metric if available
     display_europe_opex = total_op_cost if total_op_cost > 0 else total_europe_opex
     total_europe_cost = display_europe_opex + total_europe_capex_m_yr
 
-    print("-" * 106)
-    print(f"{'TOTAL EUROPE':<22} | {total_ens:>10,.1f} | {max_fail_h:>8.1f} | {display_europe_opex:>11,.1f} | {total_europe_capex_m_yr:>12,.1f} | {total_europe_cost:>12,.1f} | {total_co2:>8,.2f}")
-    print("=" * 106)
-    print(f"  Total operational cost (OPEX) : {display_europe_opex:,.2f} M€")
+    # European cost per MWh
+    if total_europe_prod_gwh > 0:
+        total_europe_cost_mwh = (total_europe_cost * 1000.0) / total_europe_prod_gwh
+        total_europe_cost_mwh_str = f"{total_europe_cost_mwh:>11,.1f}"
+    else:
+        total_europe_cost_mwh_str = f"{'-':>11}"
+
+    print("-" * 110)
+    print(f"{'TOTAL EUROPE':<20} | {total_ens:>10,.1f} | {max_fail_h:>8.1f} | {display_europe_opex:>11,.1f} | {total_europe_capex_m_yr:>12,.1f} | {total_europe_cost:>12,.1f} | {total_europe_cost_mwh_str} | {total_co2:>8,.2f}")
+    print("=" * 110)
+    print(f"  Total operational cost (OPEX) : {display_europe_opex:,.2f} M€/year")
     print(f"  Total annualized CAPEX        : {total_europe_capex_m_yr:,.2f} M€/year (Total overnight: ~{total_europe_overnight_b:,.1f} B€)")
     print(f"  Total system cost (OPEX+CAPEX): {total_europe_cost:,.2f} M€/year")
+    if total_europe_prod_gwh > 0:
+        total_europe_prod_twh = total_europe_prod_gwh / 1000.0
+        avg_opex_mwh = (display_europe_opex * 1000.0) / total_europe_prod_gwh
+        avg_capex_mwh = (total_europe_capex_m_yr * 1000.0) / total_europe_prod_gwh
+        avg_cost_mwh = (total_europe_cost * 1000.0) / total_europe_prod_gwh
+        print(f"  Total generation              : {total_europe_prod_twh:,.2f} TWh ({total_europe_prod_gwh:,.0f} GWh)")
+        print(f"  Average electricity cost      : {avg_cost_mwh:,.2f} €/MWh (OPEX: {avg_opex_mwh:,.2f} €/MWh, CAPEX: {avg_capex_mwh:,.2f} €/MWh)")
     if updated_set:
         print(f"  (*) Countries updated by the runner during this session: {', '.join(sorted(updated_set))}")
 

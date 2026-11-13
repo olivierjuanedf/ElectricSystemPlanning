@@ -1,0 +1,24 @@
+# Investment choices for France (capacities in MW)
+# You can modify the values below or add other asset types.
+# Accepted syntax: 'asset: capacity', 'asset = capacity', or 'asset capacity'
+
+country: france
+
+# Low-carbon & renewable generation
+nuclear: 61000
+solar_pv: 35000
+wind_onshore: 25000
+wind_offshore: 10000
+
+# Hydro
+hydro_reservoir: 8500
+hydro_run_of_river: 4500
+hydro_pump_storage_closed_loop: 5000
+hydro_pump_storage_open_loop: 1000
+
+# Flexibility & Storage
+batteries: 3000
+dsr: 2500
+
+# Peaking thermal
+gas: 4000

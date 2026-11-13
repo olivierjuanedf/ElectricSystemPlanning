@@ -135,6 +135,8 @@ class UCSummaryMetrics:
     per_country_total_cost: Dict[str, float] = None  # including failure penalty (fictive) cost
     per_country_total_operational_cost: Dict[str, float] = None  # without this cost
     per_country_co2_emissions: Dict[str, float] = None
+    per_country_production: Dict[str, float] = None  # in GWh, without failure
+    total_production: float = None  # in GWh, without failure
 
     def __repr__(self, europe_name: str = None) -> str:
         metric_sep = '\n-> '
@@ -946,6 +948,21 @@ class UCOptimalSolution:
             )
         return per_country_total_cost
 
+    def calc_per_country_production(self, countries: List[str], snapshot_weightings: pd.DataFrame) -> Dict[str, float]:
+        """
+        Calculate total energy generated (excluding failure) per country in MWh.
+        """
+        per_country_prod = {}
+        for country in countries:
+            current_prod_var_opt = self.get_prod_given_bus(bus_name=country)
+            fail_cols = [c for c in current_prod_var_opt.columns if c.endswith('_failure')]
+            if fail_cols:
+                current_prod_var_opt = current_prod_var_opt.drop(columns=fail_cols)
+            per_country_prod[country] = float(
+                current_prod_var_opt.multiply(snapshot_weightings, axis=0).sum().sum()
+            )
+        return per_country_prod
+
     def set_uc_summary_metrics(self, network: pypsa.Network, total_cost: float,
                                failure_penalty: float = None) -> UCSummaryMetrics:
         logging.info('Set UC summary metrics')
@@ -982,9 +999,16 @@ class UCOptimalSolution:
                                              snapshot_weightings=network.snapshot_weightings.generators,
                                              marginal_costs=network.generators.marginal_cost, is_operational_cost=True)
         )
+        per_country_prod = (
+            self.calc_per_country_production(countries=countries,
+                                             snapshot_weightings=network.snapshot_weightings.generators)
+        )
+        total_prod = sum(per_country_prod.values())
+
         # attention convert to GWh/M€ and int to get smaller values for synthesis. TODO: check CO2 emissions unit!
         cost_conversion_factor = 1e-6
         co2_emis_conversion_factor = 1e-3
+        energy_conversion_factor = 1e-3
         return UCSummaryMetrics(
             per_country_ens={c: int(val / 1e3) for c, val in per_country_ens.items()},
             per_country_n_failure_hours=per_country_n_failure_h,
@@ -995,4 +1019,6 @@ class UCOptimalSolution:
             per_country_total_operational_cost={c: int(val * cost_conversion_factor)
                                                 for c, val in per_country_total_operational_cost.items()},
             per_country_co2_emissions={c: int(val * co2_emis_conversion_factor) for
-                                       c, val in per_country_co2_emissions.items()})
+                                       c, val in per_country_co2_emissions.items()},
+            per_country_production={c: int(val * energy_conversion_factor) for c, val in per_country_prod.items()},
+            total_production=int(total_prod * energy_conversion_factor))

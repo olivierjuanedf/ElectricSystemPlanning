@@ -1,0 +1,12 @@
+# Investment choices for Poland (capacities in MW)
+country: poland
+
+wind_onshore: 20000
+wind_offshore: 10000
+solar_pv: 20000
+nuclear: 4000
+gas: 8000
+coal: 15000
+biofuel: 2000
+hydro_run_of_river: 1000
+hydro_pump_storage_closed_loop: 2000

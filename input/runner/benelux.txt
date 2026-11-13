@@ -1,0 +1,11 @@
+# Investment choices for Benelux (capacities in MW)
+country: benelux
+
+wind_offshore: 25000
+wind_onshore: 15000
+solar_pv: 30000
+nuclear: 6000
+gas: 15000
+batteries: 4000
+dsr: 2000
+biofuel: 1500

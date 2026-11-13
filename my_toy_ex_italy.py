@@ -240,9 +240,12 @@ pypsa_model = PypsaModel(name=f'my 1-zone {country_trigram} toy model')
 import pandas as pd
 
 date_idx = eraa_dataset.demand[uc_run_params.selected_countries[0]].index
+end_year = uc_run_params.selected_target_year + (
+    uc_run_params.uc_period_end.year - uc_run_params.uc_period_start.year
+)
 horizon = pd.date_range(
     start=uc_run_params.uc_period_start.replace(year=uc_run_params.selected_target_year),
-    end=uc_run_params.uc_period_end.replace(year=uc_run_params.selected_target_year),
+    end=uc_run_params.uc_period_end.replace(year=end_year),
     freq='h'
 )
 pypsa_model.init_pypsa_network(date_idx=date_idx, date_range=horizon)

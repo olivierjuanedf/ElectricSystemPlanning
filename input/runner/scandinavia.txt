@@ -1,0 +1,11 @@
+# Investment choices for Scandinavia (capacities in MW)
+country: scandinavia
+
+hydro_reservoir: 35000
+hydro_run_of_river: 15000
+wind_onshore: 30000
+wind_offshore: 8000
+nuclear: 11000
+biofuel: 5000
+solar_pv: 5000
+batteries: 2000
