@@ -36,11 +36,11 @@ per production type.
   are obtained from [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json) (and can be overwritten 
 by the ones of [fuel_sources_to-be_modif.json](../../input/long_term_uc/fuel_sources_to-be_modif.json), if 
 present in the environment)
-- [technology.json](../../data/fuel_sources/technology.json) 
+- [technology_datacrunch.json](../../data/fuel_sources/technology_datacrunch.json) 
   - Contains main technico-eco infos about the production types used in this environment. 
   - It is used in the "data crunch" session based on [data_crunch.ipynb](../../data_crunch.ipynb) - see Section XXX.
 
-    N.B. [technology.json](../../data/fuel_sources/technology.json) (for data crunch) and [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json)
+    N.B. [technology_datacrunch.json](../../data/fuel_sources/technology_datacrunch.json) (for data crunch) and [elec-europe_params_fixed.json](../../input/_env_params/elec-europe_params_fixed.json)
 (for UC simulation) values are coherent; in particular the formula used to obtain <span style="color:#32B032; font-weight:bold">marginal_cost</span>
 values from detailed parameters is XXX.
 

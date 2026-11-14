@@ -53,7 +53,7 @@ cost_per_ton
     Special : Solar/Wind/Hydro = 0 (free/no fuel input).
 
 
-technology.json — TECHNOLOGY DATA
+technology_datacrunch.json — TECHNOLOGY DATA
 =========================
 Structure: one entry per generation technology.
 
