@@ -1005,11 +1005,12 @@ class UCOptimalSolution:
         total_prod = sum(per_country_prod.values())
 
         # attention convert to GWh/M€ and int to get smaller values for synthesis. TODO: check CO2 emissions unit!
+        ens_conversion_factor = 1e-3
         cost_conversion_factor = 1e-6
         co2_emis_conversion_factor = 1e-3
         energy_conversion_factor = 1e-3
         return UCSummaryMetrics(
-            per_country_ens={c: int(val / 1e3) for c, val in per_country_ens.items()},
+            per_country_ens={c: val * ens_conversion_factor for c, val in per_country_ens.items()},
             per_country_n_failure_hours=per_country_n_failure_h,
             total_cost=int(total_cost * cost_conversion_factor),
             total_operational_cost=int(eur_total_ope_cost * cost_conversion_factor),

@@ -339,10 +339,10 @@ def overwrite_gen_capas_data(df_gen_capa: pd.DataFrame, new_power_capas: Dict[st
     if df_gen_capa is not None and country in new_power_capas:
         current_new_power_capas = deepcopy(new_power_capas[country])
         if GW_IN_LOG:
-            current_new_power_capas = {prod_type: int(capa / 1e3)
+            current_new_power_capas = {prod_type: capa / 1e3
                                        for prod_type, capa in current_new_power_capas.items()}
         logging.info(f'OVERWRITTEN ERAA prod. capacity values, in {POWER_UNIT_IN_LOG}: '
-                     f'{dict_to_str(d=current_new_power_capas, nbers_with_spaces=True, key_val_sep="=")}')
+                     f'{dict_to_str(d=current_new_power_capas, nbers_with_spaces=True, key_val_sep="=", decimals=2)}')
         for agg_prod_type, new_capa_val in new_power_capas[country].items():
             df_gen_capa.loc[
                 df_gen_capa[PROD_TYPE_AGG_COL] == agg_prod_type, 'power_capacity'] = new_capa_val
@@ -366,9 +366,9 @@ def capa_info_log(df_gen_capa: pd.DataFrame):
     # get dict. with only power capacity values to get less verbose logs
     power_capa_dict = create_dict_from_cols_in_df(df=df_gen_capa, key_col=PROD_TYPE_AGG_COL, val_col='power_capacity')
     if GW_IN_LOG:
-        power_capa_dict = {prod_type: int(capa / 1e3) for prod_type, capa in power_capa_dict.items()}
+        power_capa_dict = {prod_type: capa / 1e3 for prod_type, capa in power_capa_dict.items()}
     logging.info(f'-> power capacity values, in {POWER_UNIT_IN_LOG}: '
-                 f'{dict_to_str(d=power_capa_dict, nbers_with_spaces=True, key_val_sep="=")}')
+                 f'{dict_to_str(d=power_capa_dict, nbers_with_spaces=True, key_val_sep="=", decimals=2)}')
 
 
 def calc_cf_capa_prod(df_gen_capa: pd.DataFrame, df_agg_cf: pd.DataFrame, cf_agg_prod_types_tb_read: List[str],

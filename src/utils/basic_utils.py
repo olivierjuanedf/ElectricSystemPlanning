@@ -5,7 +5,6 @@ import math
 from dataclasses import fields, MISSING
 from collections import Counter
 
-
 CLIM_YEARS_SUFFIX = 'clim-years'  # TODO: set this constant in a more logical place... constant\...
 
 
@@ -242,22 +241,23 @@ def check_all_values_equal(d: dict) -> bool:
     return all([elt == values[0] for elt in values])
 
 
-def format_with_spaces(number) -> str:
-    return f"{number:,}".replace(",", " ")
+def format_with_spaces(number, decimals=0) -> str:
+    return f"{number:,.{decimals}f}".replace(",", " ")
 
 
-def fmt_nber_with_spaces_in_dict(d: dict) -> dict:
-    return {key: format_with_spaces(number=val) for key, val in d.items()}
+def fmt_nber_with_spaces_in_dict(d: dict, decimals: int = 0) -> dict:
+    return {key: format_with_spaces(number=val, decimals=decimals) for key, val in d.items()}
 
 
-def dict_to_str(d: Dict[str, float], nbers_with_spaces: bool = False, key_val_sep: str = ": ") -> str:
+def dict_to_str(d: dict[str, float], nbers_with_spaces: bool = False, key_val_sep: str = ": ",
+                decimals: int=0) -> str:
     """
     Nice printing of dictionary into logs
     """
     str_sep = ', '
 
     if nbers_with_spaces:
-        d = fmt_nber_with_spaces_in_dict(d)
+        d = fmt_nber_with_spaces_in_dict(d=d, decimals=decimals)
 
     key_val_lst = [f'{key}{key_val_sep}{val}' for key, val in d.items()]
     return str_sep.join(key_val_lst)
