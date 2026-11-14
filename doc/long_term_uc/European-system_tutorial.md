@@ -6,9 +6,9 @@ Python script that you will be running during the UC phase of this week.
 
 # I) To start with: some general documentation
 
-See [doc/useful_references.md](../../doc/useful_references.md) file to get 
-- infos about ERAA (data) and PyPSA (framework/modeler)
-- also some complementary sources of infos regarding the different countries you will be analysing
+See [doc/useful_references.md](../../doc/useful_references.md) file to get: 
+- infos **about ERAA (data) and PyPSA** (framework/modeler).
+- also some **complementary sources of infos** regarding the different countries you will be analysing.
 
 See [doc/glossary.md](../../doc/glossary.md) to get the **definition of some concepts or abbreviations** you may not be familiar 
 with: starting with CY (Climatic Year) and TY (Target Year) that will be used repeatedly in this class.
