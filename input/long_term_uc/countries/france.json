@@ -6,7 +6,8 @@
       "wind_onshore",
       "hydro_reservoir",
       "hydro_pump_storage_closed_loop",
-      "hydro_pump_storage_open_loop"
+      "hydro_pump_storage_open_loop",
+      "batteries"
     ],
     "germany": [
       "oil"
