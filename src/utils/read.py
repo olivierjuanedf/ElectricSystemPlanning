@@ -97,8 +97,8 @@ def update_country_json_params(countries_data: dict, json_params_tb_modif: dict,
         for elt_country, new_prod_types in countries_data[selected_pt_param_name].items():
             file_country = countr_overwr_from_other_countr.get(elt_country, elt_country)
             suffix = solo_mode_msg_suffix if not file_country == elt_country else ""
-            logging.info(f'Selected production type(s) overwritten for {elt_country} - based on countries'
-                         f'\\{file_country}.json{suffix}: {new_prod_types} (and not all the ones from ERAA)')
+            logging.info(f'Selected production type(s) selected for {elt_country} - based on countries'
+                         f'\\{file_country}.json{suffix}: {new_prod_types} (instead of all the ones from ERAA)')
             json_params_tb_modif[selected_pt_param_name][elt_country] = new_prod_types
     # suppress pt selection key in countries data dict, not to have multiple values for same attr.
     # when creating UCRunParams object hereafter

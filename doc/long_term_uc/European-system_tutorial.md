@@ -38,10 +38,14 @@ in [germany.json](../../input/long_term_uc/countries/germany.json) will be usele
 - **Open and run [my_little_europe_lt_uc.py](../../my_little_europe_lt_uc.py)**
 - You should **get a log "THE END of ERAA-PyPSA long-term UC simulation!"** in the terminal window. If not, the "checkers" should have indicated you some aspects to be corrected in your - modified - parametrization (e.g., using some unavailable values for country or production types). 
 
-N.B. Even if normally not the case with parametrization used in this class... it can be that no optimal solution 
+N.B. 
+
+1) Even if normally not the case with parametrization used in this class... it can be that no optimal solution 
 be found (e.g., when the problem is "infeasible"): in this case (i) Run stops correctly - with an explicit error message 
 indicating this infeasibility status in the logs but; (ii) No output data (neither figures) are obtained in the folders 
 described just below.
+
+2) Globally **do not hesitate to look at the logs printed out in the terminal**; they will provide you with key information/output metrics on current UC run!
 
 ## II.4) Output files
 
@@ -82,11 +86,34 @@ consumption (pumping, charging) and "State-of-Charge" (water/battery level) in *
 ## Start preparing the "design" of your country/Europe system by playing with this UC tool
 
 **Based on the numeric results obtained for each of the simulated configurations you can start "designing" (i.e. sizing the production capacities) your own country** (if in "solo" mode)/the European system ("Europe" mode). Consider different:
+* **(very key!) capacity values** for your production units:
+  * You can proceed in two ways: 
+    1) **Choosing a sub-selection of production types available in ERAA data**. By default, if the only applied operation is this selection, capacity values of year 2025 in ERAA will be used (as if no investment done).
+    
+       Ex: if this sub-selection does not contain "nuclear" while it is available in ERAA data in 2025, you will test the case without nuclear asset in your country.
+  
+    2) FOR THE PRODUCTION TYPE AVAILABLE IN ERAA DATA, modify their capacity values. 
+
+       Ex: if setting nuclear capacity to 40 000MW in France, you will test the case with this capacity instead of 61 761MW (cf. [generation-capa_2025_france.csv](../../data/ERAA_2023-2/generation_capas/generation-capa_2025_france.csv)). 
+    
+  * See **Appendix A1) for a detailed description on the way to proceed with input files**. 
+
+<br>
+
 * **seasons** -> by changing **uc_period_start** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json). **Question**: how would you select a few typical, or extreme, weeks to be considered to size your system? Is it possible to do it *ex-ante*, i.e. only looking at input data (e.g., demand, RES CF, installed generation capacities, etc.) or do you need some iterative process with UC runs to do that?
+
+<br>
+
 * **interconnection capacities** -> how are your results sensitive to the limit on the flows that can be exchanged between your 7 countries? 
   N.B. Playing with parameter **interco_capas_tb_overwritten** in file [input/long_term_uc/elec-europe_params_to-be-modif.json](../../input/long_term_uc/elec-europe_params_to-be-modif.json), you can get some preliminar insights on this.
+
+<br>
+
 * **climatic years** -> how sensitive are your results to the choice of this parameter? in combination with the ones of the season (associated period)? **Question** how would you choose one/a few scenarios used for your investment planning decision-making?
-* (in solo mode) **What if... my neighbouring countries..." -> how are your individual country results sensitive to the decisions made by your neighbours? 
+
+<br>
+
+* (in solo mode) **What if... my neighbouring countries...** -> how are your individual country results sensitive to the decisions made by your neighbours? 
 
   N.B. In solo mode you can exactly simulate the desired cases to try answering this question, by testing different configurations for your neighbours - imposing their decisions in your own *{country}.json* file.
 
@@ -149,6 +176,8 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
 - [countries/](../../input/long_term_uc/countries/){**country**}.json: 
     - <span style="color:#32B032; font-weight:bold">team</span>: **name of your team**, i.e. name of the country you are "responsible for" (<span style="color:#257cbd; font-weight:bold">string</span>, that must be in the set {"benelux", "germany", "iberian-peninsula", "italy", "poland", "scandinavia"} - use lower letters).
     - <span style="color:#32B032; font-weight:bold">selected_prod_types</span>: **per country production types to be selected - using aggregate classes** defined in [input/long_term_uc/elec-europe_eraa-available-values.json](../../input/long_term_uc/elec-europe_eraa-available-values.json) file/field "aggreg_prod_types" (<span style="color:#257cbd; font-weight:bold">dictionary</span> {country name: list of aggreg. production types to be selected for run}). 
+
+       N.B. **If a production type not available in ERAA data** (for a given country, and year) **is used, the code will stop raising an error** indicating the values to be removed before re-running the code.
   
       Ex: 
       ```json
@@ -157,6 +186,8 @@ The ones in folder [input/long_term_uc](../../input/long_term_uc/); **file by fi
       will lead to a run with only nuclear and failure (resp. coal and wind on-/off-shore) units in France (resp. Germany). 
     - <span style="color:#32B032; font-weight:bold">capacities_tb_overwritten</span>: **aggreg. production units for which you want to update the capacities - versus the ones in ERAA data**, and for the considered (target) year (2-level <span style="color:#257cbd; font-weight:bold">dictionary</span> {country: {aggreg. prod. type: updated capacity}}). 
   
+       N.B. Following remark on <span style="color:#32B032; font-weight:bold">selected_prod_types</span>, **if a production type not available in ERAA data is used, the code will raise a warning** indicating that the associated values will not be used to modify UC model (as these production types will not be part of it).
+
       Ex: 
       ```json
       {

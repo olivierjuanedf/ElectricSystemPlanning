@@ -289,6 +289,22 @@ class UCRunParams:
                         f'Unknown/not available aggreg. prod. types {msg_suffix} {elt_country}:'
                         f' {unknown_agg_prod_types}')
 
+        # warning if useless data provided in field "capacities_tb_overwritten"
+        useless_capas_vals_in_json_files = {}
+        for country, capas_vals_tb_overw in self.capacities_tb_overwritten.items():
+            updated_pts = list(capas_vals_tb_overw)
+            pts_in_eraa_data = eraa_data_descr.available_aggreg_prod_types[country][self.selected_target_year]
+            pts_with_useless_data = list(set(updated_pts) - set(pts_in_eraa_data))
+            if len(pts_with_useless_data) > 0:
+                useless_capas_vals_in_json_files[country] = pts_with_useless_data
+        if len(useless_capas_vals_in_json_files) > 0:
+            elts_warn_msg = [f"- {country}: {pts_with_useless_data}"
+                             for country, pts_with_useless_data in useless_capas_vals_in_json_files.items()]
+            warn_msg = "\n" + "\n".join(elts_warn_msg)
+            logging.warning(f"The following production types capacity values in .\\data\\long_term_uc\\country\\.json "
+                            f"files will not be used, as associated prod. types not available in ERAA data "
+                            f"(-> prod. types not included in UC model): {warn_msg}")
+
         # check that both dates are in allowed period
         allowed_period_msg = (f'[{MIN_DATE_IN_DATA.strftime(DATE_FORMAT_IN_JSON)}, '
                               f'{MAX_DATE_IN_DATA.strftime(DATE_FORMAT_IN_JSON)}]')
