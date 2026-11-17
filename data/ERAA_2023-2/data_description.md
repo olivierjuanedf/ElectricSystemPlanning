@@ -33,4 +33,4 @@ regions - nodes - of this country)
 * Regarding **hydro inflows data for Scandinavia**, the data have been **taken from ERAA2024 edition** as it was missing
 in the 2023.2 one. Given that there is no possible matching between the (historical) climatic years (CY) of 
 ERAA2023.2 and the (climatic-simulation based) weather scenarios (WS) of ERAA2024, the average over WS has been
-calculated and assigned to each CY of the data provided here 
+calculated and assigned to each CY of the data provided here. N.B. Column "cum_inflow_into_reservoirs" (resp. "cum_nat_inflow_into_pump-storage_reservoirs") is used for reservoirs (resp. for the other hydraulic assets).
