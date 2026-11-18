@@ -792,6 +792,12 @@ class PypsaModel:
         Get SoC max - supposedly CONSTANT - value of storages
         :param snapshot_idx_to_get_val: snapshot index from which constant value will be obtained
         """
+        if (
+            not hasattr(self.network, "model")
+            or self.network.model is None
+            or PypsaOptimConstNames.storage_soc_ub not in self.network.model.constraints
+        ):
+            return {}
 
         storage_soc_max_const = self.network.model.constraints[PypsaOptimConstNames.storage_soc_ub]
 
@@ -905,6 +911,11 @@ class PypsaModel:
         :returns a tuple (xxx, status of resolution)
         """
         logging.info('Optimise "network" - i.e. solve associated UC problem')
+        if not hasattr(self.network, "model") or self.network.model is None:
+            if hasattr(self.network.optimize, "create_model"):
+                self.network.optimize.create_model()
+            else:
+                self.network.optimize(build_only=True)
         result = self.network.optimize.solve_model(solver_name=self.optim_solver_params.name)
         logging.info(f'Obtained result: {result}')
         if save_lp_file:

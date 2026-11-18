@@ -1,18 +1,3 @@
 # Investment choices for Germany - Europe 1 (capacities in MW)
 country: germany
 
-# Renewables
-wind_onshore: 65000
-wind_offshore: 20000
-solar_pv: 70000
-
-# Hydro
-hydro_run_of_river: 4000
-hydro_pump_storage_closed_loop: 6000
-
-# Flexibility & Storage
-batteries: 8000
-dsr: 3000
-
-# Thermal / Gas
-gas: 25000

@@ -1065,8 +1065,7 @@ class TestInvestmentsRunnerCapacityAndEraaComparison:
         captured = capsys.readouterr()
         assert "INSTALLED CAPACITIES - EUROPE1 (GW)" in captured.out
         assert "INSTALLED CAPACITIES - EUROPE2 (GW)" in captured.out
-        assert "CAPACITY COMPARISON vs ERAA REFERENCES - EUROPE1 (GW)" in captured.out
-        assert "CAPACITY COMPARISON vs ERAA REFERENCES - EUROPE2 (GW)" in captured.out
+        assert "INCREMENTAL CAPACITY TRAJECTORY: ERAA REFERENCES vs HISTORICAL RUNS (GW)" in captured.out
 
     def test_extract_simulation_metrics_includes_capacities(self):
         summary_mock = {
@@ -1595,7 +1594,7 @@ class TestInvestmentsRunnerIncrementalCapacityTrajectory:
             displayed_countries=["france"],
         )
 
-        assert "INCREMENTAL CAPACITY TRAJECTORY: ERAA REFERENCES vs SUCCESSIVE RUNS (GW)" in table
+        assert "INCREMENTAL CAPACITY TRAJECTORY: ERAA REFERENCES vs HISTORICAL RUNS (GW)" in table
         assert "ERAA 2025" in table
         assert "ERAA 2033" in table
         assert "R1 (E1)" in table

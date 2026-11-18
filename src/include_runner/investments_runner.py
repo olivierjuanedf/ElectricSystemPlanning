@@ -2524,7 +2524,7 @@ def compute_simulation_evolutions(
         m = h["metrics"]
         runs_data.append({
             "run_index": h["run_index"],
-            "filename": h["filename"],
+            "filename": h.get("filename", ""),
             "timestamp": h["timestamp"],
             "total_cost_m_yr": float(m.get("total_cost_m_yr", 0.0)),
             "total_operational_cost_m_yr": float(m.get("total_operational_cost_m_yr", 0.0)),

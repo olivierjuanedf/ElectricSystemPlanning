@@ -12,7 +12,7 @@ from src.common.constants.datatypes import DATATYPE_NAMES
 from src.common.constants.env_dirs import DT_SUBFOLDERS, DEMAND_ADDER_FILE_PREFIX, \
     OutputFolderNames, INPUT_FUNC_PARAMS_SUBFOLDER, INPUT_DATA_ANALYSIS_SUBFOLDER, INPUT_ENV_PARAMS_SUBFOLDER, \
     INPUT_LT_UC_COUNTRY_SUBFOLDER, INPUT_FUEL_SOURCES_FOLDER, INPUT_LT_UC_SUBFOLDER, INPUT_LT_UC_OPTIONAL_SUBFOLDER, \
-    OUTPUT_FOLDER_TOY_MODEL, OUTPUT_FOLDER_LT
+    OUTPUT_FOLDER_TOY_MODEL, OUTPUT_FOLDER_LT, OUTPUT_DATA_ANALYSIS_FOLDER
 from src.common.constants.temporal import Timescale
 from src.common.logger import format_relative_path_for_log
 from src.utils.dir_utils import make_dir, uniformize_path_os, get_files_in_dir, get_folders_in_dir

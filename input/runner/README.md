@@ -65,6 +65,16 @@ batteries: 3000
   - `hydro_pump_storage_closed_loop` (aliases: `step_closed`, `step_fermee`)
   - `hydro_pump_storage_open_loop` (aliases: `step_open`, `step_ouverte`)
 
+### Missing Countries & Empty Files Behavior:
+
+| Situation | In the Simulation Grid | Capacities Applied |
+| :--- | :--- | :--- |
+| **No file provided for a country** | The country is **excluded** from the simulation (`selected_countries`). | **Not simulated** (0 cost/gen in the dashboard). |
+| **Empty file (or only `country: <name>`)** | The country is **included** in the European simulation. | **0 MW for all assets**. Only the fictive `failure` generator is active (100% loss of load / ENS). |
+| **Asset omitted from the file** | The asset is not included in `selected_prod_types`. | **0 MW** (there is **no automatic fallback to ERAA** capacities). |
+
+> **Note on ERAA References**: The runner does not inject default ERAA capacities into incomplete or missing student mixes. However, it independently simulates and displays pure **ERAA 2025** and **ERAA 2033** baselines in the comparative dashboard and trajectory table as reference benchmarks.
+
 ## How to Run the Collective Runner?
 
 From the root of the project, you can choose the investment source to use:
