@@ -33,4 +33,6 @@ regions - nodes - of this country)
 * Regarding **hydro inflows data for Scandinavia**, the data have been **taken from ERAA2024 edition** as it was missing
 in the 2023.2 one. Given that there is no possible matching between the (historical) climatic years (CY) of 
 ERAA2023.2 and the (climatic-simulation based) weather scenarios (WS) of ERAA2024, the average over WS has been
-calculated and assigned to each CY of the data provided here 
+calculated and assigned to each CY of the data provided here. N.B. Column "cum_inflow_into_reservoirs" (resp. "cum_nat_inflow_into_pump-storage_reservoirs") is used for reservoirs (resp. for the other hydraulic assets).
+
+* Regarding Poland wind off-shore capacity factors, all 0 in raw data from ERAA 2023.2 for TY 2025, they are taken equal to the ones in Poland in 2033 (for the same off-shore production units!); assuming no significative effect of climate change on these values from 2025 to 2033.
