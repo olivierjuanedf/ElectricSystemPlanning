@@ -88,6 +88,7 @@ from src.include_runner.investments_runner import (
     format_incremental_capacities_summary_table,
     save_incremental_capacities_trajectory,
     sync_country_json_files,
+    fill_missing_countries_with_eraa,
 )
 
 
@@ -221,6 +222,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Clear runner outputs and simulation history in output/runner/ (or specified --output-dir) to prevent blurring incremental results",
     )
     parser.add_argument(
+        "--fill-missing-with-eraa",
+        "--fill-missing-eraa",
+        action="store_true",
+        dest="fill_missing_with_eraa",
+        help="Automatically populate any European country without a submitted investment file with official ERAA reference capacities",
+    )
+    parser.add_argument(
         "--no-compare-eraa",
         action="store_true",
         help="Do not compare results with pure ERAA 2025 and ERAA 2033 baselines",
@@ -324,6 +332,14 @@ def main():
     if not available_europes:
         print(f"[!] No files matched the requested Europe configuration ('{args.europe}').")
         sys.exit(1)
+
+    if args.fill_missing_with_eraa:
+        target_year = get_selected_target_year()
+        grouped_capas, grouped_srcs = fill_missing_countries_with_eraa(
+            grouped_capas=grouped_capas,
+            grouped_srcs=grouped_srcs,
+            target_year=target_year,
+        )
 
     print("\n" + "=" * 76)
     print(f"   COLLECTIVE RUNNER FOR STUDENT INVESTMENTS - EUROPE MODE ({source_mode.upper()} SOURCE)")

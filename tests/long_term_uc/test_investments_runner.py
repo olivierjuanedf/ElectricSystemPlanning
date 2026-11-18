@@ -1728,6 +1728,108 @@ class TestInvestmentsRunnerIncrementalCapacityTrajectory:
             assert not os.path.isfile(benelux_file)
 
 
+class TestInvestmentsRunnerEraaDirectivesAndFillMissing:
+    def test_parse_investment_file_with_eraa_keyword(self, tmp_path):
+        from src.include_runner.investments_runner import parse_investment_file
+
+        file_path = tmp_path / "italy_europe1.txt"
+        file_path.write_text("country: italy\neraa\n", encoding="utf-8")
+
+        country, caps = parse_investment_file(str(file_path))
+        assert country == "italy"
+        assert len(caps) > 0
+        assert "solar_pv" in caps
+        assert caps["solar_pv"] > 0
+
+    def test_parse_investment_file_with_base_eraa_and_overrides(self, tmp_path):
+        from src.include_runner.investments_runner import parse_investment_file
+
+        file_path = tmp_path / "france_europe1.txt"
+        file_path.write_text("country: france\nbase: eraa\nnuclear: 50000\n", encoding="utf-8")
+
+        country, caps = parse_investment_file(str(file_path))
+        assert country == "france"
+        assert caps["nuclear"] == 50000.0
+        assert "solar_pv" in caps
+        assert caps["solar_pv"] > 0
+
+    def test_parse_investment_file_with_eraa_2025(self, tmp_path):
+        from src.include_runner.investments_runner import parse_investment_file, load_eraa_country_capacities
+
+        file_path = tmp_path / "poland_europe1.txt"
+        file_path.write_text("country: poland\neraa: 2025\n", encoding="utf-8")
+
+        country, caps = parse_investment_file(str(file_path))
+        eraa_25 = load_eraa_country_capacities(year=2025).get("poland", {})
+        assert country == "poland"
+        assert caps == eraa_25
+
+    def test_parse_country_json_with_all_selected_prod_types(self, tmp_path):
+        import json
+        from src.include_runner.investments_runner import parse_country_json_file
+
+        file_path = tmp_path / "germany_europe1.json"
+        data = {
+            "team": "germany",
+            "selected_prod_types": {"germany": ["all"]},
+            "capacities_tb_overwritten": {"germany": {"wind_onshore": 88000.0}},
+        }
+        file_path.write_text(json.dumps(data), encoding="utf-8")
+
+        country, caps = parse_country_json_file(str(file_path))
+        assert country == "germany"
+        assert caps["wind_onshore"] == 88000.0
+        assert "solar_pv" in caps
+        assert caps["solar_pv"] > 0
+
+    def test_fill_missing_countries_with_eraa(self):
+        from src.include_runner.investments_runner import fill_missing_countries_with_eraa, AVAILABLE_COUNTRIES
+
+        grouped_capas = {
+            "europe1": {
+                "france": {"nuclear": 60000.0},
+            }
+        }
+        grouped_srcs = {
+            "europe1": {
+                "france": "input/runner/france_europe1.txt",
+            }
+        }
+
+        updated_capas, updated_srcs = fill_missing_countries_with_eraa(
+            grouped_capas=grouped_capas,
+            grouped_srcs=grouped_srcs,
+            target_year=2033,
+        )
+
+        for c in AVAILABLE_COUNTRIES:
+            assert c in updated_capas["europe1"]
+            assert c in updated_srcs["europe1"]
+
+        assert updated_capas["europe1"]["france"] == {"nuclear": 60000.0}
+        assert updated_srcs["europe1"]["france"] == "input/runner/france_europe1.txt"
+        assert "ERAA 2033 reference" in updated_srcs["europe1"]["germany"]
+        assert len(updated_capas["europe1"]["germany"]) > 0
+
+    def test_main_runner_cli_fill_missing_eraa_dry_run(self, monkeypatch, capsys):
+        from main_runner import main
+
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "main_runner.py",
+                "input/runner/france_europe2.txt",
+                "--fill-missing-with-eraa",
+                "--dry-run",
+            ],
+        )
+        main()
+
+        captured = capsys.readouterr()
+        assert "EUROPE2 (7 countries)" in captured.out
+        assert "ERAA 2033 reference" in captured.out
+
+
 
 
 

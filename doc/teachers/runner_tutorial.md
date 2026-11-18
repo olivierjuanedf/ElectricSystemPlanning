@@ -82,7 +82,33 @@ gas: 4000
 | **Empty file (or only `country: <name>`)** | The country is **included** in the European simulation. | **0 MW for all assets**. Only the fictive `failure` generator is active (100% loss of load / ENS). |
 | **Asset omitted from the file** | The asset is not included in `selected_prod_types`. | **0 MW** (there is **no automatic fallback to ERAA** capacities). |
 
-> **Note on ERAA References**: The runner does not inject default ERAA capacities into incomplete or missing student mixes. However, it independently computes and displays pure **ERAA 2025** and **ERAA 2033** baselines in the comparative dashboard and trajectory table as reference benchmarks.
+### Using Official ERAA Reference Mixes:
+You can instruct a country to adopt official ENTSO-E ERAA reference capacities directly in its `.txt` file:
+
+```text
+# Option 1: 100% ERAA roadmap (target year, e.g. 2033)
+country: italy
+eraa
+
+# Option 2: ERAA baseline from a specific year (2025 or 2033)
+country: poland
+eraa: 2025
+
+# Option 3: ERAA base with custom overrides for specific technologies
+country: france
+base: eraa
+nuclear: 50000
+solar_pv: 60000
+```
+In Option 3, all official ERAA assets are loaded, and only `nuclear` and `solar_pv` are replaced by your custom choices.
+
+### Automatically Completing Missing Countries with ERAA:
+When only a few student teams have submitted files, you can simulate the full 7-country European interconnected grid by passing the `--fill-missing-with-eraa` CLI option (or shortcut `make runner-fill-eraa`):
+```bash
+python main_runner.py --fill-missing-with-eraa
+python main_runner.py --fill-missing-with-eraa --dry-run
+```
+Any European country without a submitted investment file is automatically populated with its official ERAA reference capacities.
 
 ---
 

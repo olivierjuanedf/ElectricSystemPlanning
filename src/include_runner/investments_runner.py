@@ -287,12 +287,23 @@ def parse_investment_file(filepath: str, country: Optional[str] = None) -> Tuple
                 file_country = COUNTRY_ALIASES[token]
                 break
 
+    use_eraa = False
+    eraa_year: Optional[int] = None
     capacities: Dict[str, float] = {}
 
     with open(filepath, "r", encoding="utf-8") as f:
         for line_idx, raw_line in enumerate(f, start=1):
             line = raw_line.strip()
             if not line or line.startswith("#") or line.startswith("//"):
+                continue
+
+            line_lower = line.lower()
+            if line_lower in ("eraa", "use_eraa", "eraa_2025", "eraa_2033", "eraa 2025", "eraa 2033"):
+                use_eraa = True
+                if "2025" in line_lower:
+                    eraa_year = 2025
+                elif "2033" in line_lower:
+                    eraa_year = 2033
                 continue
 
             if ":" in line:
@@ -305,9 +316,13 @@ def parse_investment_file(filepath: str, country: Optional[str] = None) -> Tuple
                 parts = line.split(None, 1)
 
             if len(parts) != 2:
+                key_candidate = parts[0].strip().lower()
+                if key_candidate in ("eraa", "use_eraa"):
+                    use_eraa = True
+                    continue
                 raise ValueError(
                     f"Syntax error on line {line_idx} in '{filepath}': '{line}'. "
-                    f"Expected format: 'asset: capacity' (e.g., 'nuclear: 60000')."
+                    f"Expected format: 'asset: capacity' (e.g., 'nuclear: 60000') or 'eraa'."
                 )
 
             key = parts[0].strip().lower()
@@ -316,6 +331,16 @@ def parse_investment_file(filepath: str, country: Optional[str] = None) -> Tuple
             if key in ("country", "pays"):
                 file_country = normalize_country_name(val)
                 continue
+
+            if key in ("eraa", "base", "mix", "source"):
+                val_lower = val.lower()
+                if "eraa" in val_lower or val_lower in ("true", "yes", "1", "2025", "2033"):
+                    use_eraa = True
+                    if "2025" in val_lower:
+                        eraa_year = 2025
+                    elif "2033" in val_lower:
+                        eraa_year = 2033
+                    continue
 
             asset = normalize_asset_name(key)
             capa = parse_capacity_value(val)
@@ -330,6 +355,19 @@ def parse_investment_file(filepath: str, country: Optional[str] = None) -> Tuple
         )
 
     resolved_country = normalize_country_name(resolved_country)
+
+    if use_eraa:
+        if eraa_year is None:
+            try:
+                eraa_year = get_selected_target_year()
+            except Exception:
+                eraa_year = 2033
+        eraa_caps_all = load_eraa_country_capacities(year=eraa_year)
+        country_eraa = eraa_caps_all.get(resolved_country, {})
+        final_capacities = dict(country_eraa)
+        final_capacities.update(capacities)
+        capacities = final_capacities
+
     return resolved_country, capacities
 
 
@@ -370,6 +408,20 @@ def parse_country_json_file(filepath: str, country: Optional[str] = None) -> Tup
 
     resolved_country = normalize_country_name(resolved_country)
 
+    use_eraa = False
+    eraa_year: Optional[int] = None
+    if data.get("eraa") or str(data.get("base", "")).lower() == "eraa" or str(data.get("mix", "")).lower() == "eraa":
+        use_eraa = True
+        val_eraa = str(data.get("eraa", "")).lower()
+        if "2025" in val_eraa:
+            eraa_year = 2025
+        elif "2033" in val_eraa:
+            eraa_year = 2033
+    elif isinstance(data.get("selected_prod_types"), dict):
+        prod_types = data["selected_prod_types"].get(resolved_country, [])
+        if "all" in prod_types:
+            use_eraa = True
+
     raw_capas: dict = {}
     if "capacities_tb_overwritten" in data and isinstance(data["capacities_tb_overwritten"], dict):
         raw_capas = data["capacities_tb_overwritten"].get(resolved_country, {})
@@ -385,6 +437,18 @@ def parse_country_json_file(filepath: str, country: Optional[str] = None) -> Tup
             capacities[asset] = float(v)
         except Exception:
             pass
+
+    if use_eraa:
+        if eraa_year is None:
+            try:
+                eraa_year = get_selected_target_year()
+            except Exception:
+                eraa_year = 2033
+        eraa_caps_all = load_eraa_country_capacities(year=eraa_year)
+        country_eraa = eraa_caps_all.get(resolved_country, {})
+        final_capacities = dict(country_eraa)
+        final_capacities.update(capacities)
+        capacities = final_capacities
 
     return resolved_country, capacities
 
@@ -431,6 +495,34 @@ def group_files_by_europe_with_sources(
             grouped_srcs[europe_id] = {}
         grouped_capas[europe_id][country] = capacities
         grouped_srcs[europe_id][country] = fpath
+    return grouped_capas, grouped_srcs
+
+
+def fill_missing_countries_with_eraa(
+    grouped_capas: Dict[str, Dict[str, Dict[str, float]]],
+    grouped_srcs: Dict[str, Dict[str, str]],
+    target_year: Optional[int] = None,
+    available_countries: Optional[List[str]] = None,
+) -> Tuple[Dict[str, Dict[str, Dict[str, float]]], Dict[str, Dict[str, str]]]:
+    """
+    For any country in available_countries not present in grouped_capas for a given Europe,
+    populate it with official ENTSO-E ERAA reference capacities.
+    """
+    if target_year is None:
+        try:
+            target_year = get_selected_target_year()
+        except Exception:
+            target_year = 2033
+
+    target_countries = available_countries if available_countries is not None else AVAILABLE_COUNTRIES
+    eraa_ref_capas = load_eraa_country_capacities(year=target_year)
+
+    for eur in list(grouped_capas.keys()):
+        for c in target_countries:
+            if c not in grouped_capas[eur]:
+                grouped_capas[eur][c] = dict(eraa_ref_capas.get(c, {}))
+                grouped_srcs[eur][c] = f"ERAA {target_year} reference"
+
     return grouped_capas, grouped_srcs
 
 
