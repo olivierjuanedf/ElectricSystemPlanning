@@ -1,11 +1,17 @@
 {
   "selected_climatic_year": 1989,
   "selected_countries": [
-    "france"
+    "benelux",
+    "france",
+    "germany",
+    "iberian-peninsula",
+    "italy",
+    "poland",
+    "scandinavia"
   ],
   "selected_target_year": 2033,
   "mode": "europe",
-  "team": "france",
+  "team": "benelux",
   "uc_period_start": "1900/1/1",
   "uc_period_end": "1901/1/1",
   "failure_power_capa": 10000000000.0,
@@ -33,6 +39,9 @@
     "scandinavia2france": 0,
     "scandinavia2italy": 0,
     "scandinavia2iberian-peninsula": 0,
-    "germany2italy": 0
+    "germany2italy": 0,
+    "scandinavia2poland": 1000,
+    "france2italy": 2000,
+    "france2germany": 15000
   }
 }

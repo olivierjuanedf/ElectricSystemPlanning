@@ -1,0 +1,34 @@
+{
+  "team": "scandinavia",
+  "selected_prod_types": {
+    "scandinavia": [
+      "nuclear",
+      "solar_pv",
+      "wind_onshore",
+      "wind_offshore",
+      "hydro_reservoir",
+      "hydro_run_of_river",
+      "hydro_pump_storage_closed_loop",
+      "hydro_pump_storage_open_loop",
+      "batteries",
+      "dsr",
+      "gas",
+      "failure"
+    ]
+  },
+  "capacities_tb_overwritten": {
+    "scandinavia": {
+      "nuclear": 50000.0,
+      "solar_pv": 15000.0,
+      "wind_onshore": 45000.0,
+      "wind_offshore": 15000.0,
+      "hydro_reservoir": 8500.0,
+      "hydro_run_of_river": 4500.0,
+      "hydro_pump_storage_closed_loop": 5000.0,
+      "hydro_pump_storage_open_loop": 1000.0,
+      "batteries": 6000.0,
+      "dsr": 3500.0,
+      "gas": 3000.0
+    }
+  }
+}

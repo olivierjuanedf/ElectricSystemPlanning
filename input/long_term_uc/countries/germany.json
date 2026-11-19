@@ -1,0 +1,30 @@
+{
+  "team": "germany",
+  "selected_prod_types": {
+    "germany": [
+      "wind_offshore",
+      "gas",
+      "batteries",
+      "oil",
+      "wind_onshore",
+      "solar_pv",
+      "hydro_pump_storage_closed_loop",
+      "hydro_reservoir",
+      "hydro_run_of_river",
+      "failure"
+    ]
+  },
+  "capacities_tb_overwritten": {
+    "germany": {
+      "wind_offshore": 105000.0,
+      "gas": 20000.0,
+      "batteries": 5000.0,
+      "oil": 1000.0,
+      "wind_onshore": 150000.0,
+      "solar_pv": 200000.0,
+      "hydro_pump_storage_closed_loop": 5000.0,
+      "hydro_reservoir": 1000.0,
+      "hydro_run_of_river": 4000.0
+    }
+  }
+}

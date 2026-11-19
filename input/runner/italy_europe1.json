@@ -1,0 +1,41 @@
+{
+  "team": "italy",
+  "selected_prod_types": {
+    "italy": [
+        "wind_offshore",
+        "gas",
+        "others_fatal",
+        "dsr",
+        "batteries",
+        "wind_onshore",
+        "solar_pv",
+        "hydro_pondage",
+        "hydro_pump_storage_closed_loop",
+        "hydro_pump_storage_open_loop",
+        "hydro_reservoir",
+        "hydro_run_of_river",
+        "failure"
+
+
+
+    ]
+  },
+
+"capacities_tb_overwritten": {
+  "italy": {
+    "gas": 43221.69,
+    "others_fatal": 13138.06,
+    "solar_pv": 59571.74,
+    "wind_offshore": 12400.0,
+    "wind_onshore": 19807.32,
+    "dsr": 1657.26,
+    "hydro_reservoir": 8772.31,
+    "hydro_run_of_river": 7028.6,
+    "hydro_pump_storage_closed_loop": 4170.2,
+    "hydro_pump_storage_open_loop": 3617.86,
+    "batteries": 19069.3
+  }
+}
+
+
+  }

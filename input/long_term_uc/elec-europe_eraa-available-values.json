@@ -37,7 +37,6 @@
         "hydro_pondage",
         "hydro_pump_storage_closed_loop",
         "hydro_pump_storage_open_loop",
-        "hydro_reservoir",
         "hydro_run_of_river"
       ],
       "2033": [
@@ -54,7 +53,6 @@
         "hydro_pondage",
         "hydro_pump_storage_closed_loop",
         "hydro_pump_storage_open_loop",
-        "hydro_reservoir",
         "hydro_run_of_river"
       ]
     },

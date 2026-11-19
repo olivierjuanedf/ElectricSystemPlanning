@@ -1,0 +1,41 @@
+{
+  "team": "iberian-peninsula",
+  "selected_prod_types": {
+    "iberian-peninsula": [
+      "nuclear",
+      "solar_pv",
+      "wind_onshore",
+      "wind_offshore",
+      "hydro_reservoir",
+      "hydro_run_of_river",
+      "hydro_pump_storage_closed_loop",
+      "hydro_pump_storage_open_loop",
+      "gas",
+      "failure"
+    ]
+  },
+  "capacities_tb_overwritten": {
+    "iberian-peninsula": {
+   
+      "wind_offshore":3000,
+      "gas":20000,
+      "others_fatal":2000,
+      "dsr":5000,
+      "batteries":15000,
+      "wind_onshore":60000,
+      "nuclear" : 65000,
+      "solar_pv":90000,
+      "hydro_pondage":5000,
+      "hydro_pump_storage_closed_loop":3000,
+      "hydro_pump_storage_open_loop":5000,
+      "hydro_reservoir":15000,
+      "hydro_run_of_river":5000
+    }
+  }
+}
+
+
+
+
+
+

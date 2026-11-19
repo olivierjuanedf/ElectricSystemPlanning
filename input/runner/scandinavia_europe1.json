@@ -1,0 +1,26 @@
+{
+  "team": "scandinavia",
+  "selected_prod_types": {
+    "scandinavia": [
+        "wind_offshore",
+        "others_fatal",
+        "dsr",
+        "batteries",
+        "wind_onshore",
+        "nuclear",
+        "solar_pv",
+        "hydro_pondage",
+        "hydro_pump_storage_closed_loop",
+        "hydro_pump_storage_open_loop",
+        "hydro_reservoir",
+        "hydro_run_of_river"
+    ]
+  },
+  "capacities_tb_overwritten": {
+    "scandinavia": {
+      "batteries": 2000,
+      "wind_onshore": 100000,
+      "wind_offshore": 30000
+    }
+  }
+}

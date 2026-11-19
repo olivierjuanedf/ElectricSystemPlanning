@@ -1,0 +1,32 @@
+{
+  "team": "poland",
+  "selected_prod_types": {
+    "poland": [
+        "wind_offshore",
+        "gas",
+        "others_fatal",
+        "coal",
+        "wind_onshore",
+        "biofuel",
+        "nuclear",
+        "solar_pv",
+        "hydro_pondage",
+        "hydro_pump_storage_closed_loop",
+        "hydro_pump_storage_open_loop",
+        "hydro_reservoir",
+        "hydro_run_of_river"
+      ]
+  },
+  "capacities_tb_overwritten": {
+    "poland": {
+  "wind_offshore": 3000,
+  "gas": 6346,
+  "others_fatal": 1769,
+  "coal": 23000,
+  "wind_onshore":12843,
+  "biofuel":10214302,
+  "nuclear":0,
+  "solar_pv":35589
+    }
+  }
+}

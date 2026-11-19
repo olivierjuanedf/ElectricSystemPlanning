@@ -1,0 +1,49 @@
+{
+  "team": "benelux",
+  "_comment": {
+    "scenario": "Europe 1 mix - % change vs ERAA 2033 Benelux values. Tested Benelux alone, CY1989: 0 failure hours, CO2 -37% vs ERAA 2033 baseline",
+    "nuclear": "2563 = ERAA 2033 (0 %), new NL reactors only after 2035",
+    "solar_pv": "100000 vs 85543 (+17 %)",
+    "wind_onshore": "18000 vs 16238 (+11 %)",
+    "wind_offshore": "27603 = ERAA 2033 (0 %), already at realistic limit",
+    "hydro_run_of_river": "194 = ERAA 2033 (0 %)",
+    "hydro_pump_storage_closed_loop": "1305 = ERAA 2033 (0 %)",
+    "batteries": "30000 vs 15840 (+89 %)",
+    "dsr": "7000 vs 4975 (+41 %)",
+    "gas": "20000 vs 17640 (+13 %), peak reserve, hydrogen-ready",
+    "oil": "140 = ERAA 2033 (0 %)",
+    "biofuel": "3000 vs 747 (+302 %), e.g. converting the 2.7 GW coal fleet phased out by 2030 to biomass"
+  },
+  "selected_prod_types": {
+    "benelux": [
+      "nuclear",
+      "solar_pv",
+      "wind_onshore",
+      "wind_offshore",
+      "hydro_run_of_river",
+      "hydro_pump_storage_closed_loop",
+      "batteries",
+      "dsr",
+      "gas",
+      "oil",
+      "biofuel",
+      "others_fatal",
+      "failure"
+    ]
+  },
+  "capacities_tb_overwritten": {
+    "benelux": {
+      "nuclear": 2563.0,
+      "solar_pv": 100000.0,
+      "wind_onshore": 18000.0,
+      "wind_offshore": 27603.0,
+      "hydro_run_of_river": 194.0,
+      "hydro_pump_storage_closed_loop": 1305.0,
+      "batteries": 30000.0,
+      "dsr": 7000.0,
+      "gas": 20000.0,
+      "oil": 140.0,
+      "biofuel": 3000.0
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "team": "benelux",
+  "selected_prod_types": {
+    "benelux": [
+      "nuclear",
+      "solar_pv",
+      "wind_onshore",
+      "wind_offshore",
+      "hydro_reservoir",
+      "hydro_run_of_river",
+      "hydro_pump_storage_closed_loop",
+      "hydro_pump_storage_open_loop",
+      "batteries",
+      "dsr",
+      "gas",
+      "failure"
+    ]
+  },
+  "capacities_tb_overwritten": {
+    "benelux": {
+      "nuclear":20000,
+      "solar_pv":50000,
+      "wind_offshore":50000,
+      "wind_onshore": 50000,
+      "hydro_run_of_river":4500,
+      "hydro_pump_storage_closed_loop":5000,
+      "hydro_pump_storage_open_loop":1000,
+      "batteries":7000,
+      "dsr":3500,
+      "gas":3000
+    }
+  }
+}
