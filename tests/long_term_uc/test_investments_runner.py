@@ -49,6 +49,12 @@ from src.include_runner.investments_runner import (
     compute_capacity_comparison_with_eraa,
     format_capacity_comparison_table,
     get_selected_climatic_year,
+    AVAILABLE_CLIMATIC_YEARS,
+    DEFAULT_BASE_INTERCO_OVERWRITTEN,
+    normalize_interco_key,
+    parse_interco_file,
+    find_interco_file,
+    load_europe_interco_overwrites,
     get_period_tag,
     get_eraa_baseline_cache_path,
     get_or_run_eraa_baseline,
@@ -1828,6 +1834,199 @@ class TestInvestmentsRunnerEraaDirectivesAndFillMissing:
         captured = capsys.readouterr()
         assert "EUROPE2 (7 countries)" in captured.out
         assert "ERAA 2033 reference" in captured.out
+
+
+class TestInterconnectionOverrides:
+    def test_normalize_interco_key_standard(self):
+        assert normalize_interco_key("france2germany") == "france2germany"
+        assert normalize_interco_key("germany2poland") == "germany2poland"
+
+    def test_normalize_interco_key_aliases_and_casing(self):
+        assert normalize_interco_key("FR2DE") == "france2germany"
+        assert normalize_interco_key("allemagne2pologne") == "germany2poland"
+        assert normalize_interco_key("espagne2italie") == "iberian-peninsula2italy"
+
+    def test_normalize_interco_key_arrow_and_separators(self):
+        assert normalize_interco_key("france -> germany") == "france2germany"
+        assert normalize_interco_key("france to germany") == "france2germany"
+        assert normalize_interco_key("france_to_germany") == "france2germany"
+        assert normalize_interco_key("germany-poland") == "germany2poland"
+
+    def test_normalize_interco_key_invalid(self):
+        with pytest.raises(ValueError, match="Origin and destination countries cannot be identical"):
+            normalize_interco_key("france2france")
+        with pytest.raises(ValueError, match="Unknown country"):
+            normalize_interco_key("atlantis2germany")
+        with pytest.raises(ValueError, match="Invalid interconnection link format"):
+            normalize_interco_key("invalidkeywithoutseparator")
+
+    def test_parse_interco_file_flat_json(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump({
+                "_comment": "Test description",
+                "france2germany": 6000.0,
+                "france -> italy": 3500.0,
+            }, f)
+            tpath = f.name
+        try:
+            res = parse_interco_file(tpath)
+            assert res == {
+                "france2germany": 6000.0,
+                "france2italy": 3500.0,
+            }
+        finally:
+            os.remove(tpath)
+
+    def test_parse_interco_file_nested_json(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump({
+                "_description": "Testing nested intercos",
+                "interco_capas_tb_overwritten": {
+                    "germany2poland": "5000 MW",
+                }
+            }, f)
+            tpath = f.name
+        try:
+            res = parse_interco_file(tpath)
+            assert res == {"germany2poland": 5000.0}
+        finally:
+            os.remove(tpath)
+
+    def test_parse_interco_file_rejects_negative(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump({"france2germany": -100.0}, f)
+            tpath = f.name
+        try:
+            with pytest.raises(ValueError, match="Capacity cannot be negative"):
+                parse_interco_file(tpath)
+        finally:
+            os.remove(tpath)
+
+    def test_collect_investment_files_ignores_interco_files(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create a regular country file
+            c_file = os.path.join(tmpdir, "france_europe1.json")
+            with open(c_file, "w") as f:
+                json.dump({"team": "france", "capacities_tb_overwritten": {"france": {"nuclear": 60000}}}, f)
+
+            # Create an interco file
+            i_file = os.path.join(tmpdir, "interco_europe1.json")
+            with open(i_file, "w") as f:
+                json.dump({"france2germany": 6000}, f)
+
+            collected = collect_investment_files(tmpdir, extension=".json")
+            assert c_file in collected
+            assert i_file not in collected
+
+    def test_load_europe_interco_overwrites_discovery(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            i_file1 = os.path.join(tmpdir, "interco_europe1.json")
+            with open(i_file1, "w") as f:
+                json.dump({"france2germany": 5500.0}, f)
+
+            res1 = load_europe_interco_overwrites("europe1", runner_dirs=[tmpdir])
+            assert res1 == {"france2germany": 5500.0}
+
+            # Europe 2 missing returns empty dict
+            res2 = load_europe_interco_overwrites("europe2", runner_dirs=[tmpdir])
+            assert res2 == {}
+
+    def test_update_europe_params_with_climatic_year_and_interco(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump({
+                "mode": "europe",
+                "selected_climatic_year": 1989,
+                "interco_capas_tb_overwritten": dict(DEFAULT_BASE_INTERCO_OVERWRITTEN),
+            }, f)
+            tpath = f.name
+        try:
+            # 1. Update with climatic year 2010 and specific interco override
+            update_europe_params(
+                mode="europe",
+                climatic_year=2010,
+                interco_capas={"france2germany": 7000.0},
+                europe_params_path=tpath,
+            )
+            with open(tpath, "r") as f:
+                data = json.load(f)
+
+            assert data["selected_climatic_year"] == 2010
+            # Non-adjacent 0 MW baseline links must be preserved as int
+            assert data["interco_capas_tb_overwritten"]["france2poland"] == 0
+            assert isinstance(data["interco_capas_tb_overwritten"]["france2poland"], int)
+            assert data["interco_capas_tb_overwritten"]["italy2scandinavia"] == 0
+            # Specified override is set as int
+            assert data["interco_capas_tb_overwritten"]["france2germany"] == 7000
+            assert isinstance(data["interco_capas_tb_overwritten"]["france2germany"], int)
+
+            # 2. Test isolation: update for Europe 2 with different link
+            update_europe_params(
+                mode="europe",
+                interco_capas={"germany2poland": 6500.0},
+                europe_params_path=tpath,
+            )
+            with open(tpath, "r") as f:
+                data2 = json.load(f)
+
+            # Europe 1's france2germany must not persist into Europe 2
+            assert "france2germany" not in data2["interco_capas_tb_overwritten"]
+            assert data2["interco_capas_tb_overwritten"]["germany2poland"] == 6500
+            assert data2["interco_capas_tb_overwritten"]["france2poland"] == 0
+        finally:
+            os.remove(tpath)
+
+
+class TestClimaticYearCLI:
+    def test_build_parser_climatic_year_and_interco_flags(self):
+        from main_runner import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["--climatic-year", "2016", "--interco-europe1", "custom_interco.json"])
+        assert args.climatic_year == 2016
+        assert args.interco_europe1 == "custom_interco.json"
+
+    def test_build_parser_short_cy_flag(self):
+        from main_runner import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["--cy", "2003"])
+        assert args.climatic_year == 2003
+
+    def test_main_runner_cli_invalid_climatic_year_exits(self, monkeypatch, capsys):
+        from main_runner import main
+
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "main_runner.py",
+                "--climatic-year",
+                "1999",
+                "--dry-run",
+            ],
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 1
+        captured = capsys.readouterr()
+        assert "Invalid climatic year: 1999" in captured.out
+        assert "Available ERAA climatic years" in captured.out
+
+    def test_main_runner_cli_valid_climatic_year_dry_run(self, monkeypatch, capsys):
+        from main_runner import main
+
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "main_runner.py",
+                "input/runner/france_europe1.txt",
+                "--climatic-year",
+                "2010",
+                "--dry-run",
+            ],
+        )
+        main()
+        captured = capsys.readouterr()
+        assert "Simulating Climatic Year: 2010" in captured.out
+        assert "climatic_year=2010" in captured.out
+
 
 
 

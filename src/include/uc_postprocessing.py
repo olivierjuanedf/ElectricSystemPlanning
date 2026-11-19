@@ -406,6 +406,10 @@ class UCOptimalSolution:
             # TODO: put alpha into plot_params.json
             prod_gw = current_prod.div(1e3)
 
+            if len(prod_gw.columns) == 0:
+                logging.warning(f"No generation data to plot for {country} (all zero curves or no units).")
+                return
+
             fig, ax = plt.subplots()
 
             x = prod_gw.index

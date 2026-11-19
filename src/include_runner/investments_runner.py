@@ -21,6 +21,44 @@ AVAILABLE_COUNTRIES: List[str] = [
     "scandinavia",
 ]
 
+AVAILABLE_CLIMATIC_YEARS: List[int] = [
+    1982,
+    1989,
+    1996,
+    2003,
+    2010,
+    2016,
+]
+
+# Baseline dictionary of non-adjacent European country pairs set to 0 MW.
+# PyPSA requires every pair of countries without an ERAA link to have an explicit 0 MW entry.
+# Values must be int to satisfy UCRunParams and type checker constraints.
+DEFAULT_BASE_INTERCO_OVERWRITTEN: Dict[str, int] = {
+    "france2poland": 0,
+    "france2scandinavia": 0,
+    "italy2iberian-peninsula": 0,
+    "italy2poland": 0,
+    "italy2benelux": 0,
+    "italy2scandinavia": 0,
+    "germany2iberian-peninsula": 0,
+    "iberian-peninsula2italy": 0,
+    "iberian-peninsula2germany": 0,
+    "iberian-peninsula2poland": 0,
+    "iberian-peninsula2benelux": 0,
+    "iberian-peninsula2scandinavia": 0,
+    "poland2france": 0,
+    "poland2italy": 0,
+    "poland2iberian-peninsula": 0,
+    "poland2benelux": 0,
+    "benelux2italy": 0,
+    "benelux2iberian-peninsula": 0,
+    "benelux2poland": 0,
+    "scandinavia2france": 0,
+    "scandinavia2italy": 0,
+    "scandinavia2iberian-peninsula": 0,
+    "germany2italy": 0,
+}
+
 COUNTRY_ALIASES: Dict[str, str] = {
     "france": "france",
     "fr": "france",
@@ -197,6 +235,128 @@ def parse_capacity_value(val_str: str) -> float:
     if val < 0:
         raise ValueError(f"Capacity cannot be negative ({val} MW).")
     return val
+
+
+def normalize_interco_key(key: str) -> str:
+    """
+    Normalize an interconnection key (e.g. 'france2germany', 'fr2de', 'france -> germany', 'france-germany')
+    into the canonical format '{origin}2{destination}'.
+    """
+    cleaned = key.strip().lower()
+
+    if "->" in cleaned:
+        parts = cleaned.split("->", 1)
+    elif " to " in cleaned:
+        parts = cleaned.split(" to ", 1)
+    elif "_to_" in cleaned:
+        parts = cleaned.split("_to_", 1)
+    elif "2" in cleaned:
+        parts = cleaned.split("2", 1)
+    elif "--" in cleaned:
+        parts = cleaned.split("--", 1)
+    else:
+        parts = cleaned.split("-", 1)
+        if len(parts) == 2:
+            try:
+                c1 = normalize_country_name(parts[0])
+                c2 = normalize_country_name(parts[1])
+                return f"{c1}2{c2}"
+            except ValueError:
+                pass
+        raise ValueError(
+            f"Invalid interconnection link format: '{key}'. "
+            f"Expected format '<origin>2<destination>' (e.g. 'france2germany' or 'france -> germany')."
+        )
+
+    c1 = normalize_country_name(parts[0].strip())
+    c2 = normalize_country_name(parts[1].strip())
+    if c1 == c2:
+        raise ValueError(f"Origin and destination countries cannot be identical: '{key}'.")
+    return f"{c1}2{c2}"
+
+
+def parse_interco_file(filepath: str) -> Dict[str, float]:
+    """
+    Parse an interconnection configuration JSON file.
+    Supports:
+      1. Flat dictionary: {"france2germany": 5000, ...}
+      2. Nested dictionary: {"interco_capas_tb_overwritten": {"france2germany": 5000, ...}}
+    Ignores metadata keys starting with '_' or named 'comment', 'description', etc.
+    Returns:
+      Dict mapping canonical '{origin}2{destination}' to capacity in MW.
+    """
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"Interconnection file not found: '{filepath}'")
+
+    with open(filepath, "r", encoding="utf-8") as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON in interconnection file '{filepath}': {exc}")
+
+    if not isinstance(data, dict):
+        raise ValueError(f"Expected a JSON object/dictionary in '{filepath}', got {type(data).__name__}")
+
+    raw_items = data.get("interco_capas_tb_overwritten", data)
+    if not isinstance(raw_items, dict):
+        raise ValueError(
+            f"Expected dictionary for 'interco_capas_tb_overwritten' in '{filepath}', got {type(raw_items).__name__}"
+        )
+
+    overwrites: Dict[str, float] = {}
+    ignored_keys = {"comment", "description", "note", "notes", "europe", "scenario", "team"}
+
+    for raw_k, raw_v in raw_items.items():
+        k_str = str(raw_k).strip()
+        if k_str.startswith("_") or k_str.lower() in ignored_keys:
+            continue
+        norm_key = normalize_interco_key(k_str)
+        capa = parse_capacity_value(str(raw_v))
+        overwrites[norm_key] = capa
+
+    return overwrites
+
+
+def find_interco_file(europe_id: str, runner_dirs: Optional[List[str]] = None) -> Optional[str]:
+    """
+    Search for an interconnection configuration file for a given Europe identifier ('europe1', 'europe2').
+    Searches in runner_dirs (default: ['input/runner']).
+    """
+    dirs = runner_dirs or ["input/runner"]
+    eur_clean = europe_id.lower().strip()
+    candidates = [
+        f"interco_{eur_clean}.json",
+        f"interconnections_{eur_clean}.json",
+        f"interco-{eur_clean}.json",
+        f"{eur_clean}_interco.json",
+    ]
+    for d in dirs:
+        if not os.path.isdir(d):
+            continue
+        for cand in candidates:
+            path = os.path.join(d, cand)
+            if os.path.isfile(path):
+                return path
+    return None
+
+
+def load_europe_interco_overwrites(
+    europe_id: str,
+    runner_dirs: Optional[List[str]] = None,
+    custom_filepath: Optional[str] = None,
+) -> Dict[str, float]:
+    """
+    Load interconnection overwrites for a given Europe scenario.
+    Returns empty dict if file does not exist or has no overrides.
+    """
+    target_file = custom_filepath or find_interco_file(europe_id=europe_id, runner_dirs=runner_dirs)
+    if not target_file or not os.path.isfile(target_file):
+        return {}
+    try:
+        return parse_interco_file(target_file)
+    except Exception as exc:
+        logging.warning(f"Could not load interconnection file '{target_file}': {exc}")
+        return {}
 
 
 def extract_europe_id(filepath_or_name: str, default_europe: str = "europe1") -> str:
@@ -531,20 +691,24 @@ def collect_investment_files(target: Union[str, List[str]], extension: str = ".t
     ext = extension if extension.startswith(".") else f".{extension}"
     pattern = f"*{ext}"
 
+    def _is_interco_file(fname: str) -> bool:
+        base = os.path.basename(fname).lower()
+        return "interco" in base or "interconnection" in base
+
     if isinstance(target, list):
         files = []
         for item in target:
             if os.path.isdir(item):
-                files.extend(glob.glob(os.path.join(item, pattern)))
-            elif os.path.isfile(item) and item.endswith(ext):
+                files.extend([f for f in glob.glob(os.path.join(item, pattern)) if not _is_interco_file(f)])
+            elif os.path.isfile(item) and item.endswith(ext) and not _is_interco_file(item):
                 files.append(item)
         return sorted(list(set(files)))
 
     if os.path.isdir(target):
-        files = glob.glob(os.path.join(target, pattern))
+        files = [f for f in glob.glob(os.path.join(target, pattern)) if not _is_interco_file(f)]
         return sorted(files)
     elif os.path.isfile(target):
-        return [target] if target.endswith(ext) else []
+        return [target] if (target.endswith(ext) and not _is_interco_file(target)) else []
     return []
 
 
@@ -732,13 +896,20 @@ def resolve_simulation_period(
     return period_start or DEFAULT_PERIOD_START, period_end or DEFAULT_PERIOD_END
 
 
-def update_europe_params(mode: str = "europe", team: Optional[str] = None,
-                         period_start: str = DEFAULT_PERIOD_START, period_end: str = DEFAULT_PERIOD_END,
-                         selected_countries: Optional[List[str]] = None,
-                         europe_params_path: str = "input/long_term_uc/elec-europe_params_to-be-modif.json") -> None:
+def update_europe_params(
+    mode: str = "europe",
+    team: Optional[str] = None,
+    period_start: str = DEFAULT_PERIOD_START,
+    period_end: str = DEFAULT_PERIOD_END,
+    selected_countries: Optional[List[str]] = None,
+    climatic_year: Optional[int] = None,
+    interco_capas: Optional[Dict[str, float]] = None,
+    europe_params_path: str = "input/long_term_uc/elec-europe_params_to-be-modif.json",
+) -> None:
     """
     Enforce and set 'mode' to 'europe', configure the simulation period,
-    and update 'selected_countries' to strictly match active participating countries.
+    update 'selected_countries' to strictly match active participating countries,
+    and optionally configure 'selected_climatic_year' and 'interco_capas_tb_overwritten'.
     """
     if mode != "europe":
         raise ValueError(
@@ -771,13 +942,24 @@ def update_europe_params(mode: str = "europe", team: Optional[str] = None,
             if data.get("selected_countries") != sorted_countries:
                 data["selected_countries"] = sorted_countries
                 modified = True
+        if climatic_year is not None and data.get("selected_climatic_year") != climatic_year:
+            data["selected_climatic_year"] = int(climatic_year)
+            modified = True
+
+        if interco_capas is not None:
+            combined_intercos = dict(DEFAULT_BASE_INTERCO_OVERWRITTEN)
+            combined_intercos.update({k: int(round(v)) for k, v in interco_capas.items()})
+            if data.get("interco_capas_tb_overwritten") != combined_intercos:
+                data["interco_capas_tb_overwritten"] = combined_intercos
+                modified = True
 
         if modified:
             with open(europe_params_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
             logging.info(
                 f"Updated {europe_params_path}: mode='europe' team='{team or data.get('team')}' "
-                f"period=[{period_start} - {period_end}] countries={data.get('selected_countries')}"
+                f"period=[{period_start} - {period_end}] countries={data.get('selected_countries')} "
+                f"climatic_year={data.get('selected_climatic_year')}"
             )
     except Exception as e:
         logging.warning(f"Could not update {europe_params_path}: {e}")
@@ -2189,6 +2371,8 @@ def get_or_run_eraa_baseline(
         period_start=period_start,
         period_end=period_end,
         selected_countries=active_countries,
+        climatic_year=climatic_year,
+        interco_capas={},
     )
 
     pattern = os.path.join(sim_output_base_dir, "**", "uc-summary_*.json")

@@ -1,0 +1,4 @@
+{
+  "_description": "Interconnection capacity overrides for Europe 2 w.r.t. ERAA (in MW). Format: '<origin>2<destination>': <capacity_in_MW>. Leave empty {} to retain native ERAA capacities.",
+  "interco_capas_tb_overwritten": {}
+}

@@ -114,11 +114,24 @@ Any European country without a submitted investment file is automatically popula
 
 ## 3. Handling of Cross-Border Interconnections
 
-For cross-border electricity exchanges between European countries, the model takes into account **both native ERAA data and user-defined overwrites**:
+For cross-border electricity exchanges between European countries, the model takes into account **both native ERAA data and scenario-specific overwrites**:
 1. **Base ERAA Data**: Native interconnections and capacities defined in `data/ERAA_2023-2/interco_capas/interco-capas_{year}.csv` are loaded by default.
-2. **User Overwrites (`interco_capas_tb_overwritten`)**: Any capacity specified in `input/long_term_uc/elec-europe_params_to-be-modif.json` under `interco_capas_tb_overwritten` overrides the ERAA value (e.g., `"germany2italy": 0` or `"france2germany": 5000`).
+2. **Scenario Overwrites per Europe**: Dedicated JSON configuration files in `input/runner/` allow each European scenario to have its own grid assumptions:
+   - `input/runner/interco_europe1.json` for **Europe 1**
+   - `input/runner/interco_europe2.json` for **Europe 2**
+   Example content:
+   ```json
+   {
+     "_description": "Interconnection capacity overrides for Europe 1 w.r.t. ERAA (in MW). Format: '<origin>2<destination>': <capacity_in_MW>. Leave empty {} to retain native ERAA capacities.",
+     "interco_capas_tb_overwritten": {
+       "france2germany": 6000,
+       "france2italy": 4000
+     }
+   }
+   ```
 3. **Unspecified Links**: All cross-border links not explicitly overridden in `interco_capas_tb_overwritten` automatically retain their native ERAA values.
-4. **New Links**: Additional links between countries not originally in ERAA can also be introduced (allowed by `"allow_adding_interco_capas": true` in `usage_params.json`).
+4. **Per europe specification**: The runner guarantees that Europe 1 overrides only affect Europe 1, Europe 2 overrides only affect Europe 2, and pure ERAA baselines always evaluate on native ERAA data.
+5. **New Links**: Additional links between countries not originally in ERAA can also be introduced (allowed by `"allow_adding_interco_capas": true` in `usage_params.json`).
 
 ---
 
@@ -138,6 +151,19 @@ python main_runner.py --dry-run
 # or:
 python main_runner.py txt --dry-run
 ```
+
+### Specifying the Climatic Year (`--climatic-year` / `--cy`)
+You can specify which deterministic climatic year to simulate (valid ERAA years: `1982`, `1989`, `1996`, `2003`, `2010`, `2016`):
+```bash
+# Run simulation using climatic year 2010:
+python main_runner.py --climatic-year 2010
+# or using the shortcut:
+python main_runner.py --cy 2010
+
+# Test mode for climatic year 2016 in dry-run:
+python main_runner.py --cy 2016 --test --dry-run
+```
+The selected climatic year is automatically propagated to both Europe simulations and the ERAA baselines.
 
 ### Mode JSON (Direct Pre-configured Countries)
 Uses the existing JSON files in `input/long_term_uc/countries/` directly without rewriting them:

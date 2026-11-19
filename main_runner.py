@@ -80,6 +80,8 @@ from src.include_runner.investments_runner import (
     format_capacity_comparison_table,
     get_selected_target_year,
     get_selected_climatic_year,
+    AVAILABLE_CLIMATIC_YEARS,
+    load_europe_interco_overwrites,
     get_or_run_eraa_baseline,
     compute_four_way_comparison,
     format_four_way_comparison_table,
@@ -97,6 +99,8 @@ def run_single_europe_simulation(
     country_capacities: Dict[str, Dict[str, float]],
     period_start: str,
     period_end: str,
+    climatic_year: Optional[int] = None,
+    interco_capas: Optional[Dict[str, float]] = None,
     dry_run: bool = False,
     sim_output_base_dir: str = "output/long_term_uc",
 ) -> Optional[dict]:
@@ -116,13 +120,22 @@ def run_single_europe_simulation(
         period_start=period_start,
         period_end=period_end,
         selected_countries=countries,
+        climatic_year=climatic_year,
+        interco_capas=interco_capas,
     )
     is_full_year = (period_start == DEFAULT_PERIOD_START and period_end == DEFAULT_PERIOD_END)
     period_label = "full year period" if is_full_year else "simulation period"
+    cy_label = f", climatic_year={climatic_year}" if climatic_year is not None else ""
+    interco_count = len(interco_capas) if interco_capas else 0
+    interco_label = f", {interco_count} interco override(s)" if interco_count > 0 else ", native ERAA intercos"
     print(
-        f"      -> Global parameters: mode='europe', {period_label} [{period_start} - {period_end}] "
+        f"      -> Global parameters: mode='europe', {period_label} [{period_start} - {period_end}]{cy_label}{interco_label} "
         f"countries={countries} activated in elec-europe_params_to-be-modif.json"
     )
+    if interco_capas:
+        print(f"      -> Overriding {len(interco_capas)} cross-border interconnection(s) w.r.t. ERAA:")
+        for link_name, link_capa in sorted(interco_capas.items()):
+            print(f"           * {link_name:<25}: {link_capa:>8,.1f} MW")
 
     if dry_run:
         print(f"      [INFO] --dry-run active for {europe_name}: files updated, solver not launched.")
@@ -248,6 +261,23 @@ def build_parser() -> argparse.ArgumentParser:
         default="1901/1/1",
         help="Simulation end date (default: '1901/1/1', full year)",
     )
+    parser.add_argument(
+        "--climatic-year",
+        "--cy",
+        type=int,
+        default=None,
+        help="Climatic year to simulate (valid ERAA years: 1982, 1989, 1996, 2003, 2010, 2016). Defaults to selected_climatic_year in elec-europe_params_to-be-modif.json (or 1989)",
+    )
+    parser.add_argument(
+        "--interco-europe1",
+        default=None,
+        help="Optional path to custom interconnection overrides JSON file for Europe 1 (default: auto-detected in input/runner/)",
+    )
+    parser.add_argument(
+        "--interco-europe2",
+        default=None,
+        help="Optional path to custom interconnection overrides JSON file for Europe 2 (default: auto-detected in input/runner/)",
+    )
     return parser
 
 
@@ -341,10 +371,33 @@ def main():
             target_year=target_year,
         )
 
+    # Resolve and validate climatic year
+    if args.climatic_year is not None and args.climatic_year not in AVAILABLE_CLIMATIC_YEARS:
+        print(f"[!] Invalid climatic year: {args.climatic_year}.")
+        print(f"    Available ERAA climatic years: {', '.join(str(y) for y in AVAILABLE_CLIMATIC_YEARS)}")
+        sys.exit(1)
+
+    climatic_year = args.climatic_year if args.climatic_year is not None else get_selected_climatic_year()
+
+    # Load Europe-specific interconnection overrides
+    runner_search_dirs = [os.path.dirname(matched_files[0])] if matched_files else ["input/runner"]
+    custom_interco_files = {
+        "europe1": args.interco_europe1,
+        "europe2": args.interco_europe2,
+    }
+    europe_intercos: Dict[str, Dict[str, float]] = {}
+    for eur in available_europes:
+        europe_intercos[eur] = load_europe_interco_overwrites(
+            europe_id=eur,
+            runner_dirs=runner_search_dirs,
+            custom_filepath=custom_interco_files.get(eur),
+        )
+
     print("\n" + "=" * 76)
     print(f"   COLLECTIVE RUNNER FOR STUDENT INVESTMENTS - EUROPE MODE ({source_mode.upper()} SOURCE)")
     if args.test:
         print(f"   *** TEST / DEBUG MODE ACTIVATED: [{period_start} -> {period_end}] (2 WEEKS) ***")
+    print(f"   Simulating Climatic Year: {climatic_year}")
     print("=" * 76)
     print(f"Detected Europe configuration(s): {', '.join(e.upper() for e in available_europes)}")
     for eur in available_europes:
@@ -352,6 +405,10 @@ def main():
         print(f"  * {eur.upper()} ({len(c_list)} countries): {', '.join(c_list)}")
         for c in c_list:
             print(f"      - {c:<18} <- {grouped_srcs[eur][c]} ({len(grouped_capas[eur][c])} assets)")
+        if europe_intercos.get(eur):
+            print(f"      -> {len(europe_intercos[eur])} interconnection overwrite(s):")
+            for l_name, l_val in sorted(europe_intercos[eur].items()):
+                print(f"           * {l_name:<25}: {l_val:>8,.1f} MW")
 
     # Display installed capacities and comparison with ERAA references (2025 and 2033)
     eraa_2025_capas = load_eraa_country_capacities(year=2025)
@@ -397,6 +454,8 @@ def main():
             country_capacities=grouped_capas["europe1"],
             period_start=period_start,
             period_end=period_end,
+            climatic_year=climatic_year,
+            interco_capas=europe_intercos.get("europe1", {}),
             dry_run=args.dry_run,
         )
 
@@ -406,6 +465,8 @@ def main():
             country_capacities=grouped_capas["europe2"],
             period_start=period_start,
             period_end=period_end,
+            climatic_year=climatic_year,
+            interco_capas=europe_intercos.get("europe2", {}),
             dry_run=args.dry_run,
         )
 
@@ -417,7 +478,6 @@ def main():
 
         if not args.no_compare_eraa:
             target_year = get_selected_target_year()
-            climatic_year = get_selected_climatic_year()
             active_eval_countries = sorted(list(set(sum([list(grouped_capas[e].keys()) for e in available_europes], []))))
             baseline_2025 = get_or_run_eraa_baseline(
                 eraa_year=2025,
@@ -491,6 +551,8 @@ def main():
             country_capacities=grouped_capas[single_eur],
             period_start=period_start,
             period_end=period_end,
+            climatic_year=climatic_year,
+            interco_capas=europe_intercos.get(single_eur, {}),
             dry_run=args.dry_run,
         )
 
@@ -502,7 +564,6 @@ def main():
 
         if not args.no_compare_eraa:
             target_year = get_selected_target_year()
-            climatic_year = get_selected_climatic_year()
             active_eval_countries = sorted(list(set(sum([list(grouped_capas[e].keys()) for e in available_europes], []))))
             baseline_2025 = get_or_run_eraa_baseline(
                 eraa_year=2025,
